@@ -4,12 +4,10 @@ import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.security.JiraAuthenticationContext;
-import com.atlassian.sal.api.auth.LoginUriProvider;
-import com.atlassian.sal.api.user.UserKey;
-import com.atlassian.sal.api.user.UserManager;
+import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.templaterenderer.TemplateRenderer;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.google.gson.Gson;
-import com.jurix.ai.api.JurixApiClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,44 +16,37 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import javax.inject.Named;
 import javax.inject.Inject;
 
 @Named("dashboardServlet")
 public class DashboardServlet extends HttpServlet {
-    // Keep the @Inject on the constructor
     
     private static final Logger log = LoggerFactory.getLogger(DashboardServlet.class);
     
-    private final UserManager userManager;
-    private final LoginUriProvider loginUriProvider;
+    @ComponentImport
     private final TemplateRenderer templateRenderer;
-    private final JurixApiClient apiClient;
+    
     private final Gson gson = new Gson();
     
-    public DashboardServlet(UserManager userManager,
-                           LoginUriProvider loginUriProvider,
-                           TemplateRenderer templateRenderer,
-                           JurixApiClient apiClient) {
-        this.userManager = userManager;
-        this.loginUriProvider = loginUriProvider;
+    @Inject
+    public DashboardServlet(@ComponentImport TemplateRenderer templateRenderer) {
         this.templateRenderer = templateRenderer;
-        this.apiClient = apiClient;
     }
     
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
-        // Check authentication
-        UserKey userKey = userManager.getRemoteUserKey(request);
-        if (userKey == null) {
-            redirectToLogin(request, response);
+        // Get authentication context
+        JiraAuthenticationContext authContext = ComponentAccessor.getJiraAuthenticationContext();
+        ApplicationUser user = authContext.getLoggedInUser();
+        
+        if (user == null) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp?os_destination=" + request.getRequestURI());
             return;
         }
         
@@ -76,120 +67,69 @@ public class DashboardServlet extends HttpServlet {
         }
         
         // Check permissions
-        JiraAuthenticationContext authContext = ComponentAccessor.getJiraAuthenticationContext();
         if (!ComponentAccessor.getPermissionManager()
                 .hasPermission(com.atlassian.jira.permission.ProjectPermissions.BROWSE_PROJECTS, 
-                              project, authContext.getLoggedInUser())) {
+                              project, user)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access denied");
             return;
         }
         
-        // Load dashboard data
-        try {
-            JurixApiClient.DashboardResponse dashboardData = 
-                apiClient.getDashboard(projectKey).get();
-            
-            // Prepare context for template
-            Map<String, Object> context = new HashMap<>();
-            context.put("project", project);
-            context.put("projectKey", projectKey);
-            context.put("projectName", project.getName());
-            context.put("dashboardData", gson.toJson(dashboardData));
-            context.put("metrics", dashboardData.metrics);
-            context.put("predictions", dashboardData.predictions);
-            context.put("recommendations", dashboardData.recommendations);
-            
-            // Add real-time endpoint info
-            context.put("websocketUrl", getWebSocketUrl(request));
-            context.put("apiBaseUrl", getApiBaseUrl(request));
-            
-            response.setContentType("text/html;charset=utf-8");
-            templateRenderer.render("templates/dashboard.vm", context, response.getWriter());
-            
-        } catch (InterruptedException | ExecutionException e) {
-            log.error("Failed to load dashboard data", e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, 
-                             "Failed to load dashboard data");
-        }
-    }
-    
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
-            throws ServletException, IOException {
+        // Create mock dashboard data for now
+        Map<String, Object> dashboardData = new HashMap<>();
+        dashboardData.put("metrics", createMockMetrics());
+        dashboardData.put("predictions", createMockPredictions());
+        dashboardData.put("recommendations", createMockRecommendations());
         
-        // Check authentication
-        UserKey userKey = userManager.getRemoteUserKey(request);
-        if (userKey == null) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-        }
+        // Prepare context for template
+        Map<String, Object> context = new HashMap<>();
+        context.put("project", project);
+        context.put("projectKey", projectKey);
+        context.put("projectName", project.getName());
+        context.put("dashboardData", gson.toJson(dashboardData));
+        context.put("metrics", dashboardData.get("metrics"));
+        context.put("predictions", dashboardData.get("predictions"));
+        context.put("recommendations", dashboardData.get("recommendations"));
         
-        String action = request.getParameter("action");
-        String projectKey = request.getParameter("projectKey");
+        // Add placeholder URLs
+        context.put("websocketUrl", "ws://localhost:2990" + request.getContextPath() + "/jurix-ws");
+        context.put("apiBaseUrl", request.getContextPath() + "/rest/jurix-api/1.0");
         
-        if ("refresh".equals(action)) {
-            // Refresh dashboard data
-            try {
-                JurixApiClient.DashboardResponse dashboardData = 
-                    apiClient.getDashboard(projectKey).get();
-                
-                response.setContentType("application/json");
-                response.getWriter().write(gson.toJson(dashboardData));
-                
-            } catch (InterruptedException | ExecutionException e) {
-                log.error("Failed to refresh dashboard", e);
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            }
-            
-        } else if ("getPredictions".equals(action)) {
-            // Get latest predictions
-            try {
-                JurixApiClient.PredictionsResponse predictions = 
-                    apiClient.getPredictions(projectKey).get();
-                
-                response.setContentType("application/json");
-                response.getWriter().write(gson.toJson(predictions));
-                
-            } catch (InterruptedException | ExecutionException e) {
-                log.error("Failed to get predictions", e);
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            }
-            
-        } else {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action");
-        }
+        response.setContentType("text/html;charset=utf-8");
+        templateRenderer.render("templates/dashboard.vm", context, response.getWriter());
     }
     
-    private void redirectToLogin(HttpServletRequest request, HttpServletResponse response) 
-            throws IOException {
-        response.sendRedirect(loginUriProvider.getLoginUri(getUri(request)).toASCIIString());
+    private Map<String, Object> createMockMetrics() {
+        Map<String, Object> metrics = new HashMap<>();
+        metrics.put("throughput", 45);
+        metrics.put("cycle_time", 3.2);
+        metrics.put("bottlenecks", Map.of(
+            "To Do", 15,
+            "In Progress", 8,
+            "Done", 45
+        ));
+        return metrics;
     }
     
-    private URI getUri(HttpServletRequest request) {
-        StringBuffer builder = request.getRequestURL();
-        if (request.getQueryString() != null) {
-            builder.append("?");
-            builder.append(request.getQueryString());
-        }
-        return URI.create(builder.toString());
+    private Map<String, Object> createMockPredictions() {
+        Map<String, Object> predictions = new HashMap<>();
+        predictions.put("sprint_completion", Map.of(
+            "probability", 0.85,
+            "risk_level", "medium",
+            "reasoning", "Based on current velocity and remaining work"
+        ));
+        predictions.put("velocity_forecast", Map.of(
+            "next_week_estimate", 48.5,
+            "trend", "increasing",
+            "insights", "Team velocity showing positive trend"
+        ));
+        return predictions;
     }
     
-    private String getWebSocketUrl(HttpServletRequest request) {
-        String scheme = request.isSecure() ? "wss" : "ws";
-        return String.format("%s://%s:%d%s/jurix-ws",
-            scheme,
-            request.getServerName(),
-            request.getServerPort(),
-            request.getContextPath()
-        );
-    }
-    
-    private String getApiBaseUrl(HttpServletRequest request) {
-        return String.format("%s://%s:%d%s/rest/jurix-api/1.0",
-            request.getScheme(),
-            request.getServerName(),
-            request.getServerPort(),
-            request.getContextPath()
-        );
+    private String[] createMockRecommendations() {
+        return new String[] {
+            "Consider breaking down large stories in the backlog - 3 stories exceed 8 story points",
+            "Review items in 'In Review' status - average time there is 2.5 days vs target of 1 day",
+            "Team velocity is increasing - consider taking on 2-3 additional story points next sprint"
+        };
     }
 }

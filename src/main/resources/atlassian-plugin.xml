@@ -24,15 +24,17 @@
         <description>JURIX AI REST API</description>
     </rest>
     
-    <!-- Servlet -->
+    <!-- Dashboard Servlet -->
     <servlet key="dashboard-servlet" name="Dashboard Servlet" 
              class="com.jurix.ai.servlet.DashboardServlet">
         <description>Serves the AI dashboard</description>
         <url-pattern>/jurix-dashboard</url-pattern>
     </servlet>
     
-    <!-- Test Servlet -->
-    <servlet key="test-servlet" class="com.jurix.ai.servlet.TestServlet">
+    <!-- Simple Test Servlet -->
+    <servlet key="test-servlet" name="Test Servlet" 
+             class="com.jurix.ai.servlet.TestServlet">
+        <description>Test servlet</description>
         <url-pattern>/jurix-test</url-pattern>
     </servlet>
     
@@ -41,15 +43,7 @@
               section="jira.project.sidebar.navigation" weight="30">
         <description>Link to AI Dashboard</description>
         <label key="jurix.dashboard.label">AI Analytics</label>
-        <link linkId="jurix-dashboard-link">/jurix-dashboard?projectKey=$projectKey</link>
+        <link linkId="jurix-dashboard-link">/plugins/servlet/jurix-dashboard?projectKey=$projectKey</link>
         <condition class="com.atlassian.jira.plugin.webfragment.conditions.UserLoggedInCondition"/>
     </web-item>
-    
-    <!-- Active Objects -->
-    <ao key="ao-module">
-        <description>Active Objects entities for JURIX AI</description>
-        <entity>com.jurix.ai.ao.AIAnalytics</entity>
-        <entity>com.jurix.ai.ao.Prediction</entity>
-        <entity>com.jurix.ai.ao.GeneratedArticle</entity>
-    </ao>
 </atlassian-plugin>

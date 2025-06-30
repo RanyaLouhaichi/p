@@ -170,7 +170,6 @@
                     <enableQuickReload>true</enableQuickReload>
                     <jvmArgs>-Xms512m -Xmx2g</jvmArgs>
                     <instructions>
-                        <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
                         <Import-Package>*;resolution:=optional</Import-Package>
                         <Spring-Context>*</Spring-Context>
                     </instructions>
