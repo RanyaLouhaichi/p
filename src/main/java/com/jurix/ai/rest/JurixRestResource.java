@@ -38,7 +38,7 @@ public class JurixRestResource {
     
     @POST
     @Path("/chat")
-    public Response chat(ChatRequest request) {
+    public Response chat(Map<String, Object> requestMap) {
         JiraAuthenticationContext authContext = ComponentAccessor.getJiraAuthenticationContext();
         ApplicationUser user = authContext.getLoggedInUser();
         
@@ -46,9 +46,14 @@ public class JurixRestResource {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         
+        String query = (String) requestMap.get("query");
+        String conversationId = (String) requestMap.get("conversationId");
+        
+        log.info("Chat request received - Query: {}, ConversationId: {}", query, conversationId);
+        
         // Mock chat response
         Map<String, Object> response = new HashMap<>();
-        response.put("query", request.getQuery());
+        response.put("query", query);
         response.put("response", "I'm analyzing your project data. Based on current metrics, your team velocity is trending upward. Would you like specific insights about sprint performance?");
         response.put("recommendations", Arrays.asList(
             "Review sprint backlog items",
@@ -148,16 +153,5 @@ public class JurixRestResource {
             )
         ));
         return predictions;
-    }
-    
-    // Request DTOs
-    public static class ChatRequest {
-        private String query;
-        private String conversationId;
-        
-        public String getQuery() { return query; }
-        public void setQuery(String query) { this.query = query; }
-        public String getConversationId() { return conversationId; }
-        public void setConversationId(String conversationId) { this.conversationId = conversationId; }
     }
 }
