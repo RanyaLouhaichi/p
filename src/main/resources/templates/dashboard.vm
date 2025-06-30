@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Analytics - $projectName | JURIX</title>
+    <meta charset="utf-8">
+    <meta name="decorator" content="atl.general">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <!-- JURIX Resources -->
+    $webResourceManager.requireResource("com.jurix.ai:jurix-ai-resources")
+</head>
+<body>
+    <div class="jurix-dashboard" data-project-key="$projectKey">
+        <!-- Header -->
+        <div class="jurix-dashboard-header">
+            <h1 class="jurix-dashboard-title">AI Analytics Dashboard</h1>
+            <p class="jurix-dashboard-subtitle">Real-time insights for $projectName</p>
+        </div>
+        
+        <!-- Metrics Grid -->
+        <div class="jurix-metrics-grid" id="metricsGrid">
+            <div class="jurix-metric-card">
+                <div class="jurix-metric-label">Sprint Velocity</div>
+                <div class="jurix-metric-value" id="velocityMetric">
+                    <span class="jurix-loader"></span>
+                </div>
+                <div class="jurix-metric-change positive" id="velocityChange" style="display: none;">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M6 0l6 12H0z"/>
+                    </svg>
+                    <span id="velocityChangeValue">+12%</span>
+                </div>
+            </div>
+            
+            <div class="jurix-metric-card">
+                <div class="jurix-metric-label">Cycle Time</div>
+                <div class="jurix-metric-value" id="cycleTimeMetric">
+                    <span class="jurix-loader"></span>
+                </div>
+                <div class="jurix-metric-change negative" id="cycleTimeChange" style="display: none;">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M6 12L0 0h12z"/>
+                    </svg>
+                    <span id="cycleTimeChangeValue">-8%</span>
+                </div>
+            </div>
+            
+            <div class="jurix-metric-card">
+                <div class="jurix-metric-label">Team Efficiency</div>
+                <div class="jurix-metric-value" id="efficiencyMetric">
+                    <span class="jurix-loader"></span>
+                </div>
+                <div class="jurix-metric-change positive" id="efficiencyChange" style="display: none;">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M6 0l6 12H0z"/>
+                    </svg>
+                    <span id="efficiencyChangeValue">+5%</span>
+                </div>
+            </div>
+            
+            <div class="jurix-metric-card">
+                <div class="jurix-metric-label">Active Issues</div>
+                <div class="jurix-metric-value" id="activeIssuesMetric">
+                    <span class="jurix-loader"></span>
+                </div>
+                <div class="jurix-metric-change" id="activeIssuesChange" style="display: none;">
+                    <span id="activeIssuesChangeValue">No change</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Predictions Panel -->
+        <div class="jurix-predictions-panel" id="predictionsPanel">
+            <h2 style="margin-bottom: 1.5rem; position: relative; z-index: 1;">AI Predictions</h2>
+            <div id="predictionsList">
+                <div class="jurix-prediction-item">
+                    <div class="jurix-prediction-probability">
+                        <span class="jurix-loader"></span>
+                    </div>
+                    <div class="jurix-prediction-label">Loading predictions...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+            <!-- Velocity Chart -->
+            <div class="jurix-chart-container">
+                <div class="jurix-chart-header">
+                    <h3 class="jurix-chart-title">Velocity Trend</h3>
+                    <button class="aui-button aui-button-subtle" onclick="JurixDashboard.refreshChart('velocity')">
+                        <span class="aui-icon aui-icon-small aui-iconfont-refresh">Refresh</span>
+                    </button>
+                </div>
+                <canvas id="velocityChart" height="300"></canvas>
+            </div>
+            
+            <!-- Workload Distribution -->
+            <div class="jurix-chart-container">
+                <div class="jurix-chart-header">
+                    <h3 class="jurix-chart-title">Team Workload</h3>
+                    <button class="aui-button aui-button-subtle" onclick="JurixDashboard.refreshChart('workload')">
+                        <span class="aui-icon aui-icon-small aui-iconfont-refresh">Refresh</span>
+                    </button>
+                </div>
+                <canvas id="workloadChart" height="300"></canvas>
+            </div>
+        </div>
+        
+        <!-- Recommendations -->
+        <div class="jurix-glass-card" style="margin-top: 2rem;">
+            <h3 style="margin-bottom: 1rem;">AI Recommendations</h3>
+            <div id="recommendationsList">
+                <div style="display: flex; align-items: center; color: #64748b;">
+                    <span class="jurix-loader" style="margin-right: 0.5rem;"></span>
+                    Analyzing patterns and generating recommendations...
+                </div>
+            </div>
+        </div>
+        
+        <!-- Real-time Activity Feed -->
+        <div class="jurix-glass-card" style="margin-top: 2rem;">
+            <h3 style="margin-bottom: 1rem;">Real-time Activity</h3>
+            <div id="activityFeed" style="max-height: 300px; overflow-y: auto;">
+                <!-- Activity items will be added here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Hidden data -->
+    <script type="text/javascript">
+        window.JurixData = {
+            dashboardData: $dashboardData,
+            projectKey: '$projectKey',
+            websocketUrl: '$websocketUrl',
+            apiBaseUrl: '$apiBaseUrl'
+        };
+    </script>
+    
+    <!-- Initialize Dashboard -->
+    <script type="text/javascript">
+        AJS.$(document).ready(function() {
+            JurixDashboard.init();
+        });
+    </script>
+</body>
+</html>

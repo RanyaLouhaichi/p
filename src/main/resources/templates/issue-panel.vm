@@ -1,0 +1,22 @@
+<div class="jurix-glass-card" style="margin-top: 10px;">
+    <h3 style="margin-bottom: 12px; color: #1a202c;">AI Insights</h3>
+    
+    #if($article)
+        <div style="margin-bottom: 12px;">
+            <span style="background: #10b981; color: white; padding: 4px 12px; border-radius: 100px; font-size: 12px;">
+                Article Generated
+            </span>
+        </div>
+        <p style="color: #64748b; margin-bottom: 12px;">$article.title</p>
+        <a href="#" class="aui-button aui-button-primary" style="margin-right: 8px;">View Article</a>
+    #else
+        <p style="color: #64748b;">AI analysis will appear here when the issue is resolved.</p>
+    #end
+    
+    #if($predictions)
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.05);">
+            <h4 style="margin-bottom: 8px;">Predictions</h4>
+            <p style="color: #64748b;">Completion probability: <strong>$predictions.probability%</strong></p>
+        </div>
+    #end
+</div>

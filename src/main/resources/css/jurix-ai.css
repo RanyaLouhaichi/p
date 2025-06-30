@@ -1,0 +1,441 @@
+/* JURIX AI - Modern Glassmorphism Design System */
+
+:root {
+    /* Color Palette */
+    --jurix-primary: #6366f1;
+    --jurix-primary-dark: #4f46e5;
+    --jurix-secondary: #8b5cf6;
+    --jurix-accent: #ec4899;
+    --jurix-success: #10b981;
+    --jurix-warning: #f59e0b;
+    --jurix-danger: #ef4444;
+    --jurix-info: #3b82f6;
+    
+    /* Gradients */
+    --jurix-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --jurix-gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --jurix-gradient-dark: linear-gradient(135deg, #1a1c20 0%, #2d3436 100%);
+    
+    /* Glass Effect */
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    
+    /* Spacing */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+}
+
+/* Global Styles */
+.jurix-ai-container {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: #1a202c;
+    line-height: 1.6;
+}
+
+/* Glassmorphism Card */
+.jurix-glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    padding: var(--space-lg);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.jurix-glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
+}
+
+/* AI Chat Widget */
+.jurix-chat-widget {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.jurix-chat-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--jurix-gradient-primary);
+    border: none;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.jurix-chat-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.jurix-chat-button:hover::before {
+    width: 120px;
+    height: 120px;
+}
+
+.jurix-chat-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 30px rgba(99, 102, 241, 0.6);
+}
+
+/* Chat Window */
+.jurix-chat-window {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    width: 380px;
+    height: 600px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.jurix-chat-header {
+    background: var(--jurix-gradient-primary);
+    color: white;
+    padding: var(--space-md) var(--space-lg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.jurix-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-lg);
+    background: rgba(249, 250, 251, 0.8);
+}
+
+/* Dashboard Styles */
+.jurix-dashboard {
+    padding: var(--space-xl);
+    background: #f5f7fa;
+    min-height: 100vh;
+}
+
+.jurix-dashboard-header {
+    margin-bottom: var(--space-2xl);
+}
+
+.jurix-dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: var(--jurix-gradient-primary);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: var(--space-sm);
+}
+
+.jurix-dashboard-subtitle {
+    color: #64748b;
+    font-size: 1.125rem;
+}
+
+/* Metric Cards */
+.jurix-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-2xl);
+}
+
+.jurix-metric-card {
+    background: white;
+    border-radius: 20px;
+    padding: var(--space-lg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.jurix-metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--jurix-gradient-primary);
+}
+
+.jurix-metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.jurix-metric-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--jurix-primary);
+    margin: var(--space-sm) 0;
+}
+
+.jurix-metric-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.jurix-metric-change {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-top: var(--space-sm);
+}
+
+.jurix-metric-change.positive {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--jurix-success);
+}
+
+.jurix-metric-change.negative {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--jurix-danger);
+}
+
+/* Charts Container */
+.jurix-chart-container {
+    background: white;
+    border-radius: 20px;
+    padding: var(--space-xl);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: var(--space-lg);
+}
+
+.jurix-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+}
+
+.jurix-chart-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a202c;
+}
+
+/* Predictions Panel */
+.jurix-predictions-panel {
+    background: var(--jurix-gradient-dark);
+    color: white;
+    border-radius: 20px;
+    padding: var(--space-xl);
+    position: relative;
+    overflow: hidden;
+}
+
+.jurix-predictions-panel::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+    animation: pulse 4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 0.3; }
+}
+
+.jurix-prediction-item {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: var(--space-md);
+    margin-bottom: var(--space-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.jurix-prediction-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(4px);
+}
+
+.jurix-prediction-probability {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: var(--space-xs);
+}
+
+.jurix-prediction-label {
+    opacity: 0.8;
+    font-size: 0.875rem;
+}
+
+/* Notification Toast */
+.jurix-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: var(--space-md);
+    display: flex;
+    align-items: flex-start;
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.jurix-notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: var(--space-md);
+    flex-shrink: 0;
+}
+
+.jurix-notification.success .jurix-notification-icon {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--jurix-success);
+}
+
+.jurix-notification.warning .jurix-notification-icon {
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--jurix-warning);
+}
+
+.jurix-notification.error .jurix-notification-icon {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--jurix-danger);
+}
+
+.jurix-notification-content {
+    flex: 1;
+}
+
+.jurix-notification-title {
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+}
+
+.jurix-notification-message {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+/* Loading Animation */
+.jurix-loader {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(99, 102, 241, 0.2);
+    border-radius: 50%;
+    border-top-color: var(--jurix-primary);
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Buttons */
+.jurix-button {
+    background: var(--jurix-gradient-primary);
+    color: white;
+    border: none;
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: 100px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.jurix-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.jurix-button:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.jurix-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .jurix-chat-window {
+        width: 100%;
+        height: 100%;
+        right: 0;
+        bottom: 0;
+        border-radius: 0;
+    }
+    
+    .jurix-dashboard {
+        padding: var(--space-md);
+    }
+    
+    .jurix-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}

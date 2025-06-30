@@ -1,0 +1,6 @@
+<!-- Chat widget is loaded via JavaScript -->
+<script>
+    AJS.$(document).ready(function() {
+        // Chat widget initialization is handled by chat-widget.js
+    });
+</script>
