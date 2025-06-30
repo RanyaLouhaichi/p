@@ -258,7 +258,7 @@
         
         /* Alert Bar - Softer Style */
         .alert-bar {
-            background: linear-gradient(90deg, var(--pastel-red) 0%, var(--pastel-pink) 100%);
+            background: #DE350B;
             color: var(--white);
             padding: 0.75rem 1.5rem;
             display: flex;
@@ -1289,7 +1289,8 @@
                 labels: ['Bugs', 'Features', 'Tasks', 'Tech Debt'],
                 datasets: [{
                     data: [15, 45, 30, 10],
-                    backgroundColor: ['#F87171', '#60A5FA', '#7DD3C0', '#A78BFA']
+                    backgroundColor: ['#DE350B', '#4C8BF5', '#AFA8D7', '#FCD169']
+
                 }]
             },
             options: {

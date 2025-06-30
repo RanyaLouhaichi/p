@@ -191,7 +191,7 @@ window.JurixDashboard = (function() {
             div.style.cssText = 'padding: 1rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);';
             div.innerHTML = `
                 <div style="display: flex; align-items: start;">
-                    <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 1rem; flex-shrink: 0;">
+                    <div style="width: 32px; height: 32px; background: var(--jira-blue); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; margin-right: 1rem; flex-shrink: 0;">
                         ${index + 1}
                     </div>
                     <div style="flex: 1;">
