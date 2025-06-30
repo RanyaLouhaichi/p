@@ -1,4 +1,4 @@
-// JURIX AI Chat Widget
+// JURIX AI Chat Widget - Blue Minimalist Design
 window.JurixChat = (function() {
     'use strict';
     
@@ -102,8 +102,6 @@ window.JurixChat = (function() {
         
         messageContainer = document.getElementById('chatMessages');
         inputField = document.getElementById('chatInput');
-        
-        // Add styles (removed to avoid duplication with CSS file)
     }
     
     function toggleChat() {
@@ -298,3 +296,81 @@ window.JurixChat = (function() {
 AJS.$(document).ready(function() {
     JurixChat.init();
 });
+
+// Add the CSS directly via JavaScript to ensure it overrides any existing styles
+(function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        /* Override chat button styles to ensure blue color */
+        .jurix-chat-widget .jurix-chat-button {
+            background: #0052CC !important; /* Solid Jira blue */
+            box-shadow: 0 4px 12px rgba(0, 82, 204, 0.25) !important;
+            background-image: none !important; /* Remove gradient */
+        }
+        
+        .jurix-chat-widget .jurix-chat-button:hover {
+            background: #0747A6 !important; /* Darker blue on hover */
+            box-shadow: 0 6px 20px rgba(0, 82, 204, 0.35) !important;
+        }
+        
+        .jurix-chat-widget .jurix-chat-button::before {
+            background: #0052CC !important;
+            animation: none !important; /* Remove pulse for more minimalist look */
+        }
+        
+        /* Ensure chat window has minimalist design */
+        .jurix-chat-window {
+            border: 1px solid #DFE1E6 !important;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* Chat header minimalist style */
+        .jurix-chat-header {
+            background: #FFFFFF !important;
+            border-bottom: 1px solid #DFE1E6 !important;
+        }
+        
+        /* Avatar with blue gradient */
+        .chat-avatar {
+            background: #0052CC !important;
+        }
+        
+        /* Quick action buttons with blue theme */
+        .quick-action-btn {
+            border-color: #4C9AFF !important;
+            color: #0052CC !important;
+        }
+        
+        .quick-action-btn:hover {
+            background: #DEEBFF !important;
+            border-color: #0052CC !important;
+        }
+        
+        /* Send button blue */
+        .send-button {
+            background: #0052CC !important;
+        }
+        
+        .send-button:hover {
+            background: #0747A6 !important;
+        }
+        
+        /* Input focus blue */
+        .jurix-chat-input input:focus {
+            border-color: #0052CC !important;
+            box-shadow: 0 0 0 2px #DEEBFF !important;
+        }
+        
+        /* User messages blue */
+        .chat-message.user .message-content {
+            background: #0052CC !important;
+        }
+        
+        /* Assistant avatar blue theme */
+        .chat-message.assistant .message-avatar {
+            background: #DEEBFF !important;
+            color: #0052CC !important;
+        }
+    `;
+    document.head.appendChild(style);
+})();

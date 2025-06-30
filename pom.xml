@@ -7,7 +7,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.jurix.ai</groupId>
     <artifactId>jurix-ai-plugin</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
     <packaging>atlassian-plugin</packaging>
 
     <name>JURIX AI - Intelligent Jira Assistant</name>
