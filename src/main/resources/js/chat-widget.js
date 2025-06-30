@@ -47,19 +47,22 @@ window.JurixChat = (function() {
         chatWindow.className = 'jurix-chat-window';
         chatWindow.innerHTML = `
             <div class="jurix-chat-header">
-                <div>
+                <div class="jurix-chat-header-content">
                     <div class="chat-avatar">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                            <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="5" />
+                            <path d="M12 2v5M12 17v5M2 12h5M17 12h5" />
+                            <circle cx="12" cy="12" r="3" fill="white" />
+                            <path d="M8 8l-1.5-1.5M16 8l1.5-1.5M8 16l-1.5 1.5M16 16l1.5 1.5" />
                         </svg>
                     </div>
-                    <div>
-                        <div>JURIX Assistant</div>
-                        <div>Always online • Typically replies instantly</div>
+                    <div class="chat-header-text">
+                        <div class="chat-header-title">JURIX Assistant</div>
+                        <div class="chat-header-status">Always online • Typically replies instantly</div>
                     </div>
                 </div>
                 <button onclick="JurixChat.toggleChat()" style="background: none; border: none; cursor: pointer;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                         <path d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
