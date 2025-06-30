@@ -1,0 +1,23 @@
+﻿# Java build artifacts
+target/
+*.log
+*.class
+*.war
+*.ear
+*.jar
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# DB dumps
+*.mv.db
+*.hprof
+
+# Atlassian logs
+atlassian-*.log

@@ -13,6 +13,6 @@ public interface AIAnalytics extends Entity {
     String getMetricsJson();
     void setMetricsJson(String metricsJson);
     
-    Long getTimestamp();
-    void setTimestamp(Long timestamp);
+    Long getCreatedAt();
+    void setCreatedAt(Long createdAt);
 }

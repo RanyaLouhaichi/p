@@ -23,7 +23,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import javax.inject.Named;
+import javax.inject.Inject;
+
+@Named("dashboardServlet")
 public class DashboardServlet extends HttpServlet {
+    // Keep the @Inject on the constructor
     
     private static final Logger log = LoggerFactory.getLogger(DashboardServlet.class);
     

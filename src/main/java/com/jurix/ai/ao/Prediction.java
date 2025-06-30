@@ -19,6 +19,6 @@ public interface Prediction extends Entity {
     Double getProbability();
     void setProbability(Double probability);
     
-    Long getTimestamp();
-    void setTimestamp(Long timestamp);
+    Long getCreatedAt();
+    void setCreatedAt(Long createdAt);
 }

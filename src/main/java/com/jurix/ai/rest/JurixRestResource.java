@@ -20,10 +20,15 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import javax.inject.Named;
+import javax.inject.Inject;
+
+@Named("jurixRestResource")
 @Path("/")
 @Consumes({MediaType.APPLICATION_JSON})
 @Produces({MediaType.APPLICATION_JSON})
 public class JurixRestResource {
+    // Keep the @Inject on the constructor
     
     private static final Logger log = LoggerFactory.getLogger(JurixRestResource.class);
     

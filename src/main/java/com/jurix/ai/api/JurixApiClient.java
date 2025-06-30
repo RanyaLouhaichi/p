@@ -20,7 +20,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.inject.Named;
+import org.springframework.stereotype.Component;
+
 @Component
+@Named("jurixApiClient")
 public class JurixApiClient {
     
     private static final Logger log = LoggerFactory.getLogger(JurixApiClient.class);

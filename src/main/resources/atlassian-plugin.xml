@@ -3,78 +3,47 @@
         <description>${project.description}</description>
         <version>${project.version}</version>
         <vendor name="${project.organization.name}" url="${project.organization.url}"/>
-        <param name="plugin-icon">images/pluginIcon.png</param>
-        <param name="plugin-logo">images/pluginLogo.png</param>
     </plugin-info>
 
-    <!-- Add our plugin modules here -->
+    <!-- Resources -->
     <resource type="i18n" name="i18n" location="jurix-ai-plugin"/>
     
     <!-- Web Resources -->
     <web-resource key="jurix-ai-resources" name="JURIX AI Web Resources">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
-        <dependency>com.atlassian.auiplugin:aui-experimental-soy-templates</dependency>
         
-        <!-- Modern CSS -->
         <resource type="download" name="jurix-ai.css" location="/css/jurix-ai.css"/>
-        <resource type="download" name="dashboard.css" location="/css/dashboard.css"/>
-        
-        <!-- JavaScript -->
-        <resource type="download" name="jurix-ai.js" location="/js/jurix-ai.js"/>
         <resource type="download" name="dashboard.js" location="/js/dashboard.js"/>
-        <resource type="download" name="notifications.js" location="/js/notifications.js"/>
         <resource type="download" name="chat-widget.js" location="/js/chat-widget.js"/>
         
-        <!-- Load on all Jira pages -->
         <context>atl.general</context>
-        <context>atl.admin</context>
     </web-resource>
     
-    <!-- REST Endpoints -->
-    <rest key="jurix-api" path="/jurix-api" version="1.0">
+    <!-- REST Module -->
+    <rest key="jurix-rest" path="/jurix-api" version="1.0">
         <description>JURIX AI REST API</description>
     </rest>
     
-    <!-- Webhooks -->
-    <webhook key="issue-resolved-webhook" event="jira:issue_updated" 
-             url="/rest/jurix-api/1.0/webhook/issue-resolved"/>
+    <!-- Servlet -->
+    <servlet key="dashboard-servlet" name="Dashboard Servlet" 
+             class="com.jurix.ai.servlet.DashboardServlet">
+        <description>Serves the AI dashboard</description>
+        <url-pattern>/jurix-dashboard</url-pattern>
+    </servlet>
     
-    <!-- Web Items and Sections -->
+    <!-- Test Servlet -->
+    <servlet key="test-servlet" class="com.jurix.ai.servlet.TestServlet">
+        <url-pattern>/jurix-test</url-pattern>
+    </servlet>
     
-    <!-- Project Dashboard Tab -->
-    <web-section key="jurix-project-section" location="atl.jira.view.issue.left.context" weight="2000">
-        <label key="jurix.section.label"/>
-    </web-section>
-    
-    <web-item key="jurix-ai-dashboard" name="AI Dashboard" section="system.project.sidebar/summary" weight="30">
+    <!-- Web Item for Project Navigation -->
+    <web-item key="jurix-dashboard-link" name="AI Dashboard Link" 
+              section="jira.project.sidebar.navigation" weight="30">
+        <description>Link to AI Dashboard</description>
         <label key="jurix.dashboard.label">AI Analytics</label>
-        <link linkId="jurix-ai-dashboard-link">/projects/${project.key}?selectedItem=com.jurix.ai:jurix-ai-dashboard</link>
-        <condition class="com.atlassian.jira.plugin.webfragment.conditions.JiraGlobalPermissionCondition">
-            <param name="permission">browse</param>
-        </condition>
+        <link linkId="jurix-dashboard-link">/jurix-dashboard?projectKey=$projectKey</link>
+        <condition class="com.atlassian.jira.plugin.webfragment.conditions.UserLoggedInCondition"/>
     </web-item>
-    
-    <!-- Issue Panel -->
-    <web-panel key="jurix-issue-panel" location="atl.jira.view.issue.right.context" weight="50">
-        <label key="jurix.issue.panel.label">AI Insights</label>
-        <resource name="view" type="velocity" location="templates/issue-panel.vm"/>
-        <context-provider class="com.jurix.ai.panel.IssueAIPanelContextProvider"/>
-    </web-panel>
-    
-    <!-- Chat Widget (Global) -->
-    <web-panel key="jurix-chat-widget" location="atl.footer" weight="1000">
-        <resource name="view" type="velocity" location="templates/chat-widget.vm"/>
-    </web-panel>
-    
-    <!-- Servlets -->
-    <servlet key="dashboard-servlet" class="com.jurix.ai.servlet.DashboardServlet">
-        <url-pattern>/jurix-dashboard/*</url-pattern>
-    </servlet>
-    
-    <!-- WebSocket Endpoint -->
-    <servlet key="websocket-servlet" class="com.jurix.ai.servlet.WebSocketServlet">
-        <url-pattern>/jurix-ws/*</url-pattern>
-    </servlet>
     
     <!-- Active Objects -->
     <ao key="ao-module">

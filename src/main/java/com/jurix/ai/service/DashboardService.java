@@ -7,6 +7,11 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.inject.Named;
+import org.springframework.stereotype.Component;
+
+@Component
+@Named("dashboardService") 
 public class DashboardService {
     
     private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
