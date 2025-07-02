@@ -160,6 +160,7 @@ window.JurixChat = (function() {
         }
     }
     
+    // In chat-widget.js, temporarily bypass the Java layer
     function sendMessage() {
         const message = inputField.value.trim();
         if (!message) return;
@@ -173,60 +174,27 @@ window.JurixChat = (function() {
         // Show typing indicator
         showTypingIndicator();
         
-        // Prepare request data
-        const requestData = {
-            query: message,
-            conversationId: conversationId
-        };
+        // TEMPORARY: Direct call to Python backend
+        const DIRECT_BACKEND_URL = 'http://localhost:5001';
         
         // Send to API
         AJS.$.ajax({
-            url: API_BASE + '/chat',
+            url: DIRECT_BACKEND_URL + '/api/chat',  // Direct to Python
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify(requestData),
+            data: JSON.stringify({
+                query: message,
+                conversationId: conversationId
+            }),
             success: function(response) {
                 hideTypingIndicator();
-                
-                // Add AI response
                 addMessage(response.response, 'assistant');
-                
-                // Add articles if available
-                if (response.articles && response.articles.length > 0) {
-                    addArticlesSummary(response.articles);
-                }
-                
-                // Add recommendations if available
-                if (response.recommendations && response.recommendations.length > 0) {
-                    addQuickActions(response.recommendations);
-                }
-                
-                // Save conversation
-                saveConversation();
+                // ... rest of success handling
             },
             error: function(xhr, status, error) {
                 hideTypingIndicator();
-                
-                let errorMessage = 'Sorry, I encountered an error. ';
-                
-                if (!isConnected) {
-                    errorMessage = 'I\'m currently in limited mode as the backend is offline. Please ensure the Python backend is running on port 5001.';
-                } else if (xhr.status === 500) {
-                    // Parse error from response if available
-                    try {
-                        const errorData = JSON.parse(xhr.responseText);
-                        errorMessage += errorData.error || 'Server error occurred.';
-                    } catch (e) {
-                        errorMessage += 'Server error occurred. Please check the backend logs.';
-                    }
-                } else if (xhr.status === 0) {
-                    errorMessage = 'Cannot connect to the backend. Please ensure the Python server is running on http://localhost:5001';
-                } else {
-                    errorMessage += 'Please try again.';
-                }
-                
-                addMessage(errorMessage, 'assistant');
-                console.error('Chat error:', status, error, xhr.responseText);
+                console.error('Direct backend error:', error);
+                addMessage('Connection error: ' + error, 'assistant');
             }
         });
     }
