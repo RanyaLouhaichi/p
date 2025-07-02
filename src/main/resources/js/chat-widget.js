@@ -1,4 +1,4 @@
-// JURIX AI Chat Widget - Blue Minimalist Design
+// JURIX AI Chat Widget - Backend Integration Version
 window.JurixChat = (function() {
     'use strict';
     
@@ -8,8 +8,9 @@ window.JurixChat = (function() {
     let messageContainer = null;
     let inputField = null;
     let isTyping = false;
+    let isConnected = false;
     
-    const API_BASE = '/rest/jurix-api/1.0';
+    const API_BASE = AJS.contextPath() + '/rest/jurix-api/1.0';
     
     function init() {
         // Generate unique conversation ID
@@ -21,8 +22,45 @@ window.JurixChat = (function() {
         // Create chat window
         createChatWindow();
         
+        // Check backend connectivity
+        checkBackendConnection();
+        
         // Load saved messages if any
         loadConversationHistory();
+    }
+    
+    function checkBackendConnection() {
+        AJS.$.ajax({
+            url: API_BASE + '/health',
+            type: 'GET',
+            success: function(response) {
+                isConnected = response.backend_connected || false;
+                if (isConnected) {
+                    console.log('✅ Connected to JURIX AI backend');
+                    updateConnectionStatus(true);
+                } else {
+                    console.warn('⚠️ Backend not connected, using fallback mode');
+                    updateConnectionStatus(false);
+                }
+            },
+            error: function() {
+                isConnected = false;
+                updateConnectionStatus(false);
+            }
+        });
+    }
+    
+    function updateConnectionStatus(connected) {
+        const statusElement = document.querySelector('.chat-header-status');
+        if (statusElement) {
+            if (connected) {
+                statusElement.textContent = 'AI Assistant Ready • Typically replies instantly';
+                statusElement.style.color = 'rgba(255, 255, 255, 0.9)';
+            } else {
+                statusElement.textContent = 'Limited Mode • Backend Offline';
+                statusElement.style.color = 'rgba(255, 200, 200, 0.9)';
+            }
+        }
     }
     
     function createChatButton() {
@@ -58,7 +96,7 @@ window.JurixChat = (function() {
                     </div>
                     <div class="chat-header-text">
                         <div class="chat-header-title">JURIX Assistant</div>
-                        <div class="chat-header-status">Always online • Typically replies instantly</div>
+                        <div class="chat-header-status">Connecting...</div>
                     </div>
                 </div>
                 <button onclick="JurixChat.toggleChat()" style="background: none; border: none; cursor: pointer;">
@@ -73,19 +111,19 @@ window.JurixChat = (function() {
                     <div class="message-avatar">AI</div>
                     <div>
                         <div class="message-content">
-                            <p>Hello! I'm your AI assistant. I can help you with:</p>
+                            <p>Hello! I'm your AI assistant connected to your Jira instance. I can help you with:</p>
                             <ul>
-                                <li>Project analytics and insights</li>
-                                <li>Sprint predictions and recommendations</li>
-                                <li>Team productivity analysis</li>
-                                <li>Best practices and process improvements</li>
+                                <li>Answering questions about your projects</li>
+                                <li>Providing insights and recommendations</li>
+                                <li>Analyzing your team's productivity</li>
+                                <li>General Agile and development best practices</li>
                             </ul>
                             <p>What would you like to know?</p>
                         </div>
                         <div class="quick-actions">
-                            <button class="quick-action-btn" onclick="JurixChat.sendQuickMessage('Show current sprint metrics')">Sprint metrics</button>
-                            <button class="quick-action-btn" onclick="JurixChat.sendQuickMessage('Team performance analysis')">Team analysis</button>
-                            <button class="quick-action-btn" onclick="JurixChat.sendQuickMessage('Show blockers')">Blockers</button>
+                            <button class="quick-action-btn" onclick="JurixChat.sendQuickMessage('What is my team\\'s current velocity?')">Team velocity</button>
+                            <button class="quick-action-btn" onclick="JurixChat.sendQuickMessage('Show me productivity insights')">Productivity</button>
+                            <button class="quick-action-btn" onclick="JurixChat.sendQuickMessage('Any blockers I should know about?')">Blockers</button>
                         </div>
                     </div>
                 </div>
@@ -114,6 +152,9 @@ window.JurixChat = (function() {
             chatWindow.classList.add('open');
             inputField.focus();
             scrollToBottom();
+            
+            // Check connection status when opening
+            checkBackendConnection();
         } else {
             chatWindow.classList.remove('open');
         }
@@ -132,22 +173,30 @@ window.JurixChat = (function() {
         // Show typing indicator
         showTypingIndicator();
         
+        // Prepare request data
+        const requestData = {
+            query: message,
+            conversationId: conversationId
+        };
+        
         // Send to API
         AJS.$.ajax({
             url: API_BASE + '/chat',
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({
-                query: message,
-                conversationId: conversationId
-            }),
+            data: JSON.stringify(requestData),
             success: function(response) {
                 hideTypingIndicator();
                 
                 // Add AI response
                 addMessage(response.response, 'assistant');
                 
-                // Add quick actions if recommendations available
+                // Add articles if available
+                if (response.articles && response.articles.length > 0) {
+                    addArticlesSummary(response.articles);
+                }
+                
+                // Add recommendations if available
                 if (response.recommendations && response.recommendations.length > 0) {
                     addQuickActions(response.recommendations);
                 }
@@ -157,8 +206,27 @@ window.JurixChat = (function() {
             },
             error: function(xhr, status, error) {
                 hideTypingIndicator();
-                addMessage('Sorry, I encountered an error. Please try again.', 'assistant');
-                console.error('Chat error:', error);
+                
+                let errorMessage = 'Sorry, I encountered an error. ';
+                
+                if (!isConnected) {
+                    errorMessage = 'I\'m currently in limited mode as the backend is offline. Please ensure the Python backend is running on port 5001.';
+                } else if (xhr.status === 500) {
+                    // Parse error from response if available
+                    try {
+                        const errorData = JSON.parse(xhr.responseText);
+                        errorMessage += errorData.error || 'Server error occurred.';
+                    } catch (e) {
+                        errorMessage += 'Server error occurred. Please check the backend logs.';
+                    }
+                } else if (xhr.status === 0) {
+                    errorMessage = 'Cannot connect to the backend. Please ensure the Python server is running on http://localhost:5001';
+                } else {
+                    errorMessage += 'Please try again.';
+                }
+                
+                addMessage(errorMessage, 'assistant');
+                console.error('Chat error:', status, error, xhr.responseText);
             }
         });
     }
@@ -188,6 +256,25 @@ window.JurixChat = (function() {
         }
         
         messageContainer.appendChild(messageDiv);
+        scrollToBottom();
+    }
+    
+    function addArticlesSummary(articles) {
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'chat-message assistant';
+        summaryDiv.innerHTML = `
+            <div class="message-avatar">📄</div>
+            <div class="message-content" style="background: #f0f7ff;">
+                <p><strong>Related Articles:</strong></p>
+                ${articles.map(article => `
+                    <div style="margin: 8px 0; padding: 8px; background: white; border-radius: 4px;">
+                        <strong>${escapeHtml(article.title)}</strong><br>
+                        <small>${escapeHtml(article.content)}</small>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        messageContainer.appendChild(summaryDiv);
         scrollToBottom();
     }
     
@@ -256,7 +343,7 @@ window.JurixChat = (function() {
     }
     
     function saveConversation() {
-        // Save to local storage (you might want to use Jira's storage API instead)
+        // Save to local storage
         const messages = Array.from(messageContainer.children).map(msg => {
             const messageContent = msg.querySelector('.message-content p');
             return {
@@ -269,20 +356,8 @@ window.JurixChat = (function() {
     }
     
     function loadConversationHistory() {
-        // Load from local storage
-        const saved = localStorage.getItem('jurix-chat-' + conversationId);
-        if (saved) {
-            try {
-                const messages = JSON.parse(saved);
-                messages.forEach(msg => {
-                    if (msg.content && !msg.content.includes('Hello! I\'m your AI assistant')) {
-                        addMessage(msg.content, msg.sender);
-                    }
-                });
-            } catch (e) {
-                console.error('Failed to load conversation history:', e);
-            }
-        }
+        // For now, we'll start fresh each time
+        // You can implement persistent conversation loading if needed
     }
     
     // Public API
@@ -299,81 +374,3 @@ window.JurixChat = (function() {
 AJS.$(document).ready(function() {
     JurixChat.init();
 });
-
-// Add the CSS directly via JavaScript to ensure it overrides any existing styles
-(function() {
-    const style = document.createElement('style');
-    style.textContent = `
-        /* Override chat button styles to ensure blue color */
-        .jurix-chat-widget .jurix-chat-button {
-            background: #0052CC !important; /* Solid Jira blue */
-            box-shadow: 0 4px 12px rgba(0, 82, 204, 0.25) !important;
-            background-image: none !important; /* Remove gradient */
-        }
-        
-        .jurix-chat-widget .jurix-chat-button:hover {
-            background: #0747A6 !important; /* Darker blue on hover */
-            box-shadow: 0 6px 20px rgba(0, 82, 204, 0.35) !important;
-        }
-        
-        .jurix-chat-widget .jurix-chat-button::before {
-            background: #0052CC !important;
-            animation: none !important; /* Remove pulse for more minimalist look */
-        }
-        
-        /* Ensure chat window has minimalist design */
-        .jurix-chat-window {
-            border: 1px solid #DFE1E6 !important;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
-        }
-        
-        /* Chat header minimalist style */
-        .jurix-chat-header {
-            background: #FFFFFF !important;
-            border-bottom: 1px solid #DFE1E6 !important;
-        }
-        
-        /* Avatar with blue gradient */
-        .chat-avatar {
-            background: #0052CC !important;
-        }
-        
-        /* Quick action buttons with blue theme */
-        .quick-action-btn {
-            border-color: #4C9AFF !important;
-            color: #0052CC !important;
-        }
-        
-        .quick-action-btn:hover {
-            background: #DEEBFF !important;
-            border-color: #0052CC !important;
-        }
-        
-        /* Send button blue */
-        .send-button {
-            background: #0052CC !important;
-        }
-        
-        .send-button:hover {
-            background: #0747A6 !important;
-        }
-        
-        /* Input focus blue */
-        .jurix-chat-input input:focus {
-            border-color: #0052CC !important;
-            box-shadow: 0 0 0 2px #DEEBFF !important;
-        }
-        
-        /* User messages blue */
-        .chat-message.user .message-content {
-            background: #0052CC !important;
-        }
-        
-        /* Assistant avatar blue theme */
-        .chat-message.assistant .message-avatar {
-            background: #DEEBFF !important;
-            color: #0052CC !important;
-        }
-    `;
-    document.head.appendChild(style);
-})();

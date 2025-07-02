@@ -1289,7 +1289,7 @@
                 labels: ['Bugs', 'Features', 'Tasks', 'Tech Debt'],
                 datasets: [{
                     data: [15, 45, 30, 10],
-                    backgroundColor: ['#DE350B', '#4C8BF5', '#AFA8D7', '#FCD169']
+                    backgroundColor: ['#0d1b2a', '#e0e1dd', '#778da9', '#415a77']
 
                 }]
             },

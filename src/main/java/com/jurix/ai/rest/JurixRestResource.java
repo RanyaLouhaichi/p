@@ -1,9 +1,6 @@
 package com.jurix.ai.rest;
 
 import com.atlassian.jira.component.ComponentAccessor;
-import com.atlassian.jira.issue.IssueManager;
-import com.atlassian.jira.project.Project;
-import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.security.JiraAuthenticationContext;
 import com.atlassian.jira.user.ApplicationUser;
 import com.google.gson.Gson;
@@ -13,9 +10,15 @@ import org.slf4j.LoggerFactory;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Arrays;
+import java.util.UUID;
 
 @Path("/")
 @Consumes({MediaType.APPLICATION_JSON})
@@ -25,6 +28,9 @@ public class JurixRestResource {
     private static final Logger log = LoggerFactory.getLogger(JurixRestResource.class);
     private final Gson gson = new Gson();
     
+    // Backend API URL - configure this based on your setup
+    private static final String BACKEND_API_URL = "http://localhost:5001";
+    
     @GET
     @Path("/health")
     public Response health() {
@@ -32,6 +38,22 @@ public class JurixRestResource {
         status.put("status", "healthy");
         status.put("version", "1.0.0");
         status.put("timestamp", System.currentTimeMillis());
+        
+        // Check backend connectivity
+        try {
+            URL url = new URL(BACKEND_API_URL + "/health");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000);
+            
+            int responseCode = conn.getResponseCode();
+            status.put("backend_connected", responseCode == 200);
+            
+            conn.disconnect();
+        } catch (Exception e) {
+            status.put("backend_connected", false);
+            status.put("backend_error", e.getMessage());
+        }
         
         return Response.ok(status).build();
     }
@@ -48,20 +70,31 @@ public class JurixRestResource {
         
         String query = (String) requestMap.get("query");
         String conversationId = (String) requestMap.get("conversationId");
+        if (conversationId == null) {
+            conversationId = UUID.randomUUID().toString();
+        }
         
         log.info("Chat request received - Query: {}, ConversationId: {}", query, conversationId);
         
-        // Mock chat response
-        Map<String, Object> response = new HashMap<>();
-        response.put("query", query);
-        response.put("response", "I'm analyzing your project data. Based on current metrics, your team velocity is trending upward. Would you like specific insights about sprint performance?");
-        response.put("recommendations", Arrays.asList(
-            "Review sprint backlog items",
-            "Check team velocity trends",
-            "Analyze cycle time metrics"
-        ));
-        
-        return Response.ok(response).build();
+        try {
+            // Call backend API
+            Map<String, Object> backendResponse = callBackendAPI("/api/chat", "POST", requestMap);
+            
+            // Return the backend response
+            return Response.ok(backendResponse).build();
+            
+        } catch (Exception e) {
+            log.error("Failed to call backend API", e);
+            
+            // Fallback response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("query", query);
+            errorResponse.put("response", "Sorry, I couldn't connect to the AI service. Please try again later.");
+            errorResponse.put("status", "error");
+            errorResponse.put("error", e.getMessage());
+            
+            return Response.ok(errorResponse).build();
+        }
     }
     
     @POST
@@ -74,59 +107,85 @@ public class JurixRestResource {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
         
-        // Verify project access
-        if (!hasProjectAccess(projectKey, user)) {
-            return Response.status(Response.Status.FORBIDDEN).build();
-        }
+        log.info("Dashboard refresh request for project: {}", projectKey);
         
-        // Mock dashboard data
+        try {
+            // Call backend API
+            Map<String, Object> backendResponse = callBackendAPI("/api/dashboard/" + projectKey, "GET", null);
+            
+            // Transform response for frontend
+            Map<String, Object> dashboard = new HashMap<>();
+            dashboard.put("projectId", projectKey);
+            dashboard.put("metrics", backendResponse.get("metrics"));
+            dashboard.put("recommendations", backendResponse.get("recommendations"));
+            dashboard.put("ticketsAnalyzed", backendResponse.get("tickets_analyzed"));
+            
+            return Response.ok(dashboard).build();
+            
+        } catch (Exception e) {
+            log.error("Failed to call backend API for dashboard", e);
+            
+            // Return mock data as fallback
+            return Response.ok(createMockDashboard(projectKey)).build();
+        }
+    }
+    
+    /**
+     * Helper method to call backend API
+     */
+    private Map<String, Object> callBackendAPI(String endpoint, String method, Map<String, Object> payload) throws Exception {
+        URL url = new URL(BACKEND_API_URL + endpoint);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        
+        try {
+            conn.setRequestMethod(method);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            
+            if ("POST".equals(method) && payload != null) {
+                conn.setDoOutput(true);
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = gson.toJson(payload).getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+            }
+            
+            int responseCode = conn.getResponseCode();
+            log.info("Backend API response code: {}", responseCode);
+            
+            // Read response
+            StringBuilder response = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(
+                        responseCode >= 200 && responseCode < 300 ? 
+                        conn.getInputStream() : conn.getErrorStream(), "utf-8"))) {
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+            }
+            
+            // Parse response
+            return gson.fromJson(response.toString(), Map.class);
+            
+        } finally {
+            conn.disconnect();
+        }
+    }
+    
+    private Map<String, Object> createMockDashboard(String projectKey) {
         Map<String, Object> dashboard = new HashMap<>();
         dashboard.put("projectId", projectKey);
         dashboard.put("metrics", createMockMetrics());
-        dashboard.put("predictions", createMockPredictions());
         dashboard.put("recommendations", Arrays.asList(
-            "Sprint velocity is improving",
-            "Consider addressing technical debt",
-            "Review blocked items"
+            "Consider implementing automated testing",
+            "Review sprint capacity allocation",
+            "Address technical debt in the backlog"
         ));
-        
-        return Response.ok(dashboard).build();
-    }
-    
-    @GET
-    @Path("/predictions/{projectKey}")
-    public Response getPredictions(@PathParam("projectKey") String projectKey) {
-        JiraAuthenticationContext authContext = ComponentAccessor.getJiraAuthenticationContext();
-        ApplicationUser user = authContext.getLoggedInUser();
-        
-        if (user == null) {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
-        }
-        
-        if (!hasProjectAccess(projectKey, user)) {
-            return Response.status(Response.Status.FORBIDDEN).build();
-        }
-        
-        Map<String, Object> predictions = new HashMap<>();
-        predictions.put("projectId", projectKey);
-        predictions.put("analysisType", "comprehensive");
-        predictions.put("predictions", createMockPredictions());
-        predictions.put("workflowStatus", "complete");
-        
-        return Response.ok(predictions).build();
-    }
-    
-    private boolean hasProjectAccess(String projectKey, ApplicationUser user) {
-        ProjectManager projectManager = ComponentAccessor.getProjectManager();
-        Project project = projectManager.getProjectByCurrentKey(projectKey);
-        
-        if (project == null) {
-            return false;
-        }
-        
-        return ComponentAccessor.getPermissionManager()
-            .hasPermission(com.atlassian.jira.permission.ProjectPermissions.BROWSE_PROJECTS, 
-                          project, user);
+        dashboard.put("ticketsAnalyzed", 42);
+        return dashboard;
     }
     
     private Map<String, Object> createMockMetrics() {
@@ -136,22 +195,5 @@ public class JurixRestResource {
         metrics.put("efficiency", 78);
         metrics.put("activeIssues", 23);
         return metrics;
-    }
-    
-    private Map<String, Object> createMockPredictions() {
-        Map<String, Object> predictions = new HashMap<>();
-        predictions.put("sprint_completion", Map.of(
-            "probability", 0.82,
-            "confidence", "high",
-            "factors", Arrays.asList("velocity trend", "remaining work", "team availability")
-        ));
-        predictions.put("risks", Arrays.asList(
-            Map.of(
-                "description", "3 blockers in current sprint",
-                "severity", "medium",
-                "mitigation", "Schedule blocker review meeting"
-            )
-        ));
-        return predictions;
     }
 }
