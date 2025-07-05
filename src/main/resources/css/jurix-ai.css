@@ -1,71 +1,149 @@
-/* JURIX AI - Modern Minimalist Blue Design System */
+/* JURIX AI - Professional Enterprise Design System */
 
 :root {
-    /* Color Palette */
+    /* Professional Enterprise Color Palette */
     --jurix-primary: #0052CC;
     --jurix-primary-dark: #0747A6;
-    --jurix-secondary: #4C9AFF;
-    --jurix-accent: #0052CC;
-    --jurix-success: #10b981;
-    --jurix-warning: #f59e0b;
-    --jurix-danger: #ef4444;
-    --jurix-info: #3b82f6;
+    --jurix-primary-light: #4C9AFF;
+    --jurix-primary-lighter: #B3D4FF;
+    --jurix-primary-lightest: #DEEBFF;
     
-    /* Jira Blue Colors */
-    --jira-blue: #0052CC;
-    --jira-blue-dark: #0747A6;
-    --jira-blue-light: #4C9AFF;
-    --jira-blue-lighter: #B3D4FF;
-    --jira-blue-lightest: #DEEBFF;
+    /* Neutral Colors - Professional Gray Scale */
+    --jurix-gray-900: #091E42;
+    --jurix-gray-800: #172B4D;
+    --jurix-gray-700: #253858;
+    --jurix-gray-600: #344563;
+    --jurix-gray-500: #42526E;
+    --jurix-gray-400: #5E6C84;
+    --jurix-gray-300: #7A869A;
+    --jurix-gray-200: #97A0AF;
+    --jurix-gray-100: #C1C7D0;
+    --jurix-gray-50: #F4F5F7;
+    --jurix-white: #FFFFFF;
     
-    /* Gradients - CHANGED TO SOLID BLUE */
-    --jurix-gradient-primary: #0052CC;
-    --jurix-gradient-secondary: #4C9AFF;
-    --jurix-gradient-dark: #0747A6;
+    /* Status Colors - Professional Palette */
+    --jurix-success: #00875A;
+    --jurix-success-light: #36B37E;
+    --jurix-success-bg: #E3FCEF;
     
-    /* Glass Effect */
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --glass-shadow: 0 8px 32px 0 rgba(0, 82, 204, 0.15);
+    --jurix-warning: #FF991F;
+    --jurix-warning-light: #FFAB00;
+    --jurix-warning-bg: #FFF7E6;
     
-    /* Spacing */
-    --space-xs: 0.25rem;
-    --space-sm: 0.5rem;
-    --space-md: 1rem;
-    --space-lg: 1.5rem;
-    --space-xl: 2rem;
-    --space-2xl: 3rem;
+    --jurix-danger: #DE350B;
+    --jurix-danger-light: #FF5630;
+    --jurix-danger-bg: #FFEBE6;
+    
+    --jurix-info: #0065FF;
+    --jurix-info-light: #2684FF;
+    --jurix-info-bg: #DEEBFF;
+    
+    /* Purple for special highlights */
+    --jurix-purple: #6554C0;
+    --jurix-purple-light: #8777D9;
+    --jurix-purple-bg: #F3E5FF;
+    
+    /* Professional Shadows */
+    --jurix-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --jurix-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
+    --jurix-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
+    --jurix-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+    --jurix-shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.18);
+    --jurix-shadow-2xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+    
+    /* Border Radius */
+    --jurix-radius-sm: 4px;
+    --jurix-radius-md: 6px;
+    --jurix-radius-lg: 8px;
+    --jurix-radius-xl: 12px;
+    --jurix-radius-2xl: 16px;
+    --jurix-radius-full: 9999px;
+    
+    /* Spacing Scale */
+    --jurix-space-xs: 0.25rem;
+    --jurix-space-sm: 0.5rem;
+    --jurix-space-md: 1rem;
+    --jurix-space-lg: 1.5rem;
+    --jurix-space-xl: 2rem;
+    --jurix-space-2xl: 3rem;
+    --jurix-space-3xl: 4rem;
+    
+    /* Typography */
+    --jurix-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    --jurix-font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    
+    /* Transitions */
+    --jurix-transition-fast: all 0.1s ease;
+    --jurix-transition-base: all 0.2s ease;
+    --jurix-transition-slow: all 0.3s ease;
+    --jurix-transition-slower: all 0.4s ease;
 }
 
 /* Global Styles */
 .jurix-ai-container {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    color: #1a202c;
-    line-height: 1.6;
+    font-family: var(--jurix-font-family);
+    color: var(--jurix-gray-800);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Glassmorphism Card */
-.jurix-glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-radius: 20px;
-    border: 1px solid var(--glass-border);
-    box-shadow: var(--glass-shadow);
-    padding: var(--space-lg);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Professional Card Component */
+.jurix-card {
+    background: var(--jurix-white);
+    border-radius: var(--jurix-radius-lg);
+    box-shadow: var(--jurix-shadow-sm);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: var(--jurix-space-lg);
+    transition: var(--jurix-transition-base);
 }
 
-.jurix-glass-card:hover {
+.jurix-card:hover {
+    box-shadow: var(--jurix-shadow-md);
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px 0 rgba(0, 82, 204, 0.2);
+}
+
+/* Professional Button Styles */
+.jurix-btn {
+    padding: var(--jurix-space-sm) var(--jurix-space-lg);
+    border-radius: var(--jurix-radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--jurix-transition-base);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--jurix-space-sm);
+    line-height: 1.5;
+}
+
+.jurix-btn-primary {
+    background: var(--jurix-primary);
+    color: var(--jurix-white);
+}
+
+.jurix-btn-primary:hover {
+    background: var(--jurix-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--jurix-shadow-md);
+}
+
+.jurix-btn-secondary {
+    background: var(--jurix-white);
+    color: var(--jurix-gray-700);
+    border: 1px solid var(--jurix-gray-200);
+}
+
+.jurix-btn-secondary:hover {
+    background: var(--jurix-gray-50);
+    border-color: var(--jurix-gray-300);
 }
 
 /* ===================================
-   MODERN CHAT WIDGET - BLUE MINIMALIST
+   MODERN CHAT WIDGET - PROFESSIONAL
    =================================== */
 
-/* Chat Widget Container */
 .jurix-chat-widget {
     position: fixed;
     bottom: 24px;
@@ -73,32 +151,25 @@
     z-index: 9999;
 }
 
-/* Chat Button - Minimalist Blue */
 .jurix-chat-button {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: #0052CC !important;
+    background: var(--jurix-primary) !important;
     border: none;
-    box-shadow: 0 4px 12px rgba(0, 82, 204, 0.25);
+    box-shadow: var(--jurix-shadow-lg);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: var(--jurix-transition-base);
     position: relative;
-    overflow: visible;
-}
-
-/* Remove pulse animation for minimalist look */
-.jurix-chat-button::before {
-    display: none;
 }
 
 .jurix-chat-button:hover {
-    background: #0747A6 !important;
+    background: var(--jurix-primary-dark) !important;
     transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(0, 82, 204, 0.35);
+    box-shadow: var(--jurix-shadow-xl);
 }
 
 .jurix-chat-button:active {
@@ -109,11 +180,9 @@
     width: 24px;
     height: 24px;
     color: white;
-    position: relative;
-    z-index: 1;
 }
 
-/* Chat Window - Clean Minimalist */
+/* Chat Window - Professional Design */
 .jurix-chat-window {
     position: fixed;
     bottom: 88px;
@@ -121,14 +190,13 @@
     width: 380px;
     height: 600px;
     max-height: calc(100vh - 120px);
-    background: #FFFFFF;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    background: var(--jurix-white);
+    border-radius: var(--jurix-radius-xl);
+    box-shadow: var(--jurix-shadow-2xl);
     display: none;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid #DFE1E6;
-    transform-origin: bottom right;
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .jurix-chat-window.open {
@@ -139,7 +207,7 @@
 @keyframes chatSlideIn {
     from {
         opacity: 0;
-        transform: scale(0.9) translateY(10px);
+        transform: scale(0.95) translateY(10px);
     }
     to {
         opacity: 1;
@@ -147,15 +215,14 @@
     }
 }
 
-/* Chat Header - Blue Theme */
+/* Chat Header - Professional Style */
 .jurix-chat-header {
-    background: #0052CC !important;
-    color: white !important;
+    background: var(--jurix-white);
+    border-bottom: 1px solid var(--jurix-gray-100);
     padding: 16px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: none;
 }
 
 .jurix-chat-header-content {
@@ -167,7 +234,7 @@
 .chat-avatar {
     width: 40px;
     height: 40px;
-    background: rgba(255, 255, 255, 0.2) !important;
+    background: var(--jurix-primary-lightest);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -178,10 +245,9 @@
 .chat-avatar svg {
     width: 24px;
     height: 24px;
-    color: white;
+    color: var(--jurix-primary);
 }
 
-/* Online indicator */
 .chat-avatar::after {
     content: '';
     position: absolute;
@@ -189,59 +255,40 @@
     right: 0;
     width: 12px;
     height: 12px;
-    background: #00875A;
+    background: var(--jurix-success);
     border-radius: 50%;
-    border: 2px solid #0052CC;
-}
-
-.chat-header-text {
-    display: flex;
-    flex-direction: column;
+    border: 2px solid var(--jurix-white);
 }
 
 .chat-header-title {
     font-size: 16px;
     font-weight: 600;
-    color: white !important;
+    color: var(--jurix-gray-900);
     margin-bottom: 2px;
 }
 
 .chat-header-status {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.9) !important;
-    font-weight: normal;
+    color: var(--jurix-gray-500);
 }
 
-.jurix-chat-header > div > div:first-child {
-    font-size: 16px;
-    font-weight: 600;
-    color: white !important;
-}
-
-.jurix-chat-header > div > div:last-child {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.9) !important;
-    font-weight: normal;
-}
-
-/* Close button */
 .jurix-chat-header button {
     width: 32px;
     height: 32px;
     background: transparent;
     border: none;
-    color: white !important;
-    font-size: 20px;
+    color: var(--jurix-gray-500);
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: var(--jurix-radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
+    transition: var(--jurix-transition-fast);
 }
 
 .jurix-chat-header button:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--jurix-gray-50);
+    color: var(--jurix-gray-700);
 }
 
 /* Chat Messages */
@@ -249,11 +296,10 @@
     flex: 1;
     overflow-y: auto;
     padding: 20px;
-    background: #F7F8FA;
+    background: var(--jurix-gray-50);
     scroll-behavior: smooth;
 }
 
-/* Custom Scrollbar */
 .jurix-chat-messages::-webkit-scrollbar {
     width: 6px;
 }
@@ -263,12 +309,8 @@
 }
 
 .jurix-chat-messages::-webkit-scrollbar-thumb {
-    background: #C1C7D0;
+    background: var(--jurix-gray-200);
     border-radius: 3px;
-}
-
-.jurix-chat-messages::-webkit-scrollbar-thumb:hover {
-    background: #97A0AF;
 }
 
 /* Message Styles */
@@ -290,14 +332,6 @@
     }
 }
 
-.chat-message.assistant {
-    align-items: flex-start;
-}
-
-.chat-message.user {
-    justify-content: flex-end;
-}
-
 .message-avatar {
     width: 32px;
     height: 32px;
@@ -311,81 +345,33 @@
 }
 
 .chat-message.assistant .message-avatar {
-    background: #0052CC !important;
-    color: white !important;
+    background: var(--jurix-primary-lightest);
+    color: var(--jurix-primary);
 }
 
 .chat-message.user .message-avatar {
-    background: #DFE1E6;
-    color: #42526E;
+    background: var(--jurix-gray-100);
+    color: var(--jurix-gray-600);
 }
 
 .message-content {
     max-width: 70%;
     padding: 12px 16px;
-    border-radius: 12px;
+    border-radius: var(--jurix-radius-lg);
     font-size: 14px;
     line-height: 1.5;
 }
 
 .chat-message.assistant .message-content {
-    background: #FFFFFF;
-    color: #172B4D;
-    border: 1px solid #DFE1E6;
-    border-bottom-left-radius: 4px;
+    background: var(--jurix-white);
+    color: var(--jurix-gray-800);
+    border: 1px solid var(--jurix-gray-100);
 }
 
 .chat-message.user .message-content {
-    background: #0052CC !important;
-    color: #FFFFFF;
-    border-bottom-right-radius: 4px;
-}
-
-.message-content p {
-    margin: 0;
-}
-
-.message-content p + p {
-    margin-top: 8px;
-}
-
-.message-content ul {
-    margin: 8px 0;
-    padding-left: 20px;
-}
-
-/* Typing Indicator */
-.typing-indicator {
-    display: flex;
-    gap: 4px;
-    padding: 12px 0;
-}
-
-.typing-indicator span {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #5E6C84;
-    animation: typing 1.4s infinite;
-}
-
-.typing-indicator span:nth-child(2) {
-    animation-delay: 0.2s;
-}
-
-.typing-indicator span:nth-child(3) {
-    animation-delay: 0.4s;
-}
-
-@keyframes typing {
-    0%, 60%, 100% {
-        transform: translateY(0);
-        opacity: 0.5;
-    }
-    30% {
-        transform: translateY(-10px);
-        opacity: 1;
-    }
+    background: var(--jurix-primary);
+    color: var(--jurix-white);
+    margin-left: auto;
 }
 
 /* Quick Actions */
@@ -398,25 +384,25 @@
 
 .quick-action-btn {
     padding: 6px 12px;
-    background: #FFFFFF;
-    border: 1px solid #0052CC !important;
-    color: #0052CC !important;
-    border-radius: 16px;
+    background: var(--jurix-white);
+    border: 1px solid var(--jurix-primary-lighter);
+    color: var(--jurix-primary);
+    border-radius: var(--jurix-radius-full);
     font-size: 12px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: var(--jurix-transition-fast);
 }
 
 .quick-action-btn:hover {
-    background: #DEEBFF !important;
-    border-color: #0747A6 !important;
+    background: var(--jurix-primary-lightest);
+    border-color: var(--jurix-primary);
 }
 
-/* Chat Input - Minimalist Design */
+/* Chat Input */
 .jurix-chat-input {
     padding: 16px;
-    background: #FFFFFF;
-    border-top: 1px solid #DFE1E6;
+    background: var(--jurix-white);
+    border-top: 1px solid var(--jurix-gray-100);
     display: flex;
     gap: 12px;
     align-items: center;
@@ -425,175 +411,159 @@
 .jurix-chat-input input {
     flex: 1;
     padding: 10px 16px;
-    border: 1px solid #C1C7D0;
-    border-radius: 20px;
+    border: 1px solid var(--jurix-gray-200);
+    border-radius: var(--jurix-radius-full);
     font-size: 14px;
-    background: #F7F8FA;
-    transition: all 0.15s ease;
+    background: var(--jurix-gray-50);
+    transition: var(--jurix-transition-fast);
 }
 
 .jurix-chat-input input:focus {
     outline: none;
-    border-color: #0052CC !important;
-    background: #FFFFFF;
-    box-shadow: 0 0 0 2px #DEEBFF;
-}
-
-.jurix-chat-input input::placeholder {
-    color: #5E6C84;
+    border-color: var(--jurix-primary);
+    background: var(--jurix-white);
+    box-shadow: 0 0 0 3px var(--jurix-primary-lightest);
 }
 
 .send-button {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #0052CC !important;
+    background: var(--jurix-primary);
     border: none;
     color: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
+    transition: var(--jurix-transition-fast);
 }
 
 .send-button:hover {
-    background: #0747A6 !important;
+    background: var(--jurix-primary-dark);
     transform: scale(1.05);
 }
 
-.send-button:active {
-    transform: scale(0.95);
-}
-
-.send-button svg {
-    width: 18px;
-    height: 18px;
-}
-
 /* ===================================
-   END OF CHAT WIDGET STYLES
+   DASHBOARD COMPONENTS
    =================================== */
 
-/* Dashboard Styles */
-.jurix-dashboard {
-    padding: var(--space-xl);
-    background: #f5f7fa;
-    min-height: 100vh;
-}
-
-.jurix-dashboard-header {
-    margin-bottom: var(--space-2xl);
-}
-
-.jurix-dashboard-title {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #0052CC;
-    margin-bottom: var(--space-sm);
-}
-
-.jurix-dashboard-subtitle {
-    color: #64748b;
-    font-size: 1.125rem;
-}
-
-/* Metric Cards */
-.jurix-metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--space-lg);
-    margin-bottom: var(--space-2xl);
-}
-
+/* Metric Cards - Professional Style */
 .jurix-metric-card {
-    background: white;
-    border-radius: 20px;
-    padding: var(--space-lg);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    background: var(--jurix-white);
+    border-radius: var(--jurix-radius-lg);
+    padding: var(--jurix-space-lg);
+    box-shadow: var(--jurix-shadow-sm);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    transition: var(--jurix-transition-base);
     position: relative;
     overflow: hidden;
 }
 
-.jurix-metric-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: #0052CC;
-}
-
 .jurix-metric-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+    box-shadow: var(--jurix-shadow-md);
 }
 
 .jurix-metric-value {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
-    color: #0052CC;
-    margin: var(--space-sm) 0;
+    color: var(--jurix-gray-900);
+    margin: var(--jurix-space-sm) 0;
 }
 
 .jurix-metric-label {
-    color: #64748b;
-    font-size: 0.875rem;
+    color: var(--jurix-gray-500);
+    font-size: 0.75rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.5px;
+    font-weight: 600;
 }
 
 .jurix-metric-change {
     display: inline-flex;
     align-items: center;
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: 100px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-top: var(--space-sm);
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: var(--jurix-radius-sm);
+    font-size: 0.813rem;
+    font-weight: 500;
 }
 
 .jurix-metric-change.positive {
-    background: rgba(16, 185, 129, 0.1);
+    background: var(--jurix-success-bg);
     color: var(--jurix-success);
 }
 
 .jurix-metric-change.negative {
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--jurix-danger-bg);
     color: var(--jurix-danger);
 }
 
 /* Charts Container */
 .jurix-chart-container {
-    background: white;
-    border-radius: 20px;
-    padding: var(--space-xl);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    margin-bottom: var(--space-lg);
+    background: var(--jurix-white);
+    border-radius: var(--jurix-radius-lg);
+    padding: var(--jurix-space-xl);
+    box-shadow: var(--jurix-shadow-sm);
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .jurix-chart-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--space-lg);
+    margin-bottom: var(--jurix-space-lg);
 }
 
 .jurix-chart-title {
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 600;
-    color: #1a202c;
+    color: var(--jurix-gray-900);
 }
 
-/* Predictions Panel */
+/* AI Recommendations - Professional Light Style */
+.jurix-recommendations-panel {
+    background: var(--jurix-white);
+    border: 1px solid var(--jurix-primary-lighter);
+    border-radius: var(--jurix-radius-lg);
+    padding: var(--jurix-space-xl);
+    position: relative;
+    overflow: hidden;
+}
+
+.jurix-recommendations-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--jurix-primary-light) 0%, var(--jurix-primary) 100%);
+}
+
+.jurix-recommendation-item {
+    background: var(--jurix-gray-50);
+    border: 1px solid var(--jurix-gray-100);
+    border-radius: var(--jurix-radius-md);
+    padding: var(--jurix-space-md);
+    margin-bottom: var(--jurix-space-md);
+    cursor: pointer;
+    transition: var(--jurix-transition-base);
+}
+
+.jurix-recommendation-item:hover {
+    background: var(--jurix-primary-lightest);
+    border-color: var(--jurix-primary-lighter);
+    transform: translateX(4px);
+}
+
+/* AI Predictions - Professional Style */
 .jurix-predictions-panel {
-    background: #0052CC;
-    color: white;
-    border-radius: 20px;
-    padding: var(--space-xl);
+    background: var(--jurix-white);
+    border: 1px solid var(--jurix-info-light);
+    border-radius: var(--jurix-radius-lg);
+    padding: var(--jurix-space-xl);
     position: relative;
     overflow: hidden;
 }
@@ -601,59 +571,175 @@
 .jurix-predictions-panel::before {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-    animation: pulse 4s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.1); opacity: 0.3; }
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--jurix-info-light) 0%, var(--jurix-info) 100%);
 }
 
 .jurix-prediction-item {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    padding: var(--space-md);
-    margin-bottom: var(--space-md);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
+    background: var(--jurix-gray-50);
+    border: 1px solid var(--jurix-gray-100);
+    border-radius: var(--jurix-radius-md);
+    padding: var(--jurix-space-md);
+    margin-bottom: var(--jurix-space-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: var(--jurix-transition-base);
 }
 
 .jurix-prediction-item:hover {
-    background: rgba(255, 255, 255, 0.15);
-    transform: translateX(4px);
+    background: var(--jurix-info-bg);
+    border-color: var(--jurix-info-light);
 }
 
 .jurix-prediction-probability {
-    font-size: 2rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    margin-bottom: var(--space-xs);
+    color: var(--jurix-gray-900);
 }
 
 .jurix-prediction-label {
-    opacity: 0.8;
-    font-size: 0.875rem;
+    font-size: 0.813rem;
+    color: var(--jurix-gray-600);
+    margin-bottom: 4px;
 }
 
-/* Notification Toast */
+/* Risk Badges */
+.risk-low {
+    background: var(--jurix-success-bg);
+    color: var(--jurix-success);
+    padding: 4px 12px;
+    border-radius: var(--jurix-radius-full);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.risk-medium {
+    background: var(--jurix-warning-bg);
+    color: var(--jurix-warning);
+    padding: 4px 12px;
+    border-radius: var(--jurix-radius-full);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.risk-high {
+    background: var(--jurix-danger-bg);
+    color: var(--jurix-danger);
+    padding: 4px 12px;
+    border-radius: var(--jurix-radius-full);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+/* Team Performance Card */
+.jurix-team-card {
+    background: var(--jurix-white);
+    border-radius: var(--jurix-radius-lg);
+    padding: var(--jurix-space-xl);
+    box-shadow: var(--jurix-shadow-sm);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.jurix-team-member {
+    display: flex;
+    align-items: center;
+    gap: var(--jurix-space-md);
+    padding: var(--jurix-space-md);
+    background: var(--jurix-gray-50);
+    border-radius: var(--jurix-radius-md);
+    margin-bottom: var(--jurix-space-sm);
+    transition: var(--jurix-transition-base);
+}
+
+.jurix-team-member:hover {
+    background: var(--jurix-gray-100);
+    transform: translateX(2px);
+}
+
+.jurix-member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--jurix-primary);
+    color: var(--jurix-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Activity Timeline */
+.jurix-timeline {
+    background: var(--jurix-white);
+    border-radius: var(--jurix-radius-lg);
+    padding: var(--jurix-space-xl);
+    box-shadow: var(--jurix-shadow-sm);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.jurix-timeline-item {
+    display: flex;
+    gap: var(--jurix-space-md);
+    margin-bottom: var(--jurix-space-lg);
+    position: relative;
+}
+
+.jurix-timeline-item:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 40px;
+    bottom: -20px;
+    width: 1px;
+    background: var(--jurix-gray-100);
+}
+
+.jurix-timeline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.jurix-timeline-icon.success {
+    background: var(--jurix-success-bg);
+    color: var(--jurix-success);
+}
+
+.jurix-timeline-icon.warning {
+    background: var(--jurix-warning-bg);
+    color: var(--jurix-warning);
+}
+
+.jurix-timeline-icon.info {
+    background: var(--jurix-info-bg);
+    color: var(--jurix-info);
+}
+
+/* Notification Styles */
 .jurix-notification {
     position: fixed;
     top: 20px;
     right: 20px;
-    min-width: 300px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    padding: var(--space-md);
+    min-width: 320px;
+    background: var(--jurix-white);
+    border-radius: var(--jurix-radius-lg);
+    box-shadow: var(--jurix-shadow-xl);
+    padding: var(--jurix-space-lg);
     display: flex;
     align-items: flex-start;
+    gap: var(--jurix-space-md);
     z-index: 10000;
     animation: slideIn 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 @keyframes slideIn {
@@ -674,47 +760,53 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: var(--space-md);
     flex-shrink: 0;
 }
 
 .jurix-notification.success .jurix-notification-icon {
-    background: rgba(16, 185, 129, 0.1);
+    background: var(--jurix-success-bg);
     color: var(--jurix-success);
 }
 
 .jurix-notification.warning .jurix-notification-icon {
-    background: rgba(245, 158, 11, 0.1);
+    background: var(--jurix-warning-bg);
     color: var(--jurix-warning);
 }
 
 .jurix-notification.error .jurix-notification-icon {
-    background: rgba(239, 68, 68, 0.1);
+    background: var(--jurix-danger-bg);
     color: var(--jurix-danger);
-}
-
-.jurix-notification-content {
-    flex: 1;
 }
 
 .jurix-notification-title {
     font-weight: 600;
-    margin-bottom: var(--space-xs);
+    margin-bottom: var(--jurix-space-xs);
+    color: var(--jurix-gray-900);
 }
 
 .jurix-notification-message {
-    color: #64748b;
+    color: var(--jurix-gray-600);
     font-size: 0.875rem;
 }
 
-/* Loading Animation */
-.jurix-loader {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(0, 82, 204, 0.2);
+/* Loading States */
+.jurix-loading {
+    position: relative;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.jurix-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0 -12px;
+    border: 2px solid var(--jurix-primary-lightest);
     border-radius: 50%;
-    border-top-color: #0052CC;
+    border-top-color: var(--jurix-primary);
     animation: spin 0.8s linear infinite;
 }
 
@@ -722,45 +814,30 @@
     to { transform: rotate(360deg); }
 }
 
-/* Buttons */
-.jurix-button {
-    background: #0052CC;
-    color: white;
-    border: none;
-    padding: var(--space-sm) var(--space-lg);
-    border-radius: 100px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.jurix-button::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
+/* Loader Animation */
+.jurix-loader {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--jurix-primary-lightest);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
+    border-top-color: var(--jurix-primary);
+    animation: spin 0.8s linear infinite;
 }
 
-.jurix-button:hover::before {
-    width: 300px;
-    height: 300px;
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .jurix-chat-window {
+        width: 360px;
+    }
 }
 
-.jurix-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(0, 82, 204, 0.4);
-}
-
-/* Responsive */
 @media (max-width: 768px) {
+    .jurix-chat-widget {
+        bottom: 16px;
+        right: 16px;
+    }
+    
     .jurix-chat-window {
         position: fixed;
         width: 100%;
@@ -771,11 +848,81 @@
         max-height: 100vh;
     }
     
-    .jurix-dashboard {
-        padding: var(--space-md);
+    .jurix-metric-card {
+        padding: var(--jurix-space-md);
     }
     
-    .jurix-metrics-grid {
-        grid-template-columns: 1fr;
+    .jurix-metric-value {
+        font-size: 1.5rem;
     }
+}
+
+/* Utility Classes */
+.jurix-text-primary { color: var(--jurix-primary); }
+.jurix-text-success { color: var(--jurix-success); }
+.jurix-text-warning { color: var(--jurix-warning); }
+.jurix-text-danger { color: var(--jurix-danger); }
+.jurix-text-muted { color: var(--jurix-gray-500); }
+
+.jurix-bg-primary { background-color: var(--jurix-primary); }
+.jurix-bg-primary-light { background-color: var(--jurix-primary-lightest); }
+.jurix-bg-success { background-color: var(--jurix-success-bg); }
+.jurix-bg-warning { background-color: var(--jurix-warning-bg); }
+.jurix-bg-danger { background-color: var(--jurix-danger-bg); }
+
+.jurix-shadow-sm { box-shadow: var(--jurix-shadow-sm); }
+.jurix-shadow-md { box-shadow: var(--jurix-shadow-md); }
+.jurix-shadow-lg { box-shadow: var(--jurix-shadow-lg); }
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Professional Focus States */
+:focus-visible {
+    outline: 2px solid var(--jurix-primary);
+    outline-offset: 2px;
+}
+
+/* Selection Colors */
+::selection {
+    background: var(--jurix-primary-lightest);
+    color: var(--jurix-gray-900);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--jurix-gray-50);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--jurix-gray-200);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--jurix-gray-300);
 }
