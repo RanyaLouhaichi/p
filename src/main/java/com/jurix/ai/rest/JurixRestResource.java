@@ -141,8 +141,8 @@ public class JurixRestResource {
             conn.setRequestMethod(method);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setRequestProperty("Accept", "application/json");
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(10000);
+            conn.setConnectTimeout(180000);
+            conn.setReadTimeout(180000);
             
             if ("POST".equals(method) && payload != null) {
                 conn.setDoOutput(true);

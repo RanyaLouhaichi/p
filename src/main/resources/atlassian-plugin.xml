@@ -19,9 +19,18 @@
         <context>atl.general</context>
     </web-resource>
     
-    <!-- REST Module -->
-    <rest key="jurix-rest" path="/jurix-api" version="1.0">
-        <description>JURIX AI REST API</description>
+    <!-- Component Imports for Dependency Injection -->
+    <component-import key="userManager" interface="com.atlassian.sal.api.user.UserManager"/>
+    <component-import key="pluginSettingsFactory" interface="com.atlassian.sal.api.pluginsettings.PluginSettingsFactory"/>
+    
+    <!-- Component Declarations -->
+    <component key="jurixConfiguration" class="com.jurix.ai.config.JurixConfiguration"/>
+    <component key="chatService" class="com.jurix.ai.rest.ChatService"/>
+    <component key="chatController" class="com.jurix.ai.rest.ChatController"/>
+    
+    <!-- REST Module - Updated path to match the Java code -->
+    <rest name="JURIX REST API" key="jurix-rest" path="/jurix" version="1.0">
+        <description>REST endpoints for JURIX AI Assistant</description>
     </rest>
     
     <!-- Dashboard Servlet -->

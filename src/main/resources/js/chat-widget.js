@@ -160,7 +160,7 @@ window.JurixChat = (function() {
         }
     }
     
-    // In chat-widget.js, temporarily bypass the Java layer
+    // Updated sendMessage function in chat-widget.js
     function sendMessage() {
         const message = inputField.value.trim();
         if (!message) return;
@@ -174,31 +174,114 @@ window.JurixChat = (function() {
         // Show typing indicator
         showTypingIndicator();
         
-        // TEMPORARY: Direct call to Python backend
-        const DIRECT_BACKEND_URL = 'http://localhost:5001';
-        
-        // Send to API
+        // Use the proper Java REST endpoint
         AJS.$.ajax({
-            url: DIRECT_BACKEND_URL + '/api/chat',  // Direct to Python
+            url: AJS.contextPath() + '/rest/jurix/1.0/chat',  // Uses Java layer
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({
                 query: message,
                 conversationId: conversationId
             }),
+            timeout: 120000, // 120 seconds (2 minutes) timeout
             success: function(response) {
                 hideTypingIndicator();
-                addMessage(response.response, 'assistant');
-                // ... rest of success handling
+                
+                // Add the main response
+                if (response.response) {
+                    addMessage(response.response, 'assistant');
+                }
+                
+                // Handle additional data if present
+                if (response.articles && response.articles.length > 0) {
+                    addArticlesSummary(response.articles);
+                }
+                
+                if (response.recommendations && response.recommendations.length > 0) {
+                    addQuickActions(response.recommendations);
+                }
+                
+                // Handle predictions if present
+                if (response.predictions && Object.keys(response.predictions).length > 0) {
+                    addPredictiveInsights(response.predictions);
+                }
+                
+                // Save conversation
+                saveConversation();
             },
             error: function(xhr, status, error) {
                 hideTypingIndicator();
-                console.error('Direct backend error:', error);
-                addMessage('Connection error: ' + error, 'assistant');
+                console.error('Chat error:', error);
+                
+                let errorMessage = 'Sorry, I encountered an error. Please try again.';
+                
+                if (status === 'timeout') {
+                    errorMessage = 'The request took too long to process. Please try a simpler query.';
+                } else if (xhr.status === 0) {
+                    errorMessage = 'Unable to connect to the server. Please check your connection.';
+                } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+                
+                addMessage(errorMessage, 'assistant');
             }
         });
     }
-    
+
+    // Add function to display predictive insights
+    function addPredictiveInsights(predictions) {
+        if (!predictions || Object.keys(predictions).length === 0) return;
+        
+        const insightsDiv = document.createElement('div');
+        insightsDiv.className = 'jurix-predictive-insights';
+        
+        // Check for sprint completion predictions
+        if (predictions.sprint_completion) {
+            const sprint = predictions.sprint_completion;
+            insightsDiv.innerHTML = `
+                <div class="insight-header">📊 Predictive Insights</div>
+                <div class="insight-content">
+                    <div class="insight-item">
+                        <span class="insight-label">Sprint Completion:</span>
+                        <span class="insight-value">${(sprint.probability * 100).toFixed(0)}%</span>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-label">Risk Level:</span>
+                        <span class="insight-value risk-${sprint.risk_level}">${sprint.risk_level}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        messagesContainer.appendChild(insightsDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Update addArticlesSummary to handle the new format
+    function addArticlesSummary(articles) {
+        if (!articles || articles.length === 0) return;
+        
+        const articlesDiv = document.createElement('div');
+        articlesDiv.className = 'jurix-articles-summary';
+        
+        let articlesHtml = '<div class="articles-header">📚 Related Articles:</div>';
+        articlesHtml += '<ul class="articles-list">';
+        
+        articles.forEach(article => {
+            articlesHtml += `
+                <li class="article-item">
+                    <span class="article-title">${article.title || 'Untitled'}</span>
+                    ${article.relevanceScore ? `<span class="relevance-score">(${(article.relevanceScore * 100).toFixed(0)}% relevant)</span>` : ''}
+                </li>
+            `;
+        });
+        
+        articlesHtml += '</ul>';
+        articlesDiv.innerHTML = articlesHtml;
+        
+        messagesContainer.appendChild(articlesDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
     function sendQuickMessage(text) {
         inputField.value = text;
         sendMessage();
@@ -227,24 +310,6 @@ window.JurixChat = (function() {
         scrollToBottom();
     }
     
-    function addArticlesSummary(articles) {
-        const summaryDiv = document.createElement('div');
-        summaryDiv.className = 'chat-message assistant';
-        summaryDiv.innerHTML = `
-            <div class="message-avatar">📄</div>
-            <div class="message-content" style="background: #f0f7ff;">
-                <p><strong>Related Articles:</strong></p>
-                ${articles.map(article => `
-                    <div style="margin: 8px 0; padding: 8px; background: white; border-radius: 4px;">
-                        <strong>${escapeHtml(article.title)}</strong><br>
-                        <small>${escapeHtml(article.content)}</small>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-        messageContainer.appendChild(summaryDiv);
-        scrollToBottom();
-    }
     
     function addQuickActions(recommendations) {
         const actionsDiv = document.createElement('div');
