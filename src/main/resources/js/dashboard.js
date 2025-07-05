@@ -26,7 +26,7 @@ window.JurixDashboard = (function() {
             loadDashboardData();
             
             // Set up periodic updates
-            updateInterval = setInterval(loadDashboardData, UPDATE_FREQUENCY);
+            // updateInterval = setInterval(loadDashboardData, UPDATE_FREQUENCY);
         } else {
             console.error('No project key found!');
             showError('No project key specified');
