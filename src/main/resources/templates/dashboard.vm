@@ -1,13 +1,4 @@
-@keyframes float {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(30px, -30px) rotate(120deg); }
-            66% { transform: translate(-20px, 20px) rotate(240deg); }
-        }
-        
-        .recommendations-list {
-            position: relative;
-            z-index: 1;
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
     <title>JURIX Analytics - $projectName</title>
@@ -494,6 +485,12 @@
             animation: float 20s ease-in-out infinite;
         }
         
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+        
         .recommendations-header {
             display: flex;
             align-items: center;
@@ -866,8 +863,7 @@
                         </select>
                         <select class="filter-select">
                             <option>All projects</option>
-                            <option>Project Alpha</option>
-                            <option>Project Beta</option>
+                            <option value="$projectKey" selected>$projectName</option>
                         </select>
                     </div>
                 </div>
@@ -878,7 +874,7 @@
             <div class="alert-bar" id="alertBar" style="display: none;">
                 <div class="alert-content">
                     <div class="alert-icon">!</div>
-                    <span id="alertText">Critical: 3 blockers detected in current sprint - immediate action required</span>
+                    <span id="alertText">Critical: Issues detected in current sprint - immediate action required</span>
                 </div>
                 <div class="alert-actions">
                     <button class="alert-btn" onclick="viewAlert()">View Details</button>
@@ -894,12 +890,12 @@
                         <div class="metric-header">
                             <div>
                                 <div class="metric-title">Sprint Velocity</div>
-                                <div class="metric-value" data-value="47">0</div>
+                                <div class="metric-value" id="velocityMetric">0</div>
                                 <div class="metric-change positive">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M7 14l5-5 5 5H7z"/>
                                     </svg>
-                                    +18% vs last sprint
+                                    <span>Loading...</span>
                                 </div>
                             </div>
                             <div class="metric-badge blue">
@@ -915,12 +911,12 @@
                         <div class="metric-header">
                             <div>
                                 <div class="metric-title">Cycle Time</div>
-                                <div class="metric-value" data-value="3.2" data-suffix="d">0d</div>
+                                <div class="metric-value" id="cycleTimeMetric">0d</div>
                                 <div class="metric-change positive">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M17 10l-5 5-5-5h10z"/>
                                     </svg>
-                                    -12% improvement
+                                    <span>Loading...</span>
                                 </div>
                             </div>
                             <div class="metric-badge green">
@@ -937,12 +933,12 @@
                         <div class="metric-header">
                             <div>
                                 <div class="metric-title">Team Efficiency</div>
-                                <div class="metric-value" data-value="89" data-suffix="%">0%</div>
+                                <div class="metric-value" id="efficiencyMetric">0%</div>
                                 <div class="metric-change positive">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M7 14l5-5 5 5H7z"/>
                                     </svg>
-                                    +5% above target
+                                    <span>Loading...</span>
                                 </div>
                             </div>
                             <div class="metric-badge purple">
@@ -958,12 +954,12 @@
                         <div class="metric-header">
                             <div>
                                 <div class="metric-title">Active Issues</div>
-                                <div class="metric-value" data-value="23">0</div>
+                                <div class="metric-value" id="activeIssuesMetric">0</div>
                                 <div class="metric-change negative">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                                     </svg>
-                                    3 blockers
+                                    <span>Loading...</span>
                                 </div>
                             </div>
                             <div class="metric-badge red">
@@ -1019,18 +1015,10 @@
                             </div>
                             <h3 style="font-size: 1.125rem; font-weight: 600; color: var(--dark);">AI Recommendations</h3>
                         </div>
-                        <div class="recommendations-list">
+                        <div class="recommendations-list" id="recommendationsList">
                             <div class="recommendation-item" onclick="applyRecommendation(1)">
-                                <div class="recommendation-title">Optimize Sprint Capacity</div>
-                                <div class="recommendation-desc">Reduce sprint scope by 15% based on velocity trends</div>
-                            </div>
-                            <div class="recommendation-item" onclick="applyRecommendation(2)">
-                                <div class="recommendation-title">Address Bottlenecks</div>
-                                <div class="recommendation-desc">3 stories stuck in review for >2 days</div>
-                            </div>
-                            <div class="recommendation-item" onclick="applyRecommendation(3)">
-                                <div class="recommendation-title">Team Balance</div>
-                                <div class="recommendation-desc">Redistribute workload from Sarah (120%) to Mike (60%)</div>
+                                <div class="recommendation-title">Loading recommendations...</div>
+                                <div class="recommendation-desc">Please wait while we analyze your data</div>
                             </div>
                         </div>
                     </div>
@@ -1065,52 +1053,13 @@
                         </div>
                     </div>
                     
-                    ## Team Performance - Moved to fill the gap
+                    ## Team Performance
                     <div class="team-card col-4">
                         <div class="chart-header">
                             <h3 class="chart-title">Team Performance</h3>
                         </div>
                         <div class="team-grid">
-                            <div class="team-member">
-                                <div class="member-avatar">JD</div>
-                                <div class="member-info">
-                                    <div class="member-name">John Doe</div>
-                                    <div class="member-status">8 tasks</div>
-                                </div>
-                                <div class="member-load">
-                                    <canvas id="johnLoad"></canvas>
-                                </div>
-                            </div>
-                            <div class="team-member">
-                                <div class="member-avatar" style="background: var(--pastel-purple);">SJ</div>
-                                <div class="member-info">
-                                    <div class="member-name">Sarah Johnson</div>
-                                    <div class="member-status">12 tasks</div>
-                                </div>
-                                <div class="member-load">
-                                    <canvas id="sarahLoad"></canvas>
-                                </div>
-                            </div>
-                            <div class="team-member">
-                                <div class="member-avatar" style="background: var(--pastel-green);">MB</div>
-                                <div class="member-info">
-                                    <div class="member-name">Mike Brown</div>
-                                    <div class="member-status">6 tasks</div>
-                                </div>
-                                <div class="member-load">
-                                    <canvas id="mikeLoad"></canvas>
-                                </div>
-                            </div>
-                            <div class="team-member">
-                                <div class="member-avatar" style="background: var(--pastel-yellow);">ED</div>
-                                <div class="member-info">
-                                    <div class="member-name">Emily Davis</div>
-                                    <div class="member-status">9 tasks</div>
-                                </div>
-                                <div class="member-load">
-                                    <canvas id="emilyLoad"></canvas>
-                                </div>
-                            </div>
+                            <!-- Will be populated by JavaScript -->
                         </div>
                     </div>
                     
@@ -1121,39 +1070,15 @@
                             <span style="font-size: 0.75rem; color: var(--gray-500);">Live</span>
                         </div>
                         <div class="timeline-content">
-                            <div class="timeline-item">
-                                <div class="timeline-icon success">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                </div>
-                                <div class="timeline-body">
-                                    <div class="timeline-title">Sprint planning completed</div>
-                                    <div class="timeline-time">2 minutes ago</div>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-icon warning">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                                    </svg>
-                                </div>
-                                <div class="timeline-body">
-                                    <div class="timeline-title">New blocker detected</div>
-                                    <div class="timeline-time">15 minutes ago</div>
-                                </div>
-                            </div>
-                            <div class="timeline-item">
-                                <div class="timeline-icon info">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                    </svg>
-                                </div>
-                                <div class="timeline-body">
-                                    <div class="timeline-title">AI insights updated</div>
-                                    <div class="timeline-time">1 hour ago</div>
-                                </div>
-                            </div>
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    ## Predictions Panel
+                    <div class="jurix-predictions-panel col-4">
+                        <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">AI Predictions</h3>
+                        <div id="predictionsList">
+                            <!-- Will be populated by JavaScript -->
                         </div>
                     </div>
                 </div>
@@ -1176,326 +1101,13 @@
     
     <script type="text/javascript">
     /* <![CDATA[ */
-    // Initialize everything when DOM loads
-    AJS.$(document).ready(function() {
-        initializeMetrics();
-        initializeCharts();
-        initializeSparklines();
-        initializeTeamLoads();
-        simulateAlerts();
-        startRealtimeUpdates();
-    });
-    
-    // Animate metrics
-    function initializeMetrics() {
-        var metrics = document.querySelectorAll('.metric-value');
-        for (var i = 0; i < metrics.length; i++) {
-            var metric = metrics[i];
-            var value = parseFloat(metric.getAttribute('data-value'));
-            var suffix = metric.getAttribute('data-suffix') || '';
-            animateValue(metric, 0, value, 1500, suffix);
-        }
-    }
-    
-    function animateValue(element, start, end, duration, suffix) {
-        var startTime = performance.now();
-        var isFloat = !Number.isInteger(end);
-        
-        function update(currentTime) {
-            var elapsed = currentTime - startTime;
-            var progress = Math.min(elapsed / duration, 1);
-            
-            var easeOut = 1 - Math.pow(1 - progress, 4);
-            var current = start + (end - start) * easeOut;
-            
-            if (isFloat) {
-                element.textContent = current.toFixed(1) + suffix;
-            } else {
-                element.textContent = Math.floor(current) + suffix;
-            }
-            
-            if (progress < 1) {
-                requestAnimationFrame(update);
-            }
-        }
-        
-        requestAnimationFrame(update);
-    }
-    
-    // Initialize all charts
-    function initializeCharts() {
-        // Chart defaults
-        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
-        Chart.defaults.color = '#172B4D';
-        
-        // Sprint Progress Chart (Stacked Bar)
-        new Chart(document.getElementById('sprintProgressChart'), {
-            type: 'bar',
-            data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                datasets: [{
-                    label: 'Completed',
-                    data: [15, 28, 42, 47],
-                    backgroundColor: '#0052CC'
-                }, {
-                    label: 'In Progress',
-                    data: [8, 12, 8, 6],
-                    backgroundColor: '#4C9AFF'
-                }, {
-                    label: 'To Do',
-                    data: [27, 10, 0, 0],
-                    backgroundColor: '#DEEBFF'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: { stacked: true },
-                    y: { stacked: true }
-                }
-            }
-        });
-        
-        // Velocity Trend Chart
-        new Chart(document.getElementById('velocityTrendChart'), {
-            type: 'line',
-            data: {
-                labels: ['Sprint 1', 'Sprint 2', 'Sprint 3', 'Sprint 4', 'Sprint 5', 'Sprint 6'],
-                datasets: [{
-                    label: 'Actual',
-                    data: [32, 35, 38, 42, 45, 47],
-                    borderColor: '#0052CC',
-                    backgroundColor: 'rgba(0, 82, 204, 0.1)',
-                    tension: 0.3
-                }, {
-                    label: 'Planned',
-                    data: [30, 35, 40, 40, 45, 50],
-                    borderColor: '#6B778C',
-                    borderDash: [5, 5],
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-        
-        // Issue Distribution Pie Chart
-        new Chart(document.getElementById('issueDistributionChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Bugs', 'Features', 'Tasks', 'Tech Debt'],
-                datasets: [{
-                    data: [15, 45, 30, 10],
-                    backgroundColor: ['#0d1b2a', '#e0e1dd', '#778da9', '#415a77']
-
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-        
-        // Team Workload Chart
-        new Chart(document.getElementById('teamWorkloadChart'), {
-            type: 'bar',
-            data: {
-                labels: ['John', 'Sarah', 'Mike', 'Emily', 'David'],
-                datasets: [{
-                    label: 'Current Load',
-                    data: [8, 12, 6, 9, 7],
-                    backgroundColor: '#0052CC'
-                }, {
-                    label: 'Capacity',
-                    data: [10, 10, 10, 10, 10],
-                    backgroundColor: '#DEEBFF'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { max: 15 }
-                }
-            }
-        });
-        
-        // Burndown Chart - Fixed array syntax
-        var days = [];
-        for (var i = 1; i <= 10; i++) {
-            days.push('Day ' + i);
-        }
-        
-        new Chart(document.getElementById('burndownChart'), {
-            type: 'line',
-            data: {
-                labels: days,
-                datasets: [{
-                    label: 'Ideal',
-                    data: [100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0],
-                    borderColor: '#6B778C',
-                    borderDash: [5, 5],
-                    tension: 0
-                }, {
-                    label: 'Actual',
-                    data: [100, 92, 85, 78, 65, 58, 45, 38, null, null, null],
-                    borderColor: '#0052CC',
-                    backgroundColor: 'rgba(0, 82, 204, 0.1)',
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    }
-    
-    // Initialize sparklines
-    function initializeSparklines() {
-        // Velocity sparkline
-        new Chart(document.getElementById('velocitySparkline'), {
-            type: 'line',
-            data: {
-                labels: Array(10).fill(''),
-                datasets: [{
-                    data: [32, 34, 35, 36, 38, 40, 42, 44, 45, 47],
-                    borderColor: '#0052CC',
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    tension: 0.3,
-                    fill: true,
-                    backgroundColor: 'rgba(0, 82, 204, 0.3)'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                scales: {
-                    x: { display: false },
-                    y: { display: false }
-                }
-            }
-        });
-        
-        // Similar for other sparklines...
-    }
-    
-    // Initialize team load gauges
-    function initializeTeamLoads() {
-        var loads = {
-            johnLoad: 80,
-            sarahLoad: 120,
-            mikeLoad: 60,
-            emilyLoad: 90
-        };
-        
-        for (var id in loads) {
-            if (loads.hasOwnProperty(id)) {
-                var value = loads[id];
-                var canvas = document.getElementById(id);
-                if (canvas) {
-                    new Chart(canvas, {
-                        type: 'doughnut',
-                        data: {
-                            datasets: [{
-                                data: [value, 100 - value],
-                                backgroundColor: [
-                                    value > 100 ? '#F87171' : value > 80 ? '#FCD34D' : '#7DD3C0',
-                                    '#F4F5F7'
-                                ],
-                                borderWidth: 0
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            cutout: '75%',
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: { enabled: false }
-                            }
-                        }
-                    });
-                }
-            }
-        }
-    }
-    
-    // Alert simulation
-    function simulateAlerts() {
-        setTimeout(function() {
-            showAlert('Critical: 3 blockers detected in current sprint - immediate action required');
-        }, 3000);
-        
-        setInterval(function() {
-            var alerts = [
-                'Performance alert: Cycle time increased by 25% this week',
-                'Team capacity warning: Sarah at 120% allocation',
-                'Sprint risk: Only 60% completion probability detected',
-                'Quality alert: Bug rate increased by 15%'
-            ];
-            var randomAlert = alerts[Math.floor(Math.random() * alerts.length)];
-            if (Math.random() > 0.7) {
-                showAlert(randomAlert);
-            }
-        }, 30000);
-    }
-    
-    function showAlert(message) {
-        var alertBar = document.getElementById('alertBar');
-        var alertText = document.getElementById('alertText');
-        alertText.textContent = message;
-        alertBar.style.display = 'flex';
-    }
-    
-    function dismissAlert() {
-        document.getElementById('alertBar').style.display = 'none';
-    }
-    
-    function viewAlert() {
-        console.log('Viewing alert details...');
-    }
-    
-    // Real-time updates
-    function startRealtimeUpdates() {
-        setInterval(function() {
-            // Update random metric
-            var metrics = document.querySelectorAll('.metric-value');
-            var randomMetric = metrics[Math.floor(Math.random() * metrics.length)];
-            var currentValue = parseFloat(randomMetric.textContent);
-            var change = (Math.random() - 0.5) * 2;
-            var newValue = Math.max(0, currentValue + change);
-            randomMetric.textContent = newValue.toFixed(1) + (randomMetric.getAttribute('data-suffix') || '');
-        }, 5000);
-    }
-    
-    // Chat functionality
-    function toggleChat() {
-        var chatWindow = document.getElementById('chatWindow');
-        chatWindow.classList.toggle('open');
-    }
-    
-    // Recommendation actions
-    function applyRecommendation(id) {
-        console.log('Applying recommendation', id);
-        // Show notification
-        var notification = document.createElement('div');
-        notification.style.cssText = 'position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #00875A; color: white; padding: 1rem 2rem; border-radius: 3px; box-shadow: 0 8px 12px rgba(9,30,66,0.15); animation: slideUp 0.3s ease;';
-        notification.textContent = 'Recommendation applied successfully!';
-        document.body.appendChild(notification);
-        
-        setTimeout(function() { notification.remove(); }, 3000);
-    }
+    // Pass project key and API configuration to JavaScript
+    window.JurixData = {
+        projectKey: '$projectKey',
+        projectName: '$projectName',
+        apiBaseUrl: '$apiBaseUrl',
+        dashboardData: $dashboardData
+    };
     /* ]]> */
     </script>
 </body>

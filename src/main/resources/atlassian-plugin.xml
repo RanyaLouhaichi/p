@@ -22,13 +22,24 @@
     <!-- Component Imports for Dependency Injection -->
     <component-import key="userManager" interface="com.atlassian.sal.api.user.UserManager"/>
     <component-import key="pluginSettingsFactory" interface="com.atlassian.sal.api.pluginsettings.PluginSettingsFactory"/>
+    <component-import key="templateRenderer" interface="com.atlassian.templaterenderer.TemplateRenderer"/>
+    <component-import key="eventPublisher" interface="com.atlassian.event.api.EventPublisher"/>
     
     <!-- Component Declarations -->
     <component key="jurixConfiguration" class="com.jurix.ai.config.JurixConfiguration"/>
     <component key="chatService" class="com.jurix.ai.rest.ChatService"/>
-    <component key="chatController" class="com.jurix.ai.rest.ChatController"/>
     
-    <!-- REST Module - Updated path to match the Java code -->
+    <!-- REST Controllers - IMPORTANT: Don't declare REST endpoints as components -->
+    <!-- They are automatically discovered by the REST module -->
+    
+    <!-- Service Components -->
+    <component key="notificationService" class="com.jurix.ai.service.NotificationService"/>
+    <component key="dashboardService" class="com.jurix.ai.service.DashboardService"/>
+    
+    <!-- Listener Component -->
+    <component key="issueEventListener" class="com.jurix.ai.listener.IssueEventListener"/>
+    
+    <!-- REST Module - This will auto-discover @Named REST classes -->
     <rest name="JURIX REST API" key="jurix-rest" path="/jurix" version="1.0">
         <description>REST endpoints for JURIX AI Assistant</description>
     </rest>

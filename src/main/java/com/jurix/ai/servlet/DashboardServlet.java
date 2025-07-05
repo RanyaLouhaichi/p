@@ -74,62 +74,22 @@ public class DashboardServlet extends HttpServlet {
             return;
         }
         
-        // Create mock dashboard data for now
-        Map<String, Object> dashboardData = new HashMap<>();
-        dashboardData.put("metrics", createMockMetrics());
-        dashboardData.put("predictions", createMockPredictions());
-        dashboardData.put("recommendations", createMockRecommendations());
-        
-        // Prepare context for template
+        // Prepare context for template - NO MORE MOCK DATA
         Map<String, Object> context = new HashMap<>();
         context.put("project", project);
         context.put("projectKey", projectKey);
         context.put("projectName", project.getName());
-        context.put("dashboardData", gson.toJson(dashboardData));
-        context.put("metrics", dashboardData.get("metrics"));
-        context.put("predictions", dashboardData.get("predictions"));
-        context.put("recommendations", dashboardData.get("recommendations"));
         
-        // Add placeholder URLs
-        context.put("websocketUrl", "ws://localhost:2990" + request.getContextPath() + "/jurix-ws");
-        context.put("apiBaseUrl", request.getContextPath() + "/rest/jurix-api/1.0");
+        // Remove all mock data - will be loaded from backend
+        context.put("dashboardData", "{}"); // Empty JSON, will be loaded by JS
+        
+        // Backend API configuration
+        context.put("apiBaseUrl", "http://localhost:5001");
+        
+        // Pass project key to JavaScript
+        context.put("jsProjectKey", projectKey);
         
         response.setContentType("text/html;charset=utf-8");
         templateRenderer.render("templates/dashboard.vm", context, response.getWriter());
-    }
-    
-    private Map<String, Object> createMockMetrics() {
-        Map<String, Object> metrics = new HashMap<>();
-        metrics.put("throughput", 45);
-        metrics.put("cycle_time", 3.2);
-        metrics.put("bottlenecks", Map.of(
-            "To Do", 15,
-            "In Progress", 8,
-            "Done", 45
-        ));
-        return metrics;
-    }
-    
-    private Map<String, Object> createMockPredictions() {
-        Map<String, Object> predictions = new HashMap<>();
-        predictions.put("sprint_completion", Map.of(
-            "probability", 0.85,
-            "risk_level", "medium",
-            "reasoning", "Based on current velocity and remaining work"
-        ));
-        predictions.put("velocity_forecast", Map.of(
-            "next_week_estimate", 48.5,
-            "trend", "increasing",
-            "insights", "Team velocity showing positive trend"
-        ));
-        return predictions;
-    }
-    
-    private String[] createMockRecommendations() {
-        return new String[] {
-            "Consider breaking down large stories in the backlog - 3 stories exceed 8 story points",
-            "Review items in 'In Review' status - average time there is 2.5 days vs target of 1 day",
-            "Team velocity is increasing - consider taking on 2-3 additional story points next sprint"
-        };
     }
 }
