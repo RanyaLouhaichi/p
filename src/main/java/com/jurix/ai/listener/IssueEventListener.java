@@ -140,10 +140,26 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
     
     private void notifyPythonBackend(String projectKey, String updateType, Issue issue) {
         try {
+            // Create detailed update payload
             Map<String, Object> details = new HashMap<>();
             details.put("issueKey", issue.getKey());
             details.put("status", issue.getStatus().getName());
             details.put("summary", issue.getSummary());
+            
+            // Add more context
+            if (issue.getAssignee() != null) {
+                details.put("assignee", issue.getAssignee().getDisplayName());
+            }
+            
+            // Add issue type
+            if (issue.getIssueType() != null) {
+                details.put("issueType", issue.getIssueType().getName());
+            }
+            
+            // Add priority if available
+            if (issue.getPriority() != null) {
+                details.put("priority", issue.getPriority().getName());
+            }
             
             Map<String, Object> payload = new HashMap<>();
             payload.put("projectKey", projectKey);
@@ -153,6 +169,12 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
             
             String backendUrl = "http://localhost:5001/api/notify-update";
             
+            log.info("📤 Sending update notification to backend:");
+            log.info("   Project: " + projectKey);
+            log.info("   Type: " + updateType);
+            log.info("   Issue: " + issue.getKey());
+            log.info("   Status: " + issue.getStatus().getName());
+            
             RequestBody body = RequestBody.create(
                 MediaType.parse("application/json"),
                 gson.toJson(payload)
@@ -161,6 +183,7 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
             Request request = new Request.Builder()
                 .url(backendUrl)
                 .post(body)
+                .addHeader("Content-Type", "application/json")
                 .build();
             
             httpClient.newCall(request).enqueue(new Callback() {
@@ -171,20 +194,32 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
                 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
-                    if (response.isSuccessful()) {
-                        log.info("✅ Successfully notified Python backend");
-                    } else {
-                        log.warn("⚠️ Python backend returned: {}", response.code());
+                    try {
+                        if (response.isSuccessful()) {
+                            log.info("✅ Successfully notified Python backend for {} update", issue.getKey());
+                            
+                            // Also store in DashboardUpdateService to ensure it's tracked
+                            UpdateEvent updateEvent = new UpdateEvent(
+                                issue.getKey(),
+                                issue.getStatus().getName(),
+                                updateType,
+                                System.currentTimeMillis()
+                            );
+                            updateService.recordUpdate(projectKey, updateEvent);
+                            
+                        } else {
+                            log.warn("⚠️ Python backend returned: {} - {}", response.code(), response.message());
+                        }
+                    } finally {
+                        response.close();
                     }
-                    response.close();
                 }
             });
             
         } catch (Exception e) {
-            log.error("❌ Error notifying Python backend: {}", e.getMessage());
+            log.error("❌ Error notifying Python backend: {}", e.getMessage(), e);
         }
     }
-    
     private String getEventTypeName(Long eventTypeId) {
         if (eventTypeId.equals(EventType.ISSUE_CREATED_ID)) return "created";
         if (eventTypeId.equals(EventType.ISSUE_UPDATED_ID)) return "updated";

@@ -103,6 +103,7 @@ window.JurixDashboard = (function() {
         isPolling = false;
     }
 
+
     function checkForUpdates() {
         if (!currentProjectKey) {
             console.log('⚠️ No project key, skipping update check');
@@ -137,27 +138,82 @@ window.JurixDashboard = (function() {
             if (data.hasUpdates) {
                 console.log(`✅ Found ${data.updateCount} updates!`);
                 
-                // Update timestamp
+                // Update timestamp immediately
                 lastUpdateTimestamp = data.timestamp || Date.now();
+                console.log(`📍 Updated lastUpdateTimestamp to: ${lastUpdateTimestamp}`);
                 
-                // Show notifications
+                // Show notifications for each update
                 if (data.updates && data.updates.length > 0) {
                     console.log('🔔 Showing notifications for updates:', data.updates);
+                    
+                    // Group updates by issue for better notifications
+                    const updatesByIssue = {};
                     data.updates.forEach(update => {
+                        const issueKey = update.details?.issueKey || 'System';
+                        if (!updatesByIssue[issueKey]) {
+                            updatesByIssue[issueKey] = [];
+                        }
+                        updatesByIssue[issueKey].push(update);
+                    });
+                    
+                    // Show notification for each issue
+                    Object.entries(updatesByIssue).forEach(([issueKey, updates]) => {
+                        const latestUpdate = updates[0]; // Most recent update for this issue
                         showUpdateNotification([{
-                            issueKey: update.details.issueKey || 'System',
-                            eventType: update.type,
-                            status: update.details.status
+                            issueKey: issueKey,
+                            eventType: latestUpdate.type,
+                            status: latestUpdate.details?.status || 'Updated',
+                            summary: latestUpdate.details?.summary || ''
                         }]);
                     });
                 }
                 
-                // Refresh dashboard
-                if (data.dashboardData) {
+                // Check if we need to refresh dashboard
+                if (data.needsRefresh && data.dashboardData) {
                     console.log('📈 Updating dashboard with fresh data');
+                    
+                    // Add visual indicator that dashboard is updating
+                    document.querySelectorAll('.metric-card').forEach(el => {
+                        el.classList.add('updating');
+                    });
+                    
+                    // Update the dashboard with the new data
                     updateDashboard(data.dashboardData);
-                } else if (data.needsRefresh) {
-                    console.log('🔄 Refreshing dashboard data');
+                    
+                    // Remove updating indicator after a delay
+                    setTimeout(() => {
+                        document.querySelectorAll('.metric-card').forEach(el => {
+                            el.classList.remove('updating');
+                        });
+                    }, 1000);
+                    
+                    // Show success notification
+                    const successNotification = document.createElement('div');
+                    successNotification.className = 'jurix-notification success';
+                    successNotification.innerHTML = `
+                        <div class="jurix-notification-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div class="jurix-notification-content">
+                            <div class="jurix-notification-title">Dashboard Updated</div>
+                            <div class="jurix-notification-message">Real-time data refreshed successfully</div>
+                        </div>
+                    `;
+                    document.body.appendChild(successNotification);
+                    
+                    // Animate in
+                    setTimeout(() => successNotification.classList.add('show'), 10);
+                    
+                    // Remove after 3 seconds
+                    setTimeout(() => {
+                        successNotification.classList.remove('show');
+                        setTimeout(() => successNotification.remove(), 300);
+                    }, 3000);
+                    
+                } else if (data.needsRefresh && !data.dashboardData) {
+                    console.log('🔄 Dashboard needs refresh but no data provided, loading manually');
                     loadDashboardData();
                 }
                 
@@ -1073,6 +1129,39 @@ window.JurixDashboard = (function() {
         .jurix-notification.error .jurix-notification-icon {
             background: rgba(239, 68, 68, 0.1);
             color: #ef4444;
+        }
+        
+        .jurix-notification.success {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            min-width: 320px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            z-index: 10000;
+            transform: translateX(400px);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .jurix-notification.success.show {
+            transform: translateX(0);
+        }
+        
+        .jurix-notification.success .jurix-notification-icon {
+            width: 32px;
+            height: 32px;
+            background: #E3FCEF;
+            color: #00875A;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
         
         .risk-low { color: #00875A; }
