@@ -18,6 +18,17 @@
         
         <context>atl.general</context>
     </web-resource>
+
+    <!-- REMOVE THIS ENTIRE SECTION - Active Objects is causing the error -->
+    <!--
+    <ao key="ao-module" name="Active Objects Module">
+        <description>The Active Objects module for this plugin.</description>
+        <entity>com.jurix.ai.ao.AIAnalytics</entity>
+        <entity>com.jurix.ai.ao.GeneratedArticle</entity>
+        <entity>com.jurix.ai.ao.Prediction</entity>
+        <entity>com.jurix.ai.ao.DashboardUpdate</entity>
+    </ao>
+    -->
     
     <!-- Component Imports for Dependency Injection -->
     <component-import key="userManager" interface="com.atlassian.sal.api.user.UserManager"/>
@@ -25,19 +36,29 @@
     <component-import key="templateRenderer" interface="com.atlassian.templaterenderer.TemplateRenderer"/>
     <component-import key="eventPublisher" interface="com.atlassian.event.api.EventPublisher"/>
     
+    <!-- REMOVE THESE TOO - Not needed without Active Objects -->
+    <!--
+    <component-import key="activeObjects" interface="com.atlassian.activeobjects.external.ActiveObjects"/>
+    <component-import key="cacheManager" interface="com.atlassian.cache.CacheManager"/>
+    -->
+
     <!-- Component Declarations -->
     <component key="jurixConfiguration" class="com.jurix.ai.config.JurixConfiguration"/>
     <component key="chatService" class="com.jurix.ai.rest.ChatService"/>
-    
-    <!-- REST Controllers - IMPORTANT: Don't declare REST endpoints as components -->
-    <!-- They are automatically discovered by the REST module -->
     
     <!-- Service Components -->
     <component key="notificationService" class="com.jurix.ai.service.NotificationService"/>
     <component key="dashboardService" class="com.jurix.ai.service.DashboardService"/>
     
-    <!-- Listener Component -->
-    <component key="issueEventListener" class="com.jurix.ai.listener.IssueEventListener"/>
+    <!-- Dashboard Update Service - Keep this, it's now using in-memory storage -->
+    <component key="dashboardUpdateService" class="com.jurix.ai.service.DashboardUpdateService">
+        <description>Service for tracking dashboard updates</description>
+    </component>
+
+    <!-- Issue Event Listener - Keep this -->
+    <component key="issueEventListener" class="com.jurix.ai.listener.IssueEventListener">
+        <description>Listens to issue events for real-time dashboard updates</description>
+    </component>
     
     <!-- REST Module - This will auto-discover @Named REST classes -->
     <rest name="JURIX REST API" key="jurix-rest" path="/jurix" version="1.0">

@@ -7,34 +7,41 @@ window.JurixDashboard = (function() {
     let currentProjectKey = null;
     const UPDATE_FREQUENCY = 30000; // 30 seconds
     const API_BASE_URL = 'http://localhost:5001'; // Your backend URL
+    let lastUpdateTimestamp = Date.now();
+    let pollInterval = null;
+    let isPolling = false;
+    let pollFrequency = 5000; // Start with 5 seconds
+    const MIN_POLL_FREQUENCY = 2000;  // 2 seconds minimum
+    const MAX_POLL_FREQUENCY = 30000;
 
     function init() {
-        console.log('Initializing JURIX Dashboard with Backend Integration...');
+        console.log('🚀 Initializing JURIX Dashboard with Real-Time Updates...');
         
         // Get project key from URL or window data
         currentProjectKey = window.JurixData && window.JurixData.projectKey;
         if (!currentProjectKey) {
-            // Try to extract from URL
             const urlParams = new URLSearchParams(window.location.search);
             currentProjectKey = urlParams.get('projectKey');
         }
         
-        console.log('Current project key:', currentProjectKey);
+        console.log('📋 Current project key:', currentProjectKey);
         
         if (currentProjectKey) {
-            // Load dashboard data from backend
+            // Load initial dashboard data
             loadDashboardData();
             
-            // Set up periodic updates
-            // updateInterval = setInterval(loadDashboardData, UPDATE_FREQUENCY);
+            // START POLLING - Make sure this is called!
+            console.log('🔄 Starting real-time polling...');
+            startPolling();
         } else {
-            console.error('No project key found!');
+            console.error('❌ No project key found!');
             showError('No project key specified');
         }
         
         // Initialize event handlers
         bindEvents();
     }
+    
 
     function loadDashboardData() {
         if (!currentProjectKey) return;
@@ -73,6 +80,197 @@ window.JurixDashboard = (function() {
             hideLoadingState();
             showError(`Failed to load dashboard: ${error.message}`);
         });
+    }
+
+    function startPolling() {
+        if (isPolling) return;
+        
+        isPolling = true;
+        console.log('Starting smart polling for real-time updates');
+        
+        // Initial poll
+        checkForUpdates();
+        
+        // Set up interval
+        pollInterval = setInterval(checkForUpdates, pollFrequency);
+    }
+
+    function stopPolling() {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
+        isPolling = false;
+    }
+
+    function checkForUpdates() {
+        if (!currentProjectKey) {
+            console.log('⚠️ No project key, skipping update check');
+            return;
+        }
+        
+        console.log(`🔍 Checking for updates at ${new Date().toLocaleTimeString()}...`);
+        console.log(`📊 Project: ${currentProjectKey}, Last timestamp: ${lastUpdateTimestamp}`);
+        
+        // Check Python backend for updates
+        const backendUrl = `${API_BASE_URL}/api/updates/${currentProjectKey}?since=${lastUpdateTimestamp}`;
+        
+        console.log('📡 Fetching from:', backendUrl);
+        
+        fetch(backendUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            mode: 'cors'
+        })
+        .then(response => {
+            console.log('📥 Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 Update check response:', data);
+            
+            if (data.hasUpdates) {
+                console.log(`✅ Found ${data.updateCount} updates!`);
+                
+                // Update timestamp
+                lastUpdateTimestamp = data.timestamp || Date.now();
+                
+                // Show notifications
+                if (data.updates && data.updates.length > 0) {
+                    console.log('🔔 Showing notifications for updates:', data.updates);
+                    data.updates.forEach(update => {
+                        showUpdateNotification([{
+                            issueKey: update.details.issueKey || 'System',
+                            eventType: update.type,
+                            status: update.details.status
+                        }]);
+                    });
+                }
+                
+                // Refresh dashboard
+                if (data.dashboardData) {
+                    console.log('📈 Updating dashboard with fresh data');
+                    updateDashboard(data.dashboardData);
+                } else if (data.needsRefresh) {
+                    console.log('🔄 Refreshing dashboard data');
+                    loadDashboardData();
+                }
+                
+                // Speed up polling when active
+                adjustPollFrequency(true);
+            } else {
+                console.log('❌ No updates found');
+                // Slow down polling when idle
+                adjustPollFrequency(false);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error checking updates:', error);
+            adjustPollFrequency(false);
+        });
+    }
+
+    function checkJavaEndpoint() {
+        const url = `${AJS.contextPath()}/rest/jurix/1.0/updates/${currentProjectKey}?since=${lastUpdateTimestamp}`;
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.hasUpdates) {
+                console.log(`Found ${data.updateCount} updates from Java`);
+                
+                // Update timestamp
+                lastUpdateTimestamp = data.latestTimestamp || Date.now();
+                
+                // Show notification
+                showUpdateNotification(data.updates);
+                
+                // Refresh dashboard
+                loadDashboardData();
+                
+                // Increase poll frequency
+                adjustPollFrequency(true);
+            } else {
+                // No updates - decrease polling frequency
+                adjustPollFrequency(false);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking Java updates:', error);
+            adjustPollFrequency(false);
+        });
+    }
+
+    function adjustPollFrequency(hasActivity) {
+        stopPolling();
+        
+        if (hasActivity) {
+            // Increase frequency (poll more often)
+            pollFrequency = Math.max(MIN_POLL_FREQUENCY, pollFrequency * 0.8);
+        } else {
+            // Decrease frequency (poll less often)
+            pollFrequency = Math.min(MAX_POLL_FREQUENCY, pollFrequency * 1.5);
+        }
+        
+        console.log(`Adjusted poll frequency to ${pollFrequency}ms`);
+        
+        // Restart with new frequency
+        pollInterval = setInterval(checkForUpdates, pollFrequency);
+    }
+
+    function showUpdateNotification(updates) {
+        if (!updates || updates.length === 0) return;
+        
+        // Get the most recent update
+        const latestUpdate = updates[0];
+        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.className = 'jurix-update-notification';
+        notification.innerHTML = `
+            <div class="notification-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">Dashboard Updated</div>
+                <div class="notification-message">
+                    ${latestUpdate.issueKey} was ${latestUpdate.eventType}
+                </div>
+            </div>
+            <div class="notification-actions">
+                <button onclick="JurixDashboard.dismissNotification(this)">✕</button>
+            </div>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => notification.classList.add('show'), 10);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }, 5000);
+    }
+
+    function dismissNotification(button) {
+        const notification = button.closest('.jurix-update-notification');
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
     }
 
     function updateDashboard(data) {
@@ -942,6 +1140,90 @@ window.JurixDashboard = (function() {
                 opacity: 1;
             }
         }
+        
+        /* Notification Styles */
+        .jurix-update-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            min-width: 320px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            z-index: 10000;
+            transform: translateX(400px);
+            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .jurix-update-notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification-icon {
+            width: 32px;
+            height: 32px;
+            background: #E3FCEF;
+            color: #00875A;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #172B4D;
+        }
+        
+        .notification-message {
+            font-size: 14px;
+            color: #6B778C;
+        }
+        
+        .notification-actions button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #97A0AF;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        
+        .notification-actions button:hover {
+            color: #42526E;
+        }
+        
+        .metric-card.updating {
+            position: relative;
+        }
+        
+        .metric-card.updating::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            background: #00875A;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
     `;
     document.head.appendChild(style);
 
@@ -951,7 +1233,10 @@ window.JurixDashboard = (function() {
         dismissAlert: dismissAlert,
         viewAlert: viewAlert,
         applyRecommendation: applyRecommendation,
-        toggleChat: toggleChat
+        toggleChat: toggleChat,
+        dismissNotification: dismissNotification,  
+        startPolling: startPolling,                
+        stopPolling: stopPolling, 
     };
 })();
 

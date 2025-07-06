@@ -9,6 +9,10 @@ import com.atlassian.jira.issue.status.Status;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.jurix.ai.api.JurixApiClient;
 import com.jurix.ai.service.NotificationService;
+import com.jurix.ai.service.DashboardUpdateService;
+import com.jurix.ai.service.DashboardUpdateService.UpdateEvent;
+import com.google.gson.Gson;
+import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
@@ -16,10 +20,9 @@ import org.springframework.beans.factory.InitializingBean;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Named("issueEventListener")
 public class IssueEventListener implements InitializingBean, DisposableBean {
@@ -32,118 +35,189 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
 
     @ComponentImport
     private final EventPublisher eventPublisher;
+    
+    private final DashboardUpdateService updateService;
+    private final Gson gson = new Gson();
+    private OkHttpClient httpClient;
 
     @Inject
-    public IssueEventListener(@ComponentImport EventPublisher eventPublisher) {
+    public IssueEventListener(@ComponentImport EventPublisher eventPublisher,
+                             DashboardUpdateService updateService) {
         this.eventPublisher = eventPublisher;
+        this.updateService = updateService;
+        log.info("🚀 IssueEventListener CONSTRUCTOR called - updateService: {}", updateService);
     }
 
     @Override
     public void afterPropertiesSet() {
-        eventPublisher.register(this);
-        log.info("JURIX Issue Event Listener registered successfully");
+        log.info("🟢 IssueEventListener.afterPropertiesSet() - STARTING REGISTRATION");
+        
+        try {
+            // Initialize HTTP client
+            this.httpClient = new OkHttpClient.Builder()
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .writeTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(5, TimeUnit.SECONDS)
+                .build();
+            
+            // Register with event publisher
+            eventPublisher.register(this);
+            log.info("✅ JURIX Real-time Issue Event Listener SUCCESSFULLY REGISTERED!");
+            log.info("✅ Event Publisher: {}", eventPublisher);
+            log.info("✅ Update Service: {}", updateService);
+            
+        } catch (Exception e) {
+            log.error("❌ Failed to register event listener!", e);
+        }
     }
 
     @Override
     public void destroy() {
+        log.info("🔴 IssueEventListener.destroy() - UNREGISTERING");
         eventPublisher.unregister(this);
         log.info("JURIX Issue Event Listener unregistered");
     }
 
     @EventListener
     public void onIssueEvent(IssueEvent event) {
+        log.info("🎯 ========== ISSUE EVENT RECEIVED ==========");
+        
         try {
-            // Only process update events
             Long eventTypeId = event.getEventTypeId();
-            if (!eventTypeId.equals(EventType.ISSUE_UPDATED_ID) &&
-                !eventTypeId.equals(EventType.ISSUE_RESOLVED_ID) &&
-                !eventTypeId.equals(EventType.ISSUE_CLOSED_ID)) {
-                return;
-            }
-
             Issue issue = event.getIssue();
+            
+            log.info("📋 Event Type ID: {}", eventTypeId);
+            log.info("📋 Event Type Name: {}", getEventTypeName(eventTypeId));
+            
             if (issue == null) {
+                log.warn("⚠️ Issue is null, skipping event");
                 return;
             }
-
-            // Check if issue was just resolved
-            Status currentStatus = issue.getStatus();
-            if (currentStatus != null && RESOLVED_STATUSES.contains(currentStatus.getName())) {
-                log.info("Issue {} was resolved/closed. Status: {}", issue.getKey(), currentStatus.getName());
-                handleIssueResolved(issue);
+            
+            log.info("📋 Issue Key: {}", issue.getKey());
+            log.info("📋 Issue Status: {}", issue.getStatus().getName());
+            log.info("📋 Project: {}", issue.getProjectObject().getKey());
+            
+            // Track the update
+            String projectKey = issue.getProjectObject().getKey();
+            String eventType = getEventTypeName(eventTypeId);
+            
+            // Store in service
+            UpdateEvent updateEvent = new UpdateEvent(
+                issue.getKey(),
+                issue.getStatus().getName(),
+                eventType,
+                System.currentTimeMillis()
+            );
+            
+            log.info("💾 Recording update in DashboardUpdateService...");
+            updateService.recordUpdate(projectKey, updateEvent);
+            log.info("✅ Update recorded successfully!");
+            
+            // Notify Python backend in a separate thread
+            new Thread(() -> {
+                log.info("📡 Notifying Python backend...");
+                notifyPythonBackend(projectKey, eventType, issue);
+            }).start();
+            
+            // Handle resolution for article generation
+            if (eventTypeId.equals(EventType.ISSUE_RESOLVED_ID) ||
+                eventTypeId.equals(EventType.ISSUE_CLOSED_ID)) {
+                
+                Status currentStatus = issue.getStatus();
+                if (currentStatus != null && RESOLVED_STATUSES.contains(currentStatus.getName())) {
+                    log.info("🎉 Issue {} was resolved/closed", issue.getKey());
+                    handleIssueResolved(issue);
+                }
             }
 
         } catch (Exception e) {
-            log.error("Error handling issue event", e);
+            log.error("❌ Error handling issue event", e);
         }
+        
+        log.info("🏁 ========== EVENT PROCESSING COMPLETE ==========");
+    }
+    
+    private void notifyPythonBackend(String projectKey, String updateType, Issue issue) {
+        try {
+            Map<String, Object> details = new HashMap<>();
+            details.put("issueKey", issue.getKey());
+            details.put("status", issue.getStatus().getName());
+            details.put("summary", issue.getSummary());
+            
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("projectKey", projectKey);
+            payload.put("updateType", updateType);
+            payload.put("details", details);
+            payload.put("timestamp", System.currentTimeMillis());
+            
+            String backendUrl = "http://localhost:5001/api/notify-update";
+            
+            RequestBody body = RequestBody.create(
+                MediaType.parse("application/json"),
+                gson.toJson(payload)
+            );
+            
+            Request request = new Request.Builder()
+                .url(backendUrl)
+                .post(body)
+                .build();
+            
+            httpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    log.warn("📡 Failed to notify Python backend: {}", e.getMessage());
+                }
+                
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        log.info("✅ Successfully notified Python backend");
+                    } else {
+                        log.warn("⚠️ Python backend returned: {}", response.code());
+                    }
+                    response.close();
+                }
+            });
+            
+        } catch (Exception e) {
+            log.error("❌ Error notifying Python backend: {}", e.getMessage());
+        }
+    }
+    
+    private String getEventTypeName(Long eventTypeId) {
+        if (eventTypeId.equals(EventType.ISSUE_CREATED_ID)) return "created";
+        if (eventTypeId.equals(EventType.ISSUE_UPDATED_ID)) return "updated";
+        if (eventTypeId.equals(EventType.ISSUE_RESOLVED_ID)) return "resolved";
+        if (eventTypeId.equals(EventType.ISSUE_CLOSED_ID)) return "closed";
+        if (eventTypeId.equals(EventType.ISSUE_REOPENED_ID)) return "reopened";
+        if (eventTypeId.equals(EventType.ISSUE_ASSIGNED_ID)) return "assigned";
+        if (eventTypeId.equals(EventType.ISSUE_WORKSTARTED_ID)) return "work_started";
+        if (eventTypeId.equals(EventType.ISSUE_WORKSTOPPED_ID)) return "work_stopped";
+        return "changed";
     }
 
     private void handleIssueResolved(Issue issue) {
         try {
-            log.info("Processing resolved issue: {}", issue.getKey());
-            
-            // Prepare issue data
-            Map<String, Object> issueData = new HashMap<>();
-            issueData.put("key", issue.getKey());
-            issueData.put("summary", issue.getSummary());
-            issueData.put("description", issue.getDescription());
-            issueData.put("status", issue.getStatus().getName());
-            issueData.put("issueType", issue.getIssueType().getName());
-            
-            if (issue.getReporter() != null) {
-                issueData.put("reporter", issue.getReporter().getDisplayName());
-            }
-            
-            if (issue.getAssignee() != null) {
-                issueData.put("assignee", issue.getAssignee().getDisplayName());
-            }
-            
-            // Log the event (in a real implementation, this would trigger article generation)
-            log.info("Issue {} resolved. Triggering AI article generation workflow", issue.getKey());
+            log.info("🎊 Processing resolved issue: {}", issue.getKey());
             
             // Get the API client and notify about resolution
             JurixApiClient apiClient = JurixApiClient.getInstance();
+            Map<String, Object> issueData = new HashMap<>();
+            issueData.put("key", issue.getKey());
+            issueData.put("summary", issue.getSummary());
+            issueData.put("status", issue.getStatus().getName());
+            
             apiClient.notifyTicketResolved(issue.getKey(), issueData);
             
-            // Send notification that article generation has started
+            // Send notification
             NotificationService notificationService = NotificationService.getInstance();
             notificationService.notifyArticleGenerationStarted(issue);
             
-            // Simulate article generation completion after a delay (in production, this would be async)
-            simulateArticleGeneration(issue.getKey());
-            
-            // In a real implementation, you might:
-            // 1. Store this in Active Objects for tracking
-            // 2. Send a notification to users
-            // 3. Trigger an async job to generate the article
-            // 4. Update the issue with a comment about article generation
-            
-            // For now, just log success
-            log.info("Successfully processed resolution event for issue: {}", issue.getKey());
+            log.info("✅ Resolved issue processing complete");
             
         } catch (Exception e) {
-            log.error("Error processing resolved issue: " + issue.getKey(), e);
+            log.error("❌ Error processing resolved issue: " + issue.getKey(), e);
         }
-    }
-    
-    private void simulateArticleGeneration(final String issueKey) {
-        // In production, this would be handled by an async service or job
-        new Thread(() -> {
-            try {
-                // Wait 5 seconds to simulate processing
-                Thread.sleep(5000);
-                
-                // Simulate successful article generation
-                NotificationService notificationService = NotificationService.getInstance();
-                notificationService.notifyArticleGenerationComplete(
-                    issueKey,
-                    "Resolution Guide for " + issueKey,
-                    "This article contains the resolution steps and learnings from issue " + issueKey
-                );
-                
-            } catch (InterruptedException e) {
-                log.error("Article generation simulation interrupted", e);
-            }
-        }).start();
     }
 }
