@@ -15,6 +15,7 @@
         <resource type="download" name="jurix-ai.css" location="/css/jurix-ai.css"/>
         <resource type="download" name="dashboard.js" location="/js/dashboard.js"/>
         <resource type="download" name="chat-widget.js" location="/js/chat-widget.js"/>
+        <resource type="download" name="smart-suggestions.js" location="/js/smart-suggestions.js"/>
         
         <context>atl.general</context>
     </web-resource>
@@ -87,4 +88,13 @@
         <link linkId="jurix-dashboard-link">/plugins/servlet/jurix-dashboard?projectKey=$projectKey</link>
         <condition class="com.atlassian.jira.plugin.webfragment.conditions.UserLoggedInCondition"/>
     </web-item>
+
+    <!-- Smart Suggestions Panel -->
+    <web-panel key="smart-suggestions-panel" name="Smart Article Suggestions Panel" 
+            location="atl.jira.view.issue.left.context" weight="150">
+        <description>Shows AI-powered article suggestions for the current issue</description>
+        <context-provider class="com.jurix.ai.panel.SmartSuggestionsPanelProvider"/>
+        <resource name="view" type="velocity" location="/templates/smart-suggestions-panel.vm"/>
+        <condition class="com.atlassian.jira.plugin.webfragment.conditions.UserLoggedInCondition"/>
+    </web-panel>
 </atlassian-plugin>

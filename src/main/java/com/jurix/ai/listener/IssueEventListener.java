@@ -130,6 +130,10 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
                     handleIssueResolved(issue);
                 }
             }
+            // Remove or comment out the problematic block
+            // if (eventTypeId.equals(EventType.ISSUE_VIEWED_ID)) {
+            //     triggerSmartSuggestions(issue);
+            // }
 
         } catch (Exception e) {
             log.error("❌ Error handling issue event", e);
@@ -253,6 +257,49 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
             
         } catch (Exception e) {
             log.error("❌ Error processing resolved issue: " + issue.getKey(), e);
+        }
+    }
+
+    private void triggerSmartSuggestions(Issue issue) {
+        try {
+            // Prepare suggestion request
+            Map<String, Object> suggestionRequest = new HashMap<>();
+            suggestionRequest.put("issue_key", issue.getKey());
+            suggestionRequest.put("issue_summary", issue.getSummary());
+            suggestionRequest.put("issue_description", issue.getDescription());
+            suggestionRequest.put("issue_type", issue.getIssueType().getName());
+            suggestionRequest.put("issue_status", issue.getStatus().getName());
+            suggestionRequest.put("event_type", "issue_viewed");
+            suggestionRequest.put("timestamp", System.currentTimeMillis());
+            
+            // Send async request to suggestion service
+            RequestBody body = RequestBody.create(
+                MediaType.parse("application/json"),
+                gson.toJson(suggestionRequest)
+            );
+            
+            Request request = new Request.Builder()
+                .url("http://localhost:5001/api/suggest-articles")
+                .post(body)
+                .build();
+            
+            httpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    log.warn("Failed to trigger smart suggestions: {}", e.getMessage());
+                }
+                
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        log.info("Smart suggestions triggered for issue {}", issue.getKey());
+                    }
+                    response.close();
+                }
+            });
+            
+        } catch (Exception e) {
+            log.error("Error triggering smart suggestions", e);
         }
     }
 }
