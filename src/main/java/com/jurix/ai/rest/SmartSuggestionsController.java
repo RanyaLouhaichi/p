@@ -3,10 +3,13 @@ package com.jurix.ai.rest;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType; // JAX-RS MediaType for javax.ws.rs annotations
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +18,9 @@ import com.atlassian.plugins.rest.common.security.AnonymousAllowed;
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.IssueManager;
 import com.atlassian.jira.issue.MutableIssue;
-import okhttp3.*; // OkHttp classes
+import com.atlassian.jira.issue.label.Label;
+import com.atlassian.jira.bc.project.component.ProjectComponent;
+import okhttp3.*;
 import com.google.gson.Gson;
 
 @Named
@@ -30,36 +35,72 @@ public class SmartSuggestionsController {
         this.httpClient = new OkHttpClient.Builder().build();
     }
     
-    @GET
-    @Path("/issue/{issueKey}")
-    @Produces(MediaType.APPLICATION_JSON) // Use JAX-RS MediaType
+    @POST
+    @Path("/retrieve")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     @AnonymousAllowed
-    public Response getSuggestions(@PathParam("issueKey") String issueKey) {
+    public Response getSuggestionsForIssue(Map<String, Object> requestData) {
         try {
+            String issueKey = (String) requestData.get("issue_key");
             log.info("Getting suggestions for issue: {}", issueKey);
             
-            // Get issue details
+            // Get issue details from Jira
             IssueManager issueManager = ComponentAccessor.getIssueManager();
             MutableIssue issue = issueManager.getIssueObject(issueKey);
             
             if (issue == null) {
+                log.error("Issue not found: {}", issueKey);
                 return Response.status(Response.Status.NOT_FOUND)
                     .entity(createErrorResponse("Issue not found"))
                     .build();
             }
             
-            // Prepare request to Python backend
-            Map<String, Object> requestData = new HashMap<>();
-            requestData.put("issue_key", issueKey);
-            requestData.put("issue_summary", issue.getSummary());
-            requestData.put("issue_description", issue.getDescription() != null ? issue.getDescription() : "");
-            requestData.put("issue_type", issue.getIssueType().getName());
-            requestData.put("issue_status", issue.getStatus().getName());
+            // Extract issue details
+            Map<String, Object> issueData = new HashMap<>();
+            issueData.put("issue_key", issueKey);
+            issueData.put("issue_summary", issue.getSummary() != null ? issue.getSummary() : "");
+            issueData.put("issue_description", issue.getDescription() != null ? issue.getDescription() : "");
+            issueData.put("issue_type", issue.getIssueType() != null ? issue.getIssueType().getName() : "");
+            issueData.put("issue_status", issue.getStatus() != null ? issue.getStatus().getName() : "");
             
-            // Call Python backend
+            // Get labels
+            List<String> labels = issue.getLabels().stream()
+                .map(Label::getLabel)
+                .collect(Collectors.toList());
+            issueData.put("labels", labels);
+            
+            // Get components
+            List<String> components = issue.getComponents().stream()
+                .map(ProjectComponent::getName)
+                .collect(Collectors.toList());
+            issueData.put("components", components);
+            
+            // Get priority
+            if (issue.getPriority() != null) {
+                issueData.put("priority", issue.getPriority().getName());
+            }
+            
+            // Get assignee
+            if (issue.getAssignee() != null) {
+                issueData.put("assignee", issue.getAssignee().getDisplayName());
+            }
+            
+            // Get project key
+            issueData.put("project_key", issue.getProjectObject().getKey());
+            
+            log.info("Issue data extracted: summary='{}', type='{}', status='{}', labels={}, components={}", 
+                issue.getSummary(), 
+                issue.getIssueType().getName(),
+                issue.getStatus().getName(),
+                labels,
+                components
+            );
+            
+            // Call Python backend with complete issue data
             RequestBody body = RequestBody.create(
-                okhttp3.MediaType.parse("application/json"), // Use OkHttp MediaType
-                gson.toJson(requestData)
+                okhttp3.MediaType.parse("application/json"),
+                gson.toJson(issueData)
             );
             
             Request request = new Request.Builder()
@@ -71,6 +112,7 @@ public class SmartSuggestionsController {
                 String responseBody = backendResponse.body().string();
                 
                 if (backendResponse.isSuccessful()) {
+                    log.info("Successfully got suggestions from backend");
                     return Response.ok(responseBody).build();
                 } else {
                     log.error("Backend error: {}", responseBody);
@@ -82,44 +124,6 @@ public class SmartSuggestionsController {
             
         } catch (Exception e) {
             log.error("Error getting suggestions", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(createErrorResponse(e.getMessage()))
-                .build();
-        }
-    }
-    
-    @POST
-    @Path("/feedback")
-    @Consumes(MediaType.APPLICATION_JSON) // Use JAX-RS MediaType
-    @Produces(MediaType.APPLICATION_JSON) // Use JAX-RS MediaType
-    @AnonymousAllowed
-    public Response recordFeedback(Map<String, Object> feedbackData) {
-        try {
-            log.info("Recording feedback: {}", feedbackData);
-            
-            // Forward to Python backend
-            RequestBody body = RequestBody.create(
-                okhttp3.MediaType.parse("application/json"), // Use OkHttp MediaType
-                gson.toJson(feedbackData)
-            );
-            
-            Request request = new Request.Builder()
-                .url("http://localhost:5001/api/article-feedback")
-                .post(body)
-                .build();
-            
-            try (okhttp3.Response backendResponse = httpClient.newCall(request).execute()) {
-                if (backendResponse.isSuccessful()) {
-                    return Response.ok("{\"status\":\"success\"}").build();
-                } else {
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity(createErrorResponse("Failed to record feedback"))
-                        .build();
-                }
-            }
-            
-        } catch (Exception e) {
-            log.error("Error recording feedback", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity(createErrorResponse(e.getMessage()))
                 .build();
