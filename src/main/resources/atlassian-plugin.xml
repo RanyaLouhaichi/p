@@ -16,8 +16,13 @@
         <resource type="download" name="dashboard.js" location="/js/dashboard.js"/>
         <resource type="download" name="chat-widget.js" location="/js/chat-widget.js"/>
         <resource type="download" name="smart-suggestions.js" location="/js/smart-suggestions.js"/>
+        <resource type="download" name="live-suggestions.js" location="/js/live-suggestions.js"/>
         
         <context>atl.general</context>
+        <context>jira.global</context>
+        <context>jira.navigator.simple</context>
+        <context>jira.navigator.advanced</context>
+        <context>jira.create</context>
     </web-resource>
 
     <!-- REMOVE THIS ENTIRE SECTION - Active Objects is causing the error -->

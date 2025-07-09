@@ -5,60 +5,154 @@ window.SmartSuggestions = (function() {
     const BACKEND_URL = 'http://localhost:5001';
     let currentIssueKey = null;
     let suggestionsCache = {};
+    let isLoadingInProgress = false;
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
     
     function init() {
         console.log('Initializing SmartSuggestions...');
         
-        // Listen for issue view events
+        // Listen for Jira events with proper error handling
         if (typeof JIRA !== 'undefined' && JIRA.Events) {
             JIRA.bind(JIRA.Events.NEW_CONTENT_ADDED, function(e, context) {
-                checkAndLoadSuggestions();
+                // Debounce to avoid multiple calls
+                setTimeout(function() {
+                    checkAndLoadSuggestions();
+                }, 500);
+            });
+            
+            // Also listen for issue refresh events
+            JIRA.bind(JIRA.Events.ISSUE_REFRESHED, function(e, context) {
+                setTimeout(function() {
+                    checkAndLoadSuggestions();
+                }, 500);
             });
         }
         
-        // Also check on page load
+        // Use MutationObserver as fallback for dynamic content
+        setupMutationObserver();
+        
+        // Initial load with better timing
         AJS.$(document).ready(function() {
-            // Add a slight delay to ensure issue data is loaded
-            setTimeout(checkAndLoadSuggestions, 1000);
+            // Wait for issue data to be fully loaded
+            waitForIssueData(function() {
+                checkAndLoadSuggestions();
+            });
         });
+    }
+    
+    function waitForIssueData(callback, attempts = 0) {
+        const maxAttempts = 20; // 10 seconds max
+        
+        const issueKey = getIssueKey();
+        const issueContainer = AJS.$('#issue-content, .issue-view, #jira-issue-header');
+        
+        if (issueKey && issueContainer.length > 0) {
+            // Issue data is ready
+            callback();
+        } else if (attempts < maxAttempts) {
+            // Retry after 500ms
+            setTimeout(function() {
+                waitForIssueData(callback, attempts + 1);
+            }, 500);
+        } else {
+            console.error('Failed to detect issue data after maximum attempts');
+            showErrorState('Unable to load issue data. Please refresh the page.');
+        }
+    }
+    
+    function setupMutationObserver() {
+        // Watch for changes in the issue view
+        const targetNode = document.getElementById('content') || document.body;
+        const config = { childList: true, subtree: true };
+        
+        const observer = new MutationObserver(function(mutationsList) {
+            for (let mutation of mutationsList) {
+                if (mutation.type === 'childList') {
+                    // Check if issue view was added/changed
+                    const newIssueKey = getIssueKey();
+                    if (newIssueKey && newIssueKey !== currentIssueKey) {
+                        // Debounce to avoid multiple calls
+                        clearTimeout(window.suggestionDebounceTimer);
+                        window.suggestionDebounceTimer = setTimeout(function() {
+                            checkAndLoadSuggestions();
+                        }, 500);
+                    }
+                }
+            }
+        });
+        
+        observer.observe(targetNode, config);
     }
     
     function checkAndLoadSuggestions() {
         const issueKey = getIssueKey();
-        if (issueKey && issueKey !== currentIssueKey) {
-            currentIssueKey = issueKey;
-            console.log('Loading suggestions for issue:', issueKey);
-            loadSuggestions(issueKey);
+        
+        if (!issueKey) {
+            console.log('No issue key found, skipping suggestions');
+            return;
         }
+        
+        // Always try to show suggestions, even for the same issue
+        // This fixes the navigation back problem
+        console.log('Loading suggestions for issue:', issueKey);
+        currentIssueKey = issueKey;
+        loadSuggestions(issueKey);
     }
     
     function getIssueKey() {
-        // Multiple ways to get issue key
+        // Multiple ways to get issue key for better reliability
+        
+        // Method 1: From JIRA global object
         if (typeof JIRA !== 'undefined' && JIRA.Issue && JIRA.Issue.getIssueKey) {
-            return JIRA.Issue.getIssueKey();
+            const key = JIRA.Issue.getIssueKey();
+            if (key) return key;
         }
         
-        // Try from URL
+        // Method 2: From URL
         const match = window.location.pathname.match(/browse\/([A-Z]+-\d+)/);
         if (match) {
             return match[1];
         }
         
-        // Try from meta tag
+        // Method 3: From meta tag
         const metaTag = AJS.$('meta[name="ajs-issue-key"]');
         if (metaTag.length) {
             return metaTag.attr('content');
+        }
+        
+        // Method 4: From data attributes
+        const issueEl = AJS.$('[data-issue-key]').first();
+        if (issueEl.length) {
+            return issueEl.attr('data-issue-key');
+        }
+        
+        // Method 5: From issue header
+        const issueHeader = AJS.$('#key-val, .issue-link').first();
+        if (issueHeader.length) {
+            const text = issueHeader.text().trim();
+            const keyMatch = text.match(/([A-Z]+-\d+)/);
+            if (keyMatch) return keyMatch[1];
         }
         
         return null;
     }
     
     function loadSuggestions(issueKey) {
-        // Check cache first
+        // Prevent duplicate requests
+        if (isLoadingInProgress) {
+            console.log('Load already in progress, skipping');
+            return;
+        }
+        
+        // Check cache first and show immediately if available
         if (suggestionsCache[issueKey]) {
+            console.log('Showing cached suggestions for', issueKey);
             displaySuggestions(suggestionsCache[issueKey]);
             return;
         }
+        
+        isLoadingInProgress = true;
         
         // Show loading state
         showLoadingState();
@@ -69,26 +163,62 @@ window.SmartSuggestions = (function() {
             type: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ issue_key: issueKey }),
+            timeout: 30000, // 30 second timeout
             success: function(response) {
                 console.log('Suggestions response:', response);
-                if (response.status === 'success') {
+                retryCount = 0; // Reset retry count on success
+                
+                if (response.status === 'success' && response.suggestions) {
                     suggestionsCache[issueKey] = response.suggestions;
                     displaySuggestions(response.suggestions);
                 } else {
-                    showErrorState();
+                    showNoSuggestionsState();
                 }
             },
             error: function(xhr, status, error) {
                 console.error('Failed to load suggestions:', error);
-                showErrorState();
+                handleLoadError(issueKey, xhr, status, error);
+            },
+            complete: function() {
+                isLoadingInProgress = false;
             }
         });
+    }
+    
+    function handleLoadError(issueKey, xhr, status, error) {
+        // Implement retry logic
+        if (retryCount < MAX_RETRIES) {
+            retryCount++;
+            console.log(`Retrying... (attempt ${retryCount}/${MAX_RETRIES})`);
+            
+            // Exponential backoff
+            const retryDelay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000);
+            
+            setTimeout(function() {
+                isLoadingInProgress = false;
+                loadSuggestions(issueKey);
+            }, retryDelay);
+        } else {
+            // Show a user-friendly error message
+            let errorMessage = 'Unable to load article suggestions. ';
+            
+            if (status === 'timeout') {
+                errorMessage += 'The request timed out.';
+            } else if (xhr.status === 0) {
+                errorMessage += 'Please check your connection.';
+            } else if (xhr.status >= 500) {
+                errorMessage += 'Server error occurred.';
+            }
+            
+            showErrorState(errorMessage);
+            retryCount = 0; // Reset for next attempt
+        }
     }
     
     function displaySuggestions(suggestions) {
         console.log('Displaying suggestions:', suggestions);
         
-        // Remove existing panel if any
+        // Remove any existing panel first
         AJS.$('#smart-suggestions-panel').remove();
         
         if (!suggestions || suggestions.length === 0) {
@@ -99,13 +229,19 @@ window.SmartSuggestions = (function() {
         // Create suggestions panel
         const panel = createSuggestionsPanel(suggestions);
         
-        // Insert in the right sidebar or after description
+        // Insert in the right sidebar with better positioning
         let inserted = false;
         
-        // Try right panel first
+        // Try right panel first (preferred location)
         const rightPanel = AJS.$('#viewissuesidebar');
         if (rightPanel.length > 0) {
-            rightPanel.prepend(panel);
+            // Insert after People section but before Dates
+            const peopleModule = rightPanel.find('.people-module');
+            if (peopleModule.length > 0) {
+                peopleModule.after(panel);
+            } else {
+                rightPanel.prepend(panel);
+            }
             inserted = true;
         }
         
@@ -120,28 +256,90 @@ window.SmartSuggestions = (function() {
         
         // Last fallback
         if (!inserted) {
-            AJS.$('.issue-main-column').prepend(panel);
+            const issueMain = AJS.$('.issue-main-column');
+            if (issueMain.length > 0) {
+                issueMain.prepend(panel);
+            }
         }
         
         // Bind feedback events
         bindFeedbackEvents();
+        
+        // Animate in
+        setTimeout(function() {
+            AJS.$('#smart-suggestions-panel').addClass('suggestions-loaded');
+        }, 100);
+    }
+    
+    function showLoadingState() {
+        // Remove any existing panel
+        AJS.$('#smart-suggestions-panel').remove();
+        
+        const loadingHtml = `
+            <div id="smart-suggestions-panel" class="module">
+                <div class="mod-header">
+                    <h2>
+                        <span class="aui-icon aui-icon-small aui-iconfont-lightbulb"></span>
+                        Suggested Articles
+                    </h2>
+                </div>
+                <div class="mod-content">
+                    <div class="loading-suggestions">
+                        <div class="aui-spinner"></div>
+                        <p>Finding relevant articles...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Try to insert in the same location logic as displaySuggestions
+        const rightPanel = AJS.$('#viewissuesidebar');
+        if (rightPanel.length > 0) {
+            const peopleModule = rightPanel.find('.people-module');
+            if (peopleModule.length > 0) {
+                peopleModule.after(loadingHtml);
+            } else {
+                rightPanel.prepend(loadingHtml);
+            }
+        } else {
+            AJS.$('.issue-main-column').prepend(loadingHtml);
+        }
     }
     
     function showNoSuggestionsState() {
         const panel = `
             <div id="smart-suggestions-panel" class="module">
                 <div class="mod-header">
-                    <h2>Suggested Articles</h2>
+                    <h2>
+                        <span class="aui-icon aui-icon-small aui-iconfont-lightbulb"></span>
+                        Suggested Articles
+                    </h2>
                 </div>
                 <div class="mod-content">
                     <div class="no-suggestions">
                         <p>No relevant articles found for this issue.</p>
+                        <p class="suggestion-help-text">Articles will appear here as our knowledge base grows.</p>
                     </div>
                 </div>
             </div>
         `;
         
-        AJS.$('#viewissuesidebar').prepend(panel);
+        AJS.$('#smart-suggestions-panel').replaceWith(panel);
+    }
+    
+    function showErrorState(errorMessage) {
+        const panel = AJS.$('#smart-suggestions-panel');
+        if (panel.length) {
+            panel.find('.mod-content').html(`
+                <div class="error-suggestions">
+                    <span class="aui-icon aui-icon-small aui-iconfont-error"></span>
+                    <p>${errorMessage || 'Unable to load suggestions. Please try refreshing the page.'}</p>
+                    <button class="aui-button aui-button-link retry-button" onclick="SmartSuggestions.retryLoad()">
+                        Try Again
+                    </button>
+                </div>
+            `);
+        }
     }
     
     function createSuggestionsPanel(suggestions) {
@@ -151,6 +349,7 @@ window.SmartSuggestions = (function() {
                     <h2>
                         <span class="aui-icon aui-icon-small aui-iconfont-lightbulb"></span>
                         Suggested Articles
+                        <span class="suggestion-count">(${suggestions.length})</span>
                     </h2>
                 </div>
                 <div class="mod-content">
@@ -172,7 +371,9 @@ window.SmartSuggestions = (function() {
                             </a>
                         </h4>
                         <div class="suggestion-relevance">
-                            <span class="aui-lozenge aui-lozenge-subtle">${relevancePercent}% match</span>
+                            <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-${relevanceClass === 'high-relevance' ? 'success' : relevanceClass === 'medium-relevance' ? 'current' : 'default'}">
+                                ${relevancePercent}% match
+                            </span>
                         </div>
                     </div>
                     <div class="suggestion-reason">
@@ -208,41 +409,6 @@ window.SmartSuggestions = (function() {
         return html;
     }
     
-    function showLoadingState() {
-        AJS.$('#smart-suggestions-panel').remove();
-        
-        const loadingHtml = `
-            <div id="smart-suggestions-panel" class="module">
-                <div class="mod-header">
-                    <h2>
-                        <span class="aui-icon aui-icon-small aui-iconfont-lightbulb"></span>
-                        Suggested Articles
-                    </h2>
-                </div>
-                <div class="mod-content">
-                    <div class="loading-suggestions">
-                        <span class="aui-icon aui-icon-wait"></span>
-                        Finding relevant articles...
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        AJS.$('#viewissuesidebar').prepend(loadingHtml);
-    }
-    
-    function showErrorState() {
-        const panel = AJS.$('#smart-suggestions-panel');
-        if (panel.length) {
-            panel.find('.mod-content').html(`
-                <div class="error-suggestions">
-                    <span class="aui-icon aui-icon-small aui-iconfont-error"></span>
-                    Unable to load suggestions. Please try refreshing the page.
-                </div>
-            `);
-        }
-    }
-    
     function bindFeedbackEvents() {
         // Helpful feedback
         AJS.$('.feedback-helpful').off('click').on('click', function(e) {
@@ -251,7 +417,7 @@ window.SmartSuggestions = (function() {
             sendFeedback(articleId, true);
             
             // Visual feedback
-            AJS.$(this).addClass('aui-button-primary');
+            AJS.$(this).addClass('aui-button-primary feedback-given');
             AJS.$(this).prop('disabled', true);
             AJS.$(this).siblings('.feedback-not-relevant').prop('disabled', true);
             
@@ -266,7 +432,7 @@ window.SmartSuggestions = (function() {
             sendFeedback(articleId, false);
             
             // Visual feedback
-            AJS.$(this).addClass('aui-button-primary');
+            AJS.$(this).addClass('aui-button-primary feedback-given');
             AJS.$(this).prop('disabled', true);
             AJS.$(this).siblings('.feedback-helpful').prop('disabled', true);
             
@@ -283,7 +449,12 @@ window.SmartSuggestions = (function() {
             sendFeedback(articleId, true);
             
             // Show article content (you can implement a modal or redirect)
-            alert('Article viewer not implemented yet. Article ID: ' + articleId);
+            AJS.flag({
+                type: 'info',
+                title: 'Article Viewer',
+                body: 'Article viewer not implemented yet. Article ID: ' + articleId,
+                close: 'auto'
+            });
         });
     }
     
@@ -309,12 +480,20 @@ window.SmartSuggestions = (function() {
         });
     }
     
-    // Public API
+    // Public methods
     return {
         init: init,
         loadSuggestions: loadSuggestions,
         clearCache: function() {
             suggestionsCache = {};
+            currentIssueKey = null;
+        },
+        retryLoad: function() {
+            retryCount = 0;
+            isLoadingInProgress = false;
+            if (currentIssueKey) {
+                loadSuggestions(currentIssueKey);
+            }
         }
     };
 })();
