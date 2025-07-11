@@ -1,957 +1,1343 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>JURIX Analytics - $projectName</title>
+    <title>JURIX AI Dashboard - $projectName</title>
     <meta charset="utf-8">
     <meta name="decorator" content="atl.general">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    ## Chart.js
+    ## Chart.js for charts
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
     
+    ## Include the complete dashboard styles from your paste.txt
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
-        :root {
-            /* Modern Color Palette with Jira Blue */
-            --primary: #0052CC;
-            --primary-dark: #0747A6;
-            --primary-light: #4C9AFF;
-            --primary-lighter: #B3D4FF;
-            --primary-lightest: #DEEBFF;
-            
-            /* Neutral Colors */
-            --gray-900: #172B4D;
-            --gray-800: #253858;
-            --gray-700: #344563;
-            --gray-600: #42526E;
-            --gray-500: #5E6C84;
-            --gray-400: #6B778C;
-            --gray-300: #97A0AF;
-            --gray-200: #C1C7D0;
-            --gray-100: #DFE1E6;
-            --gray-50: #F4F5F7;
-            --white: #FFFFFF;
-            
-            /* Status Colors */
-            --success: #00875A;
-            --success-light: #36B37E;
-            --success-bg: #E3FCEF;
-            
-            --warning: #FF991F;
-            --warning-light: #FFAB00;
-            --warning-bg: #FFF7E6;
-            
-            --danger: #DE350B;
-            --danger-light: #FF5630;
-            --danger-bg: #FFEBE6;
-            
-            --purple: #6554C0;
-            --purple-light: #8777D9;
-            --purple-bg: #EAE6FF;
-            
-            /* Shadows */
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
-            
-            /* Border Radius */
-            --radius: 8px;
-            --radius-lg: 12px;
-            --radius-xl: 16px;
-        }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-            background: #FAFBFC;
-            color: var(--gray-900);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background-color: #f7f8fa;
+            color: #172b4d;
+            font-size: 14px;
             line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
         }
-        
-        /* Main Dashboard Container */
-        .dashboard-container {
-            max-width: 1400px;
+
+        .container {
+            max-width: 1600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 20px 24px;
         }
-        
-        /* Compact Header */
-        .dashboard-header {
+
+        /* Header */
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 16px;
+            margin-bottom: 28px;
+            background-color: white;
+            padding: 20px 28px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
         }
-        
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        
-        .dashboard-title {
+
+        .header h1 {
             font-size: 24px;
             font-weight: 600;
-            color: var(--gray-900);
-            margin: 0;
+            color: #172b4d;
         }
-        
-        .header-actions {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-        
-        .btn {
-            padding: 8px 16px;
-            border-radius: 6px;
+
+        .add-ticket-btn {
+            background-color: #0052CC;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 8px;
-            white-space: nowrap;
+            transition: all 0.2s;
         }
-        
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-dark);
+
+        .add-ticket-btn:hover {
+            background-color: #0747A6;
             transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 4px 8px rgba(0,82,204,0.2);
         }
-        
-        .btn-secondary {
-            background: white;
-            color: var(--gray-700);
-            border: 1px solid var(--gray-200);
-        }
-        
-        .btn-secondary:hover {
-            background: var(--gray-50);
-            border-color: var(--gray-300);
-        }
-        
-        /* Modern Card Design */
-        .card {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--gray-100);
-            transition: all 0.2s ease;
-            height: 100%;
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 56px;
+            height: 100vh;
+            background-color: white;
+            box-shadow: 1px 0 3px rgba(0,0,0,0.06);
             display: flex;
             flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            gap: 8px;
         }
-        
-        .card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-        }
-        
-        /* Metrics Grid - Compact Layout */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        
-        .metric-card {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--gray-100);
-            position: relative;
-            overflow: hidden;
+
+        .sidebar-icon {
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            color: #5e6c84;
         }
-        
-        .metric-content {
-            flex: 1;
+
+        .sidebar-icon:hover {
+            background-color: #f4f5f7;
+            color: #0052CC;
         }
-        
-        .metric-label {
-            font-size: 12px;
-            color: var(--gray-500);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+
+        .sidebar-icon.active {
+            background-color: #0052CC;
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 72px;
+        }
+
+        /* Stats Grid - now 5 columns including alert */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: all 0.2s;
+            position: relative;
+            border: 1px solid transparent;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 600;
             margin-bottom: 4px;
+            color: #172b4d;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #5e6c84;
+            margin-bottom: 8px;
             font-weight: 500;
         }
-        
-        .metric-value {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--gray-900);
-            line-height: 1;
-            margin-bottom: 8px;
+
+        .stat-change {
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
         }
-        
-        .metric-change {
+
+        .stat-change.positive {
+            color: #00875a;
+        }
+
+        .stat-change.negative {
+            color: #de350b;
+        }
+
+        .view-details-btn {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
             font-size: 12px;
+            color: #8993a4;
+            background: transparent;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 4px;
         }
-        
-        .metric-change.positive {
-            color: var(--success);
+
+        .view-details-btn:hover {
+            background: #f4f5f7;
+            color: #5e6c84;
         }
-        
-        .metric-change.negative {
-            color: var(--danger);
-        }
-        
-        .metric-icon {
-            width: 48px;
-            height: 48px;
+
+        /* Alert Card - Same style as other cards but with alert features */
+        .alert-card {
+            background-color: white;
+            padding: 20px;
             border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            transition: all 0.2s;
+            position: relative;
+            border: 1px solid transparent;
+            cursor: pointer;
+            overflow: hidden;
         }
-        
-        .metric-icon.blue {
-            background: var(--primary-lightest);
-            color: var(--primary);
+
+        .alert-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
         }
-        
-        .metric-icon.green {
-            background: var(--success-bg);
-            color: var(--success);
+
+        /* Subtle alert indicator */
+        .alert-indicator {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #de350b;
+            animation: alertPulse 2s ease-in-out infinite;
         }
-        
-        .metric-icon.purple {
-            background: var(--purple-bg);
-            color: var(--purple);
+
+        @keyframes alertPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
         }
-        
-        .metric-icon.orange {
-            background: var(--warning-bg);
-            color: var(--warning);
+
+        .alert-dot {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 8px;
+            height: 8px;
+            background-color: #de350b;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
         }
-        
-        /* Main Content Grid */
-        .content-grid {
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(222,53,11,0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(222,53,11,0); }
+            100% { box-shadow: 0 0 0 0 rgba(222,53,11,0); }
+        }
+
+        .alert-value {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #de350b;
+        }
+
+        .alert-label {
+            font-size: 13px;
+            color: #5e6c84;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .alert-details {
+            font-size: 13px;
+            color: #de350b;
+            font-weight: 600;
+        }
+
+        /* Remove old banner styles */
+        .alert-banner {
+            display: none;
+        }
+
+        /* Charts Section */
+        .charts-grid {
             display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 20px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 28px;
         }
-        
-        /* Column Spans */
-        .col-3 { grid-column: span 3; }
-        .col-4 { grid-column: span 4; }
-        .col-6 { grid-column: span 6; }
-        .col-8 { grid-column: span 8; }
-        .col-12 { grid-column: span 12; }
-        
-        /* Card Header */
-        .card-header {
+
+        .chart-card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .chart-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #172b4d;
+        }
+
+        .chart-subtitle {
+            font-size: 12px;
+            color: #5e6c84;
+            margin-bottom: 16px;
+        }
+
+        .chart-container {
+            height: 200px;
+            position: relative;
+        }
+
+        /* Sprint Progress */
+        .progress-legend {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+            gap: 20px;
+            margin-bottom: 16px;
+            font-size: 12px;
         }
-        
-        .card-title {
+
+        .progress-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .progress-legend-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .sprint-progress-container {
+            height: 180px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 0 10px;
+        }
+
+        .week-bar {
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stacked-bar {
+            width: 100%;
+            height: 160px;
+            display: flex;
+            flex-direction: column-reverse;
+            border-radius: 4px 4px 0 0;
+            overflow: hidden;
+            margin-bottom: 8px;
+            background: #f4f5f7;
+            position: relative;
+        }
+
+        .bar-segment {
+            width: 100%;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .bar-segment.completed {
+            background-color: #0052CC;
+        }
+
+        .bar-segment.in-progress {
+            background-color: #6B88F7;
+        }
+
+        .bar-segment.todo {
+            background-color: #DFE5FF;
+        }
+
+        .week-label {
+            font-size: 12px;
+            color: #5e6c84;
+        }
+
+        /* Burndown Chart */
+        .burndown-chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Velocity Chart */
+        .velocity-chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* AI INSIGHTS SECTION */
+        .ai-insights-wrapper {
+            background-color: white;
+            border-radius: 16px;
+            padding: 28px 32px;
+            margin-top: 28px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e4e6ea;
+        }
+
+        /* Creative accent - subtle geometric pattern */
+        .ai-insights-wrapper::after {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(45deg, transparent 48%, #f0f2f5 48%, #f0f2f5 52%, transparent 52%);
+            background-size: 30px 30px;
+            opacity: 0.5;
+            transform: rotate(45deg);
+        }
+
+        .ai-header {
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .ai-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #172b4d;
+            margin-bottom: 0;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* AI indicator - subtle and professional */
+        .ai-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 12px;
+            background: #f4f5f7;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #5e6c84;
+            letter-spacing: 0.5px;
+        }
+
+        .ai-indicator::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            background: #5e6c84;
+            border-radius: 50%;
+            animation: ai-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes ai-pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* Top Action Buttons */
+        .ai-top-actions {
+            position: absolute;
+            top: 28px;
+            right: 32px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .ai-action-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .ai-action-btn.primary {
+            background-color: #0052CC;
+            color: white;
+        }
+
+        .ai-action-btn.primary:hover {
+            background-color: #0747A6;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,82,204,0.15);
+        }
+
+        .ai-action-btn.secondary {
+            background-color: white;
+            color: #42526e;
+            border: 1px solid #dfe1e6;
+        }
+
+        .ai-action-btn.secondary:hover {
+            background-color: #f4f5f7;
+            border-color: #c1c7d0;
+        }
+
+        /* Main Grid Layout */
+        .ai-content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+        }
+
+        /* Left Column */
+        .ai-left-section {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Risk Assessment Card */
+        .risk-card {
+            background-color: #f7f8fa;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            border: 1px solid #e4e6ea;
+        }
+
+        .risk-header {
+            margin-bottom: 18px;
+        }
+
+        .risk-title {
             font-size: 16px;
             font-weight: 600;
-            color: var(--gray-900);
-            margin: 0;
+            color: #172b4d;
+            margin-bottom: 8px;
         }
-        
-        .card-subtitle {
+
+        .risk-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #172b4d;
+            margin-bottom: 4px;
+        }
+
+        .risk-label {
             font-size: 13px;
-            color: var(--gray-500);
-            margin-top: 2px;
+            color: #6b778c;
         }
-        
-        /* Chart Container */
-        .chart-container {
-            position: relative;
-            flex: 1;
-            min-height: 200px;
-        }
-        
-        .chart-container canvas {
-            max-height: 300px;
-        }
-        
-        /* Compact Lists */
-        .list-item {
-            padding: 12px 0;
-            border-bottom: 1px solid var(--gray-100);
+
+        /* Bar Chart */
+        .bar-chart {
+            height: 80px;
             display: flex;
+            align-items: flex-end;
             justify-content: space-between;
-            align-items: center;
+            gap: 4px;
+            margin-top: 16px;
         }
-        
-        .list-item:last-child {
+
+        .bar {
+            flex: 1;
+            background: #e4e6ea;
+            border-radius: 2px 2px 0 0;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .bar.active {
+            background: #0052CC;
+        }
+
+        .bar:hover {
+            background: #c1c7d0;
+        }
+
+        .bar.active:hover {
+            background: #0747A6;
+        }
+
+        .bar-label {
+            position: absolute;
+            bottom: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: #8993a4;
+        }
+
+        /* Project Predictions */
+        .market-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #f0f2f5;
+        }
+
+        .prediction-item {
+            padding: 16px 0;
+            border-bottom: 1px solid #f0f2f5;
+        }
+
+        .prediction-item:last-child {
             border-bottom: none;
             padding-bottom: 0;
         }
-        
-        .list-item-title {
-            font-size: 14px;
-            color: var(--gray-900);
-            font-weight: 500;
+
+        .prediction-item:first-child {
+            padding-top: 0;
         }
-        
-        .list-item-desc {
-            font-size: 12px;
-            color: var(--gray-500);
-            margin-top: 2px;
-        }
-        
-        .list-item-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--gray-700);
-        }
-        
-        /* Status Badge */
-        .status-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .status-badge.success {
-            background: var(--success-bg);
-            color: var(--success);
-        }
-        
-        .status-badge.warning {
-            background: var(--warning-bg);
-            color: var(--warning);
-        }
-        
-        .status-badge.danger {
-            background: var(--danger-bg);
-            color: var(--danger);
-        }
-        
-        /* Predictions Card */
-        .prediction-item {
-            padding: 16px;
-            background: var(--gray-50);
-            border-radius: 8px;
-            margin-bottom: 12px;
+
+        .prediction-header {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .prediction-item:last-child {
-            margin-bottom: 0;
-        }
-        
-        .prediction-label {
-            font-size: 13px;
-            color: var(--gray-600);
-            margin-bottom: 4px;
-        }
-        
-        .prediction-value {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--gray-900);
-        }
-        
-        /* Recommendations */
-        .recommendation-item {
-            padding: 16px;
-            background: var(--gray-50);
-            border-radius: 8px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-        }
-        
-        .recommendation-item:hover {
-            background: var(--primary-lightest);
-            border-color: var(--primary-lighter);
-            transform: translateX(4px);
-        }
-        
-        .recommendation-item:last-child {
-            margin-bottom: 0;
-        }
-        
-        .recommendation-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--gray-900);
-            margin-bottom: 4px;
-        }
-        
-        .recommendation-desc {
-            font-size: 12px;
-            color: var(--gray-600);
-            line-height: 1.5;
-        }
-        
-        /* Team Grid */
-        .team-grid {
-            display: grid;
-            grid-template-columns: 1fr;
+            align-items: flex-start;
             gap: 12px;
+            margin-bottom: 8px;
         }
-        
-        .team-member {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            background: var(--gray-50);
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-        
-        .team-member:hover {
-            background: var(--gray-100);
-        }
-        
-        .member-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 13px;
-        }
-        
-        .member-info {
-            flex: 1;
-        }
-        
-        .member-name {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--gray-900);
-        }
-        
-        .member-status {
-            font-size: 11px;
-            color: var(--gray-500);
-        }
-        
-        .member-load {
+
+        .prediction-icon {
             width: 32px;
             height: 32px;
-        }
-        
-        /* Activity Timeline */
-        .timeline-content {
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-        
-        .timeline-content::-webkit-scrollbar {
-            width: 4px;
-        }
-        
-        .timeline-content::-webkit-scrollbar-track {
-            background: var(--gray-50);
-        }
-        
-        .timeline-content::-webkit-scrollbar-thumb {
-            background: var(--gray-200);
-            border-radius: 2px;
-        }
-        
-        .timeline-item {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 16px;
-            position: relative;
-        }
-        
-        .timeline-item:not(:last-child)::before {
-            content: '';
-            position: absolute;
-            left: 18px;
-            top: 36px;
-            bottom: -16px;
-            width: 1px;
-            background: var(--gray-100);
-        }
-        
-        .timeline-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            background: white;
-            border: 2px solid var(--gray-100);
+            margin-top: 2px;
         }
-        
-        .timeline-icon.success {
-            border-color: var(--success-light);
-            color: var(--success);
-            background: var(--success-bg);
+
+        .prediction-icon.growth {
+            background-color: rgba(0,82,204,0.1);
+            color: #0052CC;
         }
-        
-        .timeline-icon.warning {
-            border-color: var(--warning-light);
-            color: var(--warning);
-            background: var(--warning-bg);
+
+        .prediction-icon.warning {
+            background-color: rgba(255,171,0,0.1);
+            color: #ffab00;
         }
-        
-        .timeline-icon.info {
-            border-color: var(--primary-light);
-            color: var(--primary);
-            background: var(--primary-lightest);
+
+        .prediction-icon svg {
+            width: 16px;
+            height: 16px;
         }
-        
-        .timeline-body {
+
+        .prediction-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #172b4d;
+            margin-bottom: 4px;
+        }
+
+        .prediction-description {
+            font-size: 13px;
+            color: #6b778c;
+            line-height: 1.5;
+            margin-bottom: 6px;
+        }
+
+        .prediction-metric {
+            font-size: 13px;
+            color: #0052CC;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Right Column */
+        .ai-right-section {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Performance Forecasts */
+        .performance-card {
+            background-color: #f7f8fa;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e4e6ea;
+        }
+
+        .performance-subtitle {
+            font-size: 13px;
+            color: #6b778c;
+            margin-top: 6px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        /* Creative Pills Design */
+        .forecast-pills {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .forecast-pill {
             flex: 1;
-            padding-top: 6px;
-        }
-        
-        .timeline-title {
+            padding: 12px 16px;
+            text-align: center;
             font-size: 13px;
             font-weight: 500;
-            color: var(--gray-900);
-            margin-bottom: 2px;
+            color: #6b778c;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            background: transparent;
+            border: none;
         }
-        
-        .timeline-time {
-            font-size: 11px;
-            color: var(--gray-500);
+
+        .forecast-pill::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e4e6ea;
+            transition: all 0.3s;
         }
-        
-        /* Alert Bar */
-        .alert-bar {
-            background: var(--warning-bg);
-            border: 1px solid var(--warning-light);
-            border-radius: var(--radius);
-            padding: 12px 16px;
-            margin-bottom: 20px;
+
+        .forecast-pill:hover {
+            color: #42526e;
+        }
+
+        .forecast-pill:hover::before {
+            background: #c1c7d0;
+        }
+
+        .forecast-pill.active {
+            color: #0052CC;
+            font-weight: 600;
+        }
+
+        .forecast-pill.active::before {
+            height: 3px;
+            background: #0052CC;
+        }
+
+        /* Floating indicator dot */
+        .forecast-indicator {
+            position: absolute;
+            top: -8px;
+            width: 6px;
+            height: 6px;
+            background: #0052CC;
+            border-radius: 50%;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,82,204,0.3);
+        }
+
+        .forecast-indicator.pos-1 {
+            left: calc(16.67% - 3px);
+        }
+
+        .forecast-indicator.pos-2 {
+            left: calc(50% - 3px);
+        }
+
+        .forecast-indicator.pos-3 {
+            left: calc(83.33% - 3px);
+        }
+
+        /* AI Recommendations Grid */
+        .recommendations-section {
+            margin-top: 0;
+        }
+
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .recommendation-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #f0f2f5;
+        }
+
+        .recommendation-card:hover {
+            border-color: #dfe1e6;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        }
+
+        .rec-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .rec-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .rec-icon.portfolio {
+            background-color: rgba(0,82,204,0.1);
+            color: #0052CC;
+        }
+
+        .rec-icon.compliance {
+            background-color: rgba(0,135,90,0.1);
+            color: #00875a;
+        }
+
+        .rec-icon.service {
+            background-color: rgba(255,171,0,0.1);
+            color: #ffab00;
+        }
+
+        .rec-icon.risk {
+            background-color: rgba(101,84,192,0.1);
+            color: #6554C0;
+        }
+
+        .rec-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #172b4d;
+            margin-bottom: 4px;
+        }
+
+        .rec-description {
+            font-size: 13px;
+            color: #6b778c;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .apply-btn {
+            width: 100%;
+            padding: 8px 14px;
+            background-color: white;
+            color: #0052CC;
+            border: 1.5px solid #0052CC;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .apply-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: #0052CC;
+            transition: left 0.3s ease;
+            z-index: 0;
+        }
+
+        .apply-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .apply-btn:hover {
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,82,204,0.15);
+        }
+
+        .apply-btn:hover::before {
+            left: 0;
+        }
+
+        .forecast-start-btn {
+            margin-top: 0;
+            width: auto;
+            padding: 8px 16px;
+            background-color: #0052CC;
+            color: white;
+            border: none;
+        }
+
+        .forecast-start-btn:hover {
+            background-color: #0747A6;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .alert-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            padding: 28px;
+            width: 520px;
+            max-width: 90vw;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .alert-modal.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .modal-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 14px;
+            margin-bottom: 24px;
         }
-        
-        .alert-bar.danger {
-            background: var(--danger-bg);
-            border-color: var(--danger-light);
-        }
-        
-        .alert-content {
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #172b4d;
             display: flex;
             align-items: center;
             gap: 12px;
         }
-        
-        .alert-icon {
-            width: 20px;
-            height: 20px;
-            color: var(--warning);
-        }
-        
-        .alert-bar.danger .alert-icon {
-            color: var(--danger);
-        }
-        
-        .alert-actions {
+
+        .close-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: #f4f5f7;
+            border-radius: 50%;
+            cursor: pointer;
             display: flex;
-            gap: 8px;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
-        
-        /* Loading State */
-        .loading {
-            opacity: 0.6;
+
+        .close-btn:hover {
+            background: #ebecf0;
+        }
+
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .alert-item {
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #ffebe6;
+            background: #fffbfa;
+            transition: all 0.2s;
+        }
+
+        .alert-item:hover {
+            background: #ffebe6;
+            transform: translateX(4px);
+        }
+
+        .alert-item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .alert-severity {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff5630;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0% { box-shadow: 0 0 0 0 rgba(255,86,48,0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(255,86,48,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,86,48,0); }
+        }
+
+        .alert-text {
+            font-size: 14px;
+            color: #172b4d;
+            font-weight: 500;
+        }
+
+        .alert-time {
+            font-size: 12px;
+            color: #5e6c84;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #172b4d;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
             pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 1000;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
-        
-        .loading::after {
+
+        .tooltip.show {
+            opacity: 0.95;
+        }
+
+        .tooltip::after {
             content: '';
             position: absolute;
-            top: 50%;
+            bottom: -4px;
             left: 50%;
-            width: 20px;
-            height: 20px;
-            margin: -10px 0 0 -10px;
-            border: 2px solid var(--primary-lightest);
-            border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 0.8s linear infinite;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #172b4d;
         }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+
+        /* Responsive */
+        @media (max-width: 1400px) {
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .ai-content-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
         }
-        
-        /* Responsive Design */
+
         @media (max-width: 1200px) {
-            .metrics-grid {
+            .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
             
-            .content-grid {
-                grid-template-columns: repeat(8, 1fr);
+            .charts-grid {
+                grid-template-columns: 1fr;
             }
-            
-            .col-3 { grid-column: span 4; }
-            .col-4 { grid-column: span 4; }
-            .col-6 { grid-column: span 8; }
         }
-        
+
         @media (max-width: 768px) {
-            .dashboard-container {
-                padding: 16px;
-            }
-            
-            .dashboard-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .metrics-grid {
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
             
-            .content-grid {
-                grid-template-columns: 1fr;
-                gap: 16px;
+            .main-content {
+                margin-left: 0;
             }
             
-            .col-3, .col-4, .col-6, .col-8, .col-12 {
-                grid-column: span 1;
+            .sidebar {
+                display: none;
             }
-        }
-        
-        /* Utility Classes */
-        .text-muted { color: var(--gray-500); }
-        .text-small { font-size: 12px; }
-        .font-medium { font-weight: 500; }
-        .font-semibold { font-weight: 600; }
-        .mb-0 { margin-bottom: 0; }
-        .mb-2 { margin-bottom: 8px; }
-        .mb-3 { margin-bottom: 12px; }
-        .mb-4 { margin-bottom: 16px; }
-        
-        /* Remove Jira-specific overrides */
-        #content {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        
-        .dashboard-container h1, 
-        .dashboard-container h2, 
-        .dashboard-container h3, 
-        .dashboard-container h4, 
-        .dashboard-container h5, 
-        .dashboard-container h6 {
-            margin: 0;
-            padding: 0;
-            line-height: 1.2;
+            
+            .recommendations-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        ## Compact Header
-        <div class="dashboard-header">
-            <div class="header-left">
-                <h1 class="dashboard-title">$projectName Analytics</h1>
-            </div>
-            <div class="header-actions">
-                <select class="btn btn-secondary" style="appearance: auto; padding-right: 32px;">
-                    <option>Last 30 days</option>
-                    <option>Last 7 days</option>
-                    <option>Last quarter</option>
-                </select>
-                <button class="btn btn-primary" onclick="JurixDashboard.loadDashboardData()">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                    </svg>
-                    Refresh Data
-                </button>
-            </div>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-icon active">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="3" y="3" width="8" height="8" rx="1"/>
+                <rect x="13" y="3" width="8" height="8" rx="1"/>
+                <rect x="3" y="13" width="8" height="8" rx="1"/>
+                <rect x="13" y="13" width="8" height="8" rx="1"/>
+            </svg>
         </div>
-        
-        ## Alert Bar
-        <div class="alert-bar" id="alertBar" style="display: none;">
-            <div class="alert-content">
-                <svg class="alert-icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                </svg>
-                <span id="alertText">Sprint health check: 3 items at risk of missing deadline</span>
-            </div>
-            <div class="alert-actions">
-                <button class="btn btn-secondary" onclick="viewAlert()">View Details</button>
-                <button class="btn btn-secondary" onclick="dismissAlert()">×</button>
-            </div>
+        <div class="sidebar-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M12 8v8m-4-4h8"/>
+            </svg>
         </div>
-        
-        ## Metrics Cards - Compact Layout
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-content">
-                    <div class="metric-label">Sprint Velocity</div>
-                    <div class="metric-value" id="velocityMetric">0</div>
-                    <div class="metric-change positive">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M7 14l5-5 5 5H7z"/>
-                        </svg>
-                        +12% from last sprint
-                    </div>
-                </div>
-                <div class="metric-icon blue">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
-                    </svg>
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-content">
-                    <div class="metric-label">Cycle Time</div>
-                    <div class="metric-value" id="cycleTimeMetric">0d</div>
-                    <div class="metric-change positive">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M7 14l5-5 5 5H7z"/>
-                        </svg>
-                        -0.5 days improvement
-                    </div>
-                </div>
-                <div class="metric-icon green">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-                        <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-content">
-                    <div class="metric-label">Team Efficiency</div>
-                    <div class="metric-value" id="efficiencyMetric">0%</div>
-                    <div class="metric-change positive">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M7 14l5-5 5 5H7z"/>
-                        </svg>
-                        Above target
-                    </div>
-                </div>
-                <div class="metric-icon purple">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-                    </svg>
-                </div>
-            </div>
-            
-            <div class="metric-card">
-                <div class="metric-content">
-                    <div class="metric-label">Active Issues</div>
-                    <div class="metric-value" id="activeIssuesMetric">0</div>
-                    <div class="metric-change negative">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17 10l-5 5-5-5h10z"/>
-                        </svg>
-                        3 blockers
-                    </div>
-                </div>
-                <div class="metric-icon orange">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-                        <path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </div>
-            </div>
+        <div class="sidebar-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
         </div>
-        
-        ## Main Content Grid
-        <div class="content-grid">
-            ## Velocity Trend
-            <div class="card col-4">
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">Velocity Trend Analysis</h3>
-                        <p class="card-subtitle">Story points completed per sprint</p>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="velocityTrendChart"></canvas>
-                </div>
-            </div>
-            
-            ## Sprint Progress
-            <div class="card col-4">
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">Sprint Progress Overview</h3>
-                        <p class="card-subtitle">Current sprint: PROJ-2024-03</p>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="sprintProgressChart"></canvas>
-                </div>
-            </div>
-            
-            ## Issue Distribution
-            <div class="card col-4">
-                <div class="card-header">
-                    <h3 class="card-title">Issue Distribution</h3>
-                </div>
-                <div class="chart-container">
-                    <canvas id="issueDistributionChart"></canvas>
-                </div>
-            </div>
-            
-            ## AI Recommendations
-            <div class="card col-4">
-                <div class="card-header">
-                    <h3 class="card-title">AI Recommendations</h3>
-                </div>
-                <div id="recommendationsList">
-                    <div class="recommendation-item" onclick="applyRecommendation(1)">
-                        <div class="recommendation-title">Optimize Code Review Process</div>
-                        <div class="recommendation-desc">3 PRs pending for over 48 hours. Consider pairing reviews.</div>
-                    </div>
-                    <div class="recommendation-item" onclick="applyRecommendation(2)">
-                        <div class="recommendation-title">Balance Team Workload</div>
-                        <div class="recommendation-desc">2 team members at 120% capacity while others at 60%.</div>
-                    </div>
-                    <div class="recommendation-item" onclick="applyRecommendation(3)">
-                        <div class="recommendation-title">Address Technical Debt</div>
-                        <div class="recommendation-desc">15% of sprint capacity lost to bug fixes.</div>
-                    </div>
-                </div>
-            </div>
-            
-            ## AI Predictions
-            <div class="card col-4">
-                <div class="card-header">
-                    <h3 class="card-title">AI Predictions</h3>
-                </div>
-                <div id="predictionsList">
-                    <div class="prediction-item">
-                        <div>
-                            <div class="prediction-label">Sprint Completion</div>
-                            <div class="prediction-value">85%</div>
-                        </div>
-                        <span class="status-badge success">Low Risk</span>
-                    </div>
-                    <div class="prediction-item">
-                        <div>
-                            <div class="prediction-label">Next Week Velocity</div>
-                            <div class="prediction-value">48</div>
-                        </div>
-                        <span class="status-badge warning">Trending Up</span>
-                    </div>
-                </div>
-            </div>
-            
-            ## Recent Activity
-            <div class="card col-4">
-                <div class="card-header">
-                    <h3 class="card-title">Recent Activity</h3>
-                </div>
-                <div class="timeline-content">
-                    <div class="timeline-item">
-                        <div class="timeline-icon success">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div class="timeline-body">
-                            <div class="timeline-title">Sprint goal achieved</div>
-                            <div class="timeline-time">2 hours ago</div>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-icon warning">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                            </svg>
-                        </div>
-                        <div class="timeline-body">
-                            <div class="timeline-title">3 issues flagged as blockers</div>
-                            <div class="timeline-time">5 hours ago</div>
-                        </div>
-                    </div>
-                    <div class="timeline-item">
-                        <div class="timeline-icon info">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div class="timeline-body">
-                            <div class="timeline-title">New team member onboarded</div>
-                            <div class="timeline-time">Yesterday</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            ## Burndown Chart
-            <div class="card col-6">
-                <div class="card-header">
-                    <div>
-                        <h3 class="card-title">Sprint Burndown</h3>
-                        <p class="card-subtitle">Progress vs. ideal trajectory</p>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="burndownChart"></canvas>
-                </div>
-            </div>
-            
-            ## Team Performance
-            <div class="card col-3">
-                <div class="card-header">
-                    <h3 class="card-title">Team Performance</h3>
-                </div>
-                <div class="team-grid" id="teamGrid">
-                    <!-- Populated by JavaScript -->
-                </div>
-            </div>
-            
-            ## Team Workload
-            <div class="card col-3">
-                <div class="card-header">
-                    <h3 class="card-title">Team Workload Distribution</h3>
-                </div>
-                <div class="chart-container">
-                    <canvas id="teamWorkloadChart"></canvas>
-                </div>
-            </div>
+        <div class="sidebar-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 20V10m-6 10V4m-6 16v-6"/>
+            </svg>
+        </div>
+        <div class="sidebar-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+            </svg>
         </div>
     </div>
-    
+
+    <div class="main-content">
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <h1>$projectName Dashboard</h1>
+                <button class="add-ticket-btn" onclick="window.location.href='${contextPath}/browse/${projectKey}'">
+                    <span>+</span> Add New Ticket
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="velocityMetric">--</div>
+                    <div class="stat-label">Sprint Velocity</div>
+                    <div class="stat-change positive" id="velocityChange">
+                        <span>Loading...</span>
+                    </div>
+                    <button class="view-details-btn" onclick="JurixDashboard.viewDetails('velocity')">
+                        View details
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="cycleTimeMetric">--</div>
+                    <div class="stat-label">Cycle Time (days)</div>
+                    <div class="stat-change positive" id="cycleTimeChange">
+                        <span>Loading...</span>
+                    </div>
+                    <button class="view-details-btn" onclick="JurixDashboard.viewDetails('cycle')">
+                        View details
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="efficiencyMetric">--%</div>
+                    <div class="stat-label">Team Efficiency</div>
+                    <div class="stat-change positive" id="efficiencyChange">
+                        <span>Loading...</span>
+                    </div>
+                    <button class="view-details-btn" onclick="JurixDashboard.viewDetails('efficiency')">
+                        View details
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="activeIssuesMetric">--</div>
+                    <div class="stat-label">Active Issues</div>
+                    <div class="stat-change" id="activeIssuesChange">
+                        <span>Loading...</span>
+                    </div>
+                    <button class="view-details-btn" onclick="JurixDashboard.viewDetails('issues')">
+                        View details
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="alert-card" onclick="JurixDashboard.toggleAlertModal()">
+                    <div class="alert-indicator"></div>
+                    <div class="alert-dot"></div>
+                    <div class="alert-value" id="alertCount">0</div>
+                    <div class="alert-label">Critical Alerts</div>
+                    <div class="alert-details">Immediate Action Required</div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-grid">
+                <!-- Sprint Progress Overview -->
+                <div class="chart-card">
+                    <h3 class="chart-title">Sprint Progress Overview</h3>
+                    <div class="chart-subtitle">Current sprint: <span id="currentSprint">Loading...</span></div>
+                    <div class="progress-legend">
+                        <div class="progress-legend-item">
+                            <div class="progress-legend-box" style="background-color: #0052CC;"></div>
+                            <span>Completed</span>
+                        </div>
+                        <div class="progress-legend-item">
+                            <div class="progress-legend-box" style="background-color: #6B88F7;"></div>
+                            <span>In Progress</span>
+                        </div>
+                        <div class="progress-legend-item">
+                            <div class="progress-legend-box" style="background-color: #DFE5FF;"></div>
+                            <span>To Do</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="sprintProgressChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Sprint Burndown -->
+                <div class="chart-card">
+                    <h3 class="chart-title">Sprint Burndown</h3>
+                    <div class="chart-subtitle">Progress vs. ideal trajectory</div>
+                    <div class="chart-container">
+                        <canvas id="burndownChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Velocity Trend Analysis -->
+                <div class="chart-card">
+                    <h3 class="chart-title">Velocity Trend Analysis</h3>
+                    <div class="chart-subtitle">Story points completed per sprint</div>
+                    <div class="chart-container">
+                        <canvas id="velocityTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI INSIGHTS SECTION -->
+            <div class="ai-insights-wrapper">
+                <div class="ai-top-actions">
+                    <button class="ai-action-btn secondary" onclick="JurixDashboard.runSprintAnalysis()">AI Sprint Analysis</button>
+                    <button class="ai-action-btn primary" onclick="JurixDashboard.generateReport()">Generate Report</button>
+                </div>
+
+                <div class="ai-header">
+                    <h2 class="ai-title">
+                        AI Insights
+                        <span class="ai-indicator">POWERED BY ML</span>
+                    </h2>
+                </div>
+
+                <div class="ai-content-grid">
+                    <!-- Left Column -->
+                    <div class="ai-left-section">
+                        <!-- Sprint Risk Assessment -->
+                        <div class="risk-card">
+                            <div class="risk-header">
+                                <h3 class="risk-title">Sprint Risk Assessment</h3>
+                                <div class="risk-value" id="riskScore">--</div>
+                                <div class="risk-label">Risk Score (Critical: >4.0)</div>
+                            </div>
+                            
+                            <div class="bar-chart" id="riskChart">
+                                <!-- Risk bars will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <!-- Project Predictions -->
+                        <div class="market-card">
+                            <h3 class="risk-title">Project Predictions</h3>
+                            <div id="predictionsContainer">
+                                <!-- Predictions will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="ai-right-section">
+                        <!-- Performance Forecasts -->
+                        <div class="performance-card">
+                            <h3 class="risk-title">Sprint Performance Forecasts</h3>
+                            <p class="performance-subtitle">
+                                Want to predict sprint outcomes, manage team capacity, and optimize your delivery pipeline?
+                            </p>
+                            
+                            <div class="forecast-pills">
+                                <div class="forecast-indicator pos-1"></div>
+                                <button class="forecast-pill active" onclick="JurixDashboard.switchForecast(1, this)">Velocity Trend</button>
+                                <button class="forecast-pill" onclick="JurixDashboard.switchForecast(2, this)">Burndown Rate</button>
+                                <button class="forecast-pill" onclick="JurixDashboard.switchForecast(3, this)">Team Capacity</button>
+                            </div>
+                            
+                            <button class="apply-btn forecast-start-btn" onclick="JurixDashboard.startForecast()">
+                                Start forecast
+                            </button>
+                        </div>
+
+                        <!-- AI Recommendations -->
+                        <div class="recommendations-section">
+                            <h3 class="risk-title">AI Recommendations</h3>
+                            
+                            <div class="recommendations-grid" id="recommendationsGrid">
+                                <!-- Recommendations will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert Modal -->
+            <div class="modal-overlay" id="modalOverlay" onclick="JurixDashboard.toggleAlertModal()"></div>
+            <div class="alert-modal" id="alertModal">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff5630" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        Critical System Alerts
+                    </div>
+                    <button class="close-btn" onclick="JurixDashboard.toggleAlertModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5e6c84" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="alert-list" id="alertList">
+                    <!-- Alerts will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Tooltip -->
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+    </div>
+
     <script type="text/javascript">
     /* <![CDATA[ */
     // Pass project key and API configuration to JavaScript
@@ -959,7 +1345,64 @@
         projectKey: '$projectKey',
         projectName: '$projectName',
         apiBaseUrl: '$apiBaseUrl',
-        dashboardData: $dashboardData
+        contextPath: '$contextPath'
+    };
+
+    // Additional dashboard functions that work with the new layout
+    window.JurixDashboard = window.JurixDashboard || {};
+    
+    // Add missing functions for the new layout
+    JurixDashboard.viewDetails = function(type) {
+        console.log('Viewing details for:', type);
+        // Navigate to detailed view
+        window.location.href = window.JurixData.contextPath + '/browse/' + window.JurixData.projectKey + '?details=' + type;
+    };
+    
+    JurixDashboard.toggleAlertModal = function() {
+        const modal = document.getElementById('alertModal');
+        const overlay = document.getElementById('modalOverlay');
+        modal.classList.toggle('active');
+        overlay.classList.toggle('active');
+    };
+    
+    JurixDashboard.switchForecast = function(position, element) {
+        // Update active state
+        document.querySelectorAll('.forecast-pill').forEach(opt => opt.classList.remove('active'));
+        element.classList.add('active');
+        
+        // Move indicator dot
+        const indicator = document.querySelector('.forecast-indicator');
+        indicator.className = 'forecast-indicator';
+        indicator.classList.add('pos-' + position);
+        
+        // Update forecast data
+        console.log('Switching to forecast type:', position);
+    };
+    
+    JurixDashboard.startForecast = function() {
+        console.log('Starting forecast...');
+        // Show loading state and fetch forecast data
+        JurixDashboard.loadDashboardData();
+    };
+    
+    JurixDashboard.runSprintAnalysis = function() {
+        console.log('Running AI sprint analysis...');
+        AJS.flag({
+            type: 'info',
+            title: 'AI Analysis Started',
+            body: 'Running comprehensive sprint analysis. This may take a few moments...',
+            close: 'auto'
+        });
+        
+        // Refresh dashboard with analysis results
+        setTimeout(function() {
+            JurixDashboard.loadDashboardData();
+        }, 2000);
+    };
+    
+    JurixDashboard.generateReport = function() {
+        console.log('Generating report...');
+        window.open(window.JurixData.contextPath + '/rest/jurix/1.0/report/' + window.JurixData.projectKey, '_blank');
     };
     /* ]]> */
     </script>

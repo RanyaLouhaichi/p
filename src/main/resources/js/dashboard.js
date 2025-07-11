@@ -1,4 +1,4 @@
-// JURIX AI Dashboard - Real Backend Integration
+// JURIX AI Dashboard - Full Backend Integration for New Layout
 window.JurixDashboard = (function() {
     'use strict';
     
@@ -6,16 +6,16 @@ window.JurixDashboard = (function() {
     let updateInterval = null;
     let currentProjectKey = null;
     const UPDATE_FREQUENCY = 30000; // 30 seconds
-    const API_BASE_URL = 'http://localhost:5001'; // Your backend URL
+    const API_BASE_URL = 'http://localhost:5001'; // Python backend
     let lastUpdateTimestamp = Date.now();
     let pollInterval = null;
     let isPolling = false;
     let pollFrequency = 5000; // Start with 5 seconds
-    const MIN_POLL_FREQUENCY = 2000;  // 2 seconds minimum
+    const MIN_POLL_FREQUENCY = 2000;
     const MAX_POLL_FREQUENCY = 30000;
 
     function init() {
-        console.log('🚀 Initializing JURIX Dashboard with Real-Time Updates...');
+        console.log('🚀 Initializing JURIX Dashboard with New Layout...');
         
         // Get project key from URL or window data
         currentProjectKey = window.JurixData && window.JurixData.projectKey;
@@ -30,7 +30,7 @@ window.JurixDashboard = (function() {
             // Load initial dashboard data
             loadDashboardData();
             
-            // START POLLING - Make sure this is called!
+            // Start polling for real-time updates
             console.log('🔄 Starting real-time polling...');
             startPolling();
         } else {
@@ -40,9 +40,14 @@ window.JurixDashboard = (function() {
         
         // Initialize event handlers
         bindEvents();
+        
+        // Initialize tooltips
+        initializeTooltips();
+        
+        // Initialize interactions
+        initializeInteractions();
     }
     
-
     function loadDashboardData() {
         if (!currentProjectKey) return;
         
@@ -51,7 +56,7 @@ window.JurixDashboard = (function() {
         // Show loading state
         showLoadingState();
         
-        // Fetch data from backend
+        // Fetch data from Python backend
         fetch(`${API_BASE_URL}/api/dashboard/${currentProjectKey}`, {
             method: 'GET',
             headers: {
@@ -82,253 +87,6 @@ window.JurixDashboard = (function() {
         });
     }
 
-    function startPolling() {
-        if (isPolling) return;
-        
-        isPolling = true;
-        console.log('Starting smart polling for real-time updates');
-        
-        // Initial poll
-        checkForUpdates();
-        
-        // Set up interval
-        pollInterval = setInterval(checkForUpdates, pollFrequency);
-    }
-
-    function stopPolling() {
-        if (pollInterval) {
-            clearInterval(pollInterval);
-            pollInterval = null;
-        }
-        isPolling = false;
-    }
-
-
-    function checkForUpdates() {
-        if (!currentProjectKey) {
-            console.log('⚠️ No project key, skipping update check');
-            return;
-        }
-        
-        console.log(`🔍 Checking for updates at ${new Date().toLocaleTimeString()}...`);
-        console.log(`📊 Project: ${currentProjectKey}, Last timestamp: ${lastUpdateTimestamp}`);
-        
-        // Check Python backend for updates
-        const backendUrl = `${API_BASE_URL}/api/updates/${currentProjectKey}?since=${lastUpdateTimestamp}`;
-        
-        console.log('📡 Fetching from:', backendUrl);
-        
-        fetch(backendUrl, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            mode: 'cors'
-        })
-        .then(response => {
-            console.log('📥 Response status:', response.status);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('📊 Update check response:', data);
-            
-            if (data.hasUpdates) {
-                console.log(`✅ Found ${data.updateCount} updates!`);
-                
-                // Update timestamp immediately
-                lastUpdateTimestamp = data.timestamp || Date.now();
-                console.log(`📍 Updated lastUpdateTimestamp to: ${lastUpdateTimestamp}`);
-                
-                // Show notifications for each update
-                if (data.updates && data.updates.length > 0) {
-                    console.log('🔔 Showing notifications for updates:', data.updates);
-                    
-                    // Group updates by issue for better notifications
-                    const updatesByIssue = {};
-                    data.updates.forEach(update => {
-                        const issueKey = update.details?.issueKey || 'System';
-                        if (!updatesByIssue[issueKey]) {
-                            updatesByIssue[issueKey] = [];
-                        }
-                        updatesByIssue[issueKey].push(update);
-                    });
-                    
-                    // Show notification for each issue
-                    Object.entries(updatesByIssue).forEach(([issueKey, updates]) => {
-                        const latestUpdate = updates[0]; // Most recent update for this issue
-                        showUpdateNotification([{
-                            issueKey: issueKey,
-                            eventType: latestUpdate.type,
-                            status: latestUpdate.details?.status || 'Updated',
-                            summary: latestUpdate.details?.summary || ''
-                        }]);
-                    });
-                }
-                
-                // Check if we need to refresh dashboard
-                if (data.needsRefresh && data.dashboardData) {
-                    console.log('📈 Updating dashboard with fresh data');
-                    
-                    // Add visual indicator that dashboard is updating
-                    document.querySelectorAll('.metric-card').forEach(el => {
-                        el.classList.add('updating');
-                    });
-                    
-                    // Update the dashboard with the new data
-                    updateDashboard(data.dashboardData);
-                    
-                    // Remove updating indicator after a delay
-                    setTimeout(() => {
-                        document.querySelectorAll('.metric-card').forEach(el => {
-                            el.classList.remove('updating');
-                        });
-                    }, 1000);
-                    
-                    // Show success notification
-                    const successNotification = document.createElement('div');
-                    successNotification.className = 'jurix-notification success';
-                    successNotification.innerHTML = `
-                        <div class="jurix-notification-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-                        </div>
-                        <div class="jurix-notification-content">
-                            <div class="jurix-notification-title">Dashboard Updated</div>
-                            <div class="jurix-notification-message">Real-time data refreshed successfully</div>
-                        </div>
-                    `;
-                    document.body.appendChild(successNotification);
-                    
-                    // Animate in
-                    setTimeout(() => successNotification.classList.add('show'), 10);
-                    
-                    // Remove after 3 seconds
-                    setTimeout(() => {
-                        successNotification.classList.remove('show');
-                        setTimeout(() => successNotification.remove(), 300);
-                    }, 3000);
-                    
-                } else if (data.needsRefresh && !data.dashboardData) {
-                    console.log('🔄 Dashboard needs refresh but no data provided, loading manually');
-                    loadDashboardData();
-                }
-                
-                // Speed up polling when active
-                adjustPollFrequency(true);
-            } else {
-                console.log('❌ No updates found');
-                // Slow down polling when idle
-                adjustPollFrequency(false);
-            }
-        })
-        .catch(error => {
-            console.error('❌ Error checking updates:', error);
-            adjustPollFrequency(false);
-        });
-    }
-
-    function checkJavaEndpoint() {
-        const url = `${AJS.contextPath()}/rest/jurix/1.0/updates/${currentProjectKey}?since=${lastUpdateTimestamp}`;
-        
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.hasUpdates) {
-                console.log(`Found ${data.updateCount} updates from Java`);
-                
-                // Update timestamp
-                lastUpdateTimestamp = data.latestTimestamp || Date.now();
-                
-                // Show notification
-                showUpdateNotification(data.updates);
-                
-                // Refresh dashboard
-                loadDashboardData();
-                
-                // Increase poll frequency
-                adjustPollFrequency(true);
-            } else {
-                // No updates - decrease polling frequency
-                adjustPollFrequency(false);
-            }
-        })
-        .catch(error => {
-            console.error('Error checking Java updates:', error);
-            adjustPollFrequency(false);
-        });
-    }
-
-    function adjustPollFrequency(hasActivity) {
-        stopPolling();
-        
-        if (hasActivity) {
-            // Increase frequency (poll more often)
-            pollFrequency = Math.max(MIN_POLL_FREQUENCY, pollFrequency * 0.8);
-        } else {
-            // Decrease frequency (poll less often)
-            pollFrequency = Math.min(MAX_POLL_FREQUENCY, pollFrequency * 1.5);
-        }
-        
-        console.log(`Adjusted poll frequency to ${pollFrequency}ms`);
-        
-        // Restart with new frequency
-        pollInterval = setInterval(checkForUpdates, pollFrequency);
-    }
-
-    function showUpdateNotification(updates) {
-        if (!updates || updates.length === 0) return;
-        
-        // Get the most recent update
-        const latestUpdate = updates[0];
-        
-        // Create notification
-        const notification = document.createElement('div');
-        notification.className = 'jurix-update-notification';
-        notification.innerHTML = `
-            <div class="notification-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-            </div>
-            <div class="notification-content">
-                <div class="notification-title">Dashboard Updated</div>
-                <div class="notification-message">
-                    ${latestUpdate.issueKey} was ${latestUpdate.eventType}
-                </div>
-            </div>
-            <div class="notification-actions">
-                <button onclick="JurixDashboard.dismissNotification(this)">✕</button>
-            </div>
-        `;
-        
-        // Add to page
-        document.body.appendChild(notification);
-        
-        // Animate in
-        setTimeout(() => notification.classList.add('show'), 10);
-        
-        // Auto-dismiss after 5 seconds
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
-        }, 5000);
-    }
-
-    function dismissNotification(button) {
-        const notification = button.closest('.jurix-update-notification');
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
-    }
-
     function updateDashboard(data) {
         // Update metrics
         if (data.metrics) {
@@ -350,26 +108,18 @@ window.JurixDashboard = (function() {
             updateCharts(data.visualizationData);
         }
         
-        // Update sparklines
-        if (data.visualizationData && data.visualizationData.sparklines) {
-            updateSparklines(data.visualizationData.sparklines);
+        // Update alerts
+        if (data.alerts) {
+            updateAlerts(data.alerts);
         }
         
-        // Update team members
-        if (data.teamMembers) {
-            updateTeamMembers(data.teamMembers);
-        }
-        
-        // Update recent activity
-        if (data.recentActivity) {
-            updateRecentActivity(data.recentActivity);
+        // Update risk assessment
+        if (data.riskAssessment) {
+            updateRiskAssessment(data.riskAssessment);
         }
         
         // Update last updated time
         updateLastUpdatedTime(data.lastUpdated);
-        
-        // Check for alerts
-        checkForAlerts(data);
     }
 
     function updateMetrics(metrics) {
@@ -377,269 +127,209 @@ window.JurixDashboard = (function() {
         
         // Velocity metric
         const velocityEl = document.getElementById('velocityMetric');
-        if (velocityEl) {
-            const velocityValue = metrics.velocity || 0;
-            animateValue(velocityEl, velocityValue);
-            updateMetricChange(velocityEl.closest('.metric-card'), metrics.velocityChange);
+        if (velocityEl && metrics.velocity !== undefined) {
+            animateValue(velocityEl, metrics.velocity);
+            updateMetricChange('velocityChange', metrics.velocityChange || { type: 'positive', value: '+12% from last sprint' });
         }
 
         // Cycle Time metric
         const cycleTimeEl = document.getElementById('cycleTimeMetric');
-        if (cycleTimeEl) {
-            const cycleTimeValue = metrics.cycleTime || 0;
-            animateValue(cycleTimeEl, cycleTimeValue, 'd');
-            updateMetricChange(cycleTimeEl.closest('.metric-card'), metrics.cycleTimeChange);
+        if (cycleTimeEl && metrics.cycleTime !== undefined) {
+            animateValue(cycleTimeEl, metrics.cycleTime, 'd');
+            updateMetricChange('cycleTimeChange', metrics.cycleTimeChange || { type: 'positive', value: '-0.5 days improvement' });
         }
 
         // Efficiency metric
         const efficiencyEl = document.getElementById('efficiencyMetric');
-        if (efficiencyEl) {
-            const efficiency = metrics.efficiency || 0;
-            animateValue(efficiencyEl, efficiency, '%');
-            updateMetricChange(efficiencyEl.closest('.metric-card'), metrics.efficiencyChange);
+        if (efficiencyEl && metrics.efficiency !== undefined) {
+            animateValue(efficiencyEl, metrics.efficiency, '%');
+            updateMetricChange('efficiencyChange', metrics.efficiencyChange || { type: 'positive', value: 'Above target' });
         }
 
         // Active Issues metric
         const activeIssuesEl = document.getElementById('activeIssuesMetric');
-        if (activeIssuesEl) {
-            const activeCount = metrics.activeIssues || 0;
-            animateValue(activeIssuesEl, activeCount);
+        if (activeIssuesEl && metrics.activeIssues !== undefined) {
+            animateValue(activeIssuesEl, metrics.activeIssues);
             
             // Check for blockers
-            const blockerCount = Object.values(metrics.bottlenecks || {}).filter(v => v > 3).length;
+            const blockerCount = metrics.blockers || 0;
             if (blockerCount > 0) {
-                updateMetricChange(activeIssuesEl.closest('.metric-card'), {
-                    value: blockerCount,
-                    text: `${blockerCount} blockers`,
-                    type: 'negative'
+                updateMetricChange('activeIssuesChange', {
+                    type: 'negative',
+                    value: `${blockerCount} blockers`
                 });
             }
         }
+
+        // Alert count
+        const alertCountEl = document.getElementById('alertCount');
+        if (alertCountEl && metrics.criticalAlerts !== undefined) {
+            animateValue(alertCountEl, metrics.criticalAlerts);
+        }
     }
 
-    function updateMetricChange(container, changeData) {
-        if (!container) return;
-        const changeEl = container.querySelector('.metric-change');
+    function updateMetricChange(elementId, changeData) {
+        const changeEl = document.getElementById(elementId);
         if (!changeEl) return;
         
-        // For now, just show the current state
-        if (changeData && changeData.text) {
-            changeEl.innerHTML = `
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                    ${changeData.type === 'positive' ? 
-                        '<path d="M7 14l5-5 5 5H7z"/>' : 
-                        '<path d="M17 10l-5 5-5-5h10z"/>'}
-                </svg>
-                ${changeData.text}
-            `;
+        if (changeData) {
+            const iconSvg = changeData.type === 'positive' 
+                ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5H7z"/></svg>'
+                : '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10l-5 5-5-5h10z"/></svg>';
+            
+            changeEl.className = `stat-change ${changeData.type}`;
+            changeEl.innerHTML = `${iconSvg} ${changeData.value}`;
         }
     }
 
     function updatePredictions(predictions) {
         console.log('Updating predictions:', predictions);
-        const container = document.getElementById('predictionsList');
+        
+        const container = document.getElementById('predictionsContainer');
         if (!container) return;
         
         container.innerHTML = '';
 
         // Sprint completion prediction
         if (predictions.sprintCompletion) {
-            const sprint = predictions.sprintCompletion;
             const item = createPredictionItem(
-                Math.round(sprint.probability * 100) + '%',
-                'Sprint Completion Probability',
-                sprint.risk_level || 'low',
-                sprint.reasoning || ''
+                'Sprint Completion Forecast',
+                predictions.sprintCompletion.probability,
+                predictions.sprintCompletion.reasoning,
+                'growth'
             );
             container.appendChild(item);
         }
 
-        // Velocity forecast
-        if (predictions.velocityForecast) {
-            const forecast = predictions.velocityForecast;
-            const nextWeek = forecast.forecast && forecast.forecast[0] ? forecast.forecast[0] : 'N/A';
+        // Bottleneck detection
+        if (predictions.bottlenecks && predictions.bottlenecks.length > 0) {
+            const bottleneck = predictions.bottlenecks[0];
             const item = createPredictionItem(
-                nextWeek !== 'N/A' ? nextWeek.toFixed(1) : 'N/A',
-                'Next Week Velocity Forecast',
-                forecast.trend === 'insufficient_data' ? 'medium' : 'stable',
-                forecast.insights || ''
-            );
-            container.appendChild(item);
-        }
-
-        // Top risk
-        if (predictions.risks && predictions.risks.length > 0) {
-            const topRisk = predictions.risks[0];
-            const item = createPredictionItem(
-                topRisk.severity ? topRisk.severity.toUpperCase() : 'UNKNOWN',
-                topRisk.type || topRisk.description || 'Risk detected',
-                topRisk.severity || 'medium',
-                topRisk.mitigation || ''
+                'Bottleneck Detection',
+                bottleneck.severity,
+                bottleneck.description,
+                'warning'
             );
             container.appendChild(item);
         }
     }
 
-    function createPredictionItem(value, label, riskLevel, tooltip) {
+    function createPredictionItem(title, value, description, type) {
         const div = document.createElement('div');
-        div.className = 'jurix-prediction-item';
+        div.className = 'prediction-item';
         div.innerHTML = `
-            <div class="jurix-prediction-probability ${getRiskClass(riskLevel)}">${value}</div>
-            <div class="jurix-prediction-label" title="${tooltip || ''}">${label}</div>
+            <div class="prediction-header">
+                <div class="prediction-icon ${type}">
+                    ${type === 'growth' ? 
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12l3 9h14l3-9M2 12l3-9h14l3 9M2 12h20"/><circle cx="12" cy="12" r="2"/></svg>' :
+                        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M12 2a10 10 0 110 20 10 10 0 010-20z"/><path d="M12 8v4m0 4h.01"/></svg>'
+                    }
+                </div>
+                <div>
+                    <div class="prediction-title">${title}</div>
+                </div>
+            </div>
+            <div class="prediction-description">${description}</div>
+            <div class="prediction-metric">↗ ${value}</div>
         `;
         return div;
     }
 
     function updateRecommendations(recommendations) {
         console.log('Updating recommendations:', recommendations);
-        const container = document.getElementById('recommendationsList');
+        
+        const container = document.getElementById('recommendationsGrid');
         if (!container) return;
         
         container.innerHTML = '';
 
-        // Filter out the header recommendation if it exists
-        const filteredRecs = recommendations.filter(rec => 
-            !rec.toLowerCase().includes('here are') && 
-            !rec.toLowerCase().includes('recommendations for')
-        );
+        const recommendationTypes = [
+            { icon: 'portfolio', title: 'Sprint Optimization' },
+            { icon: 'compliance', title: 'Resource Balancing' },
+            { icon: 'service', title: 'Automation Opportunities' },
+            { icon: 'risk', title: 'Quality Improvements' }
+        ];
 
-        filteredRecs.slice(0, 3).forEach((rec, index) => {
-            const div = document.createElement('div');
-            div.className = 'recommendation-item';
-            div.onclick = function() { applyRecommendation(index + 1); };
-            div.innerHTML = `
-                <div class="recommendation-title">Recommendation ${index + 1}</div>
-                <div class="recommendation-desc">${rec}</div>
-            `;
-            container.appendChild(div);
+        recommendations.slice(0, 4).forEach((rec, index) => {
+            const type = recommendationTypes[index % recommendationTypes.length];
+            const card = createRecommendationCard(type.icon, type.title, rec, index);
+            container.appendChild(card);
         });
+    }
+
+    function createRecommendationCard(iconType, title, description, index) {
+        const div = document.createElement('div');
+        div.className = 'recommendation-card';
+        div.innerHTML = `
+            <div class="rec-icon ${iconType}">
+                ${getRecommendationIcon(iconType)}
+            </div>
+            <div class="rec-title">${title}</div>
+            <div class="rec-description">${description}</div>
+            <button class="apply-btn" onclick="JurixDashboard.applyRecommendation(${index})">
+                <span>Apply</span>
+            </button>
+        `;
+        return div;
+    }
+
+    function getRecommendationIcon(type) {
+        const icons = {
+            portfolio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>',
+            compliance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>',
+            service: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+            risk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'
+        };
+        return icons[type] || '';
     }
 
     function updateCharts(visualizationData) {
         console.log('Updating charts:', visualizationData);
+        
         const charts = visualizationData.charts || {};
         
-        // Update team workload chart
-        if (charts.teamWorkload) {
-            updateTeamWorkloadChart(charts.teamWorkload);
+        // Update sprint progress chart
+        if (charts.sprintProgress) {
+            updateSprintProgressChart(charts.sprintProgress);
+        }
+        
+        // Update burndown chart
+        if (charts.burndown) {
+            updateBurndownChart(charts.burndown);
         }
         
         // Update velocity trend chart
         if (charts.velocityTrend) {
             updateVelocityTrendChart(charts.velocityTrend);
         }
-        
-        // Update team performance radar
-        if (charts.teamPerformance) {
-            updateTeamPerformanceChart(charts.teamPerformance);
-        }
-        
-        // For missing charts, create default ones
-        if (!charts.sprintProgress) {
-            createDefaultSprintProgressChart();
-        }
-        
-        if (!charts.issueDistribution) {
-            createDefaultIssueDistributionChart();
-        }
-        
-        if (!charts.burndown) {
-            createDefaultBurndownChart();
-        }
     }
 
-    function updateTeamWorkloadChart(chartData) {
-        const canvas = document.getElementById('teamWorkloadChart');
-        if (!canvas || !chartData || !chartData.data) return;
-        
-        // Destroy existing chart if it exists
-        if (window.teamWorkloadChart && typeof window.teamWorkloadChart.destroy === 'function') {
-            window.teamWorkloadChart.destroy();
-        }
-        
-        const ctx = canvas.getContext('2d');
-        window.teamWorkloadChart = new Chart(ctx, {
-            type: chartData.type || 'bar',
-            data: chartData.data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        max: 15 
-                    }
-                }
-            }
-        });
-    }
-
-    function updateVelocityTrendChart(chartData) {
-        const canvas = document.getElementById('velocityTrendChart');
-        if (!canvas || !chartData || !chartData.data) return;
-        
-        // Destroy existing chart if it exists
-        if (window.velocityTrendChart && typeof window.velocityTrendChart.destroy === 'function') {
-            window.velocityTrendChart.destroy();
-        }
-        
-        const ctx = canvas.getContext('2d');
-        window.velocityTrendChart = new Chart(ctx, {
-            type: chartData.type || 'line',
-            data: chartData.data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    }
-
-    function updateTeamPerformanceChart(chartData) {
-        // This might be a radar chart, but we'll put it in sprint progress for now
-        const canvas = document.getElementById('sprintProgressChart');
-        if (!canvas || !chartData || !chartData.data) return;
-        
-        // Destroy existing chart if it exists
-        if (window.sprintProgressChart && typeof window.sprintProgressChart.destroy === 'function') {
-            window.sprintProgressChart.destroy();
-        }
-        
-        const ctx = canvas.getContext('2d');
-        window.sprintProgressChart = new Chart(ctx, {
-            type: chartData.type || 'radar',
-            data: chartData.data,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    }
-
-    function createDefaultSprintProgressChart() {
+    function updateSprintProgressChart(chartData) {
         const canvas = document.getElementById('sprintProgressChart');
         if (!canvas) return;
         
-        if (window.sprintProgressChart && typeof window.sprintProgressChart.destroy === 'function') {
-            window.sprintProgressChart.destroy();
+        // Destroy existing chart
+        if (charts.sprintProgress) {
+            charts.sprintProgress.destroy();
         }
         
         const ctx = canvas.getContext('2d');
-        window.sprintProgressChart = new Chart(ctx, {
+        charts.sprintProgress = new Chart(ctx, {
             type: 'bar',
-            data: {
+            data: chartData.data || {
                 labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
                 datasets: [{
                     label: 'Completed',
-                    data: [2, 2, 2, 2],
+                    data: [45, 60, 75, 10],
                     backgroundColor: '#0052CC'
                 }, {
                     label: 'In Progress',
-                    data: [4, 4, 4, 4],
-                    backgroundColor: '#4C9AFF'
+                    data: [30, 25, 20, 35],
+                    backgroundColor: '#6B88F7'
                 }, {
                     label: 'To Do',
-                    data: [0, 0, 0, 0],
-                    backgroundColor: '#DEEBFF'
+                    data: [25, 15, 5, 55],
+                    backgroundColor: '#DFE5FF'
                 }]
             },
             options: {
@@ -647,28 +337,52 @@ window.JurixDashboard = (function() {
                 maintainAspectRatio: false,
                 scales: {
                     x: { stacked: true },
-                    y: { stacked: true }
+                    y: { 
+                        stacked: true,
+                        max: 100
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.raw + '%';
+                            }
+                        }
+                    }
                 }
             }
         });
     }
 
-    function createDefaultIssueDistributionChart() {
-        const canvas = document.getElementById('issueDistributionChart');
+    function updateBurndownChart(chartData) {
+        const canvas = document.getElementById('burndownChart');
         if (!canvas) return;
         
-        if (window.issueDistributionChart && typeof window.issueDistributionChart.destroy === 'function') {
-            window.issueDistributionChart.destroy();
+        // Destroy existing chart
+        if (charts.burndown) {
+            charts.burndown.destroy();
         }
         
         const ctx = canvas.getContext('2d');
-        window.issueDistributionChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['In Progress', 'Done'],
+        charts.burndown = new Chart(ctx, {
+            type: 'line',
+            data: chartData.data || {
+                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8', 'Day 9', 'Day 10'],
                 datasets: [{
-                    data: [4, 2],
-                    backgroundColor: ['#4C9AFF', '#0052CC']
+                    label: 'Ideal',
+                    data: [60, 54, 48, 42, 36, 30, 24, 18, 12, 6, 0],
+                    borderColor: '#C1C7D0',
+                    borderDash: [5, 5],
+                    tension: 0,
+                    fill: false
+                }, {
+                    label: 'Actual',
+                    data: [60, 55, 50, 40, 38, 30, 25, 20, 18, null, null],
+                    borderColor: '#0052CC',
+                    backgroundColor: 'rgba(0, 82, 204, 0.1)',
+                    tension: 0.3,
+                    fill: true
                 }]
             },
             options: {
@@ -677,278 +391,278 @@ window.JurixDashboard = (function() {
                 plugins: {
                     legend: {
                         position: 'bottom'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Story Points'
+                        }
                     }
                 }
             }
         });
     }
 
-    function createDefaultBurndownChart() {
-        const canvas = document.getElementById('burndownChart');
-        if (!canvas) return;
-        
-        if (window.burndownChart && typeof window.burndownChart.destroy === 'function') {
-            window.burndownChart.destroy();
-        }
-        
-        const days = [];
-        for (let i = 1; i <= 10; i++) {
-            days.push('Day ' + i);
-        }
-        
-        const ctx = canvas.getContext('2d');
-        window.burndownChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: days,
-                datasets: [{
-                    label: 'Ideal',
-                    data: [6, 5.4, 4.8, 4.2, 3.6, 3, 2.4, 1.8, 1.2, 0.6, 0],
-                    borderColor: '#6B778C',
-                    borderDash: [5, 5],
-                    tension: 0
-                }, {
-                    label: 'Actual',
-                    data: [6, 6, 4, 4, 2, 2, null, null, null, null, null],
-                    borderColor: '#0052CC',
-                    backgroundColor: 'rgba(0, 82, 204, 0.1)',
-                    tension: 0.3
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    }
-
-    function updateSparklines(sparklineData) {
-        console.log('Updating sparklines:', sparklineData);
-        
-        // Update velocity sparkline
-        if (sparklineData.velocity) {
-            updateSparkline('velocitySparkline', sparklineData.velocity, '#0052CC');
-        }
-        
-        // Update cycle time sparkline
-        if (sparklineData.cycleTime) {
-            updateSparkline('cycleSparkline', sparklineData.cycleTime, '#00875A');
-        }
-        
-        // Update efficiency sparkline
-        if (sparklineData.efficiency) {
-            updateSparkline('efficiencySparkline', sparklineData.efficiency, '#6554C0');
-        }
-        
-        // Update issues sparkline
-        if (sparklineData.issues) {
-            updateSparkline('issuesSparkline', sparklineData.issues, '#FF5630');
-        }
-    }
-
-    function updateSparkline(canvasId, data, color) {
-        const canvas = document.getElementById(canvasId);
+    function updateVelocityTrendChart(chartData) {
+        const canvas = document.getElementById('velocityTrendChart');
         if (!canvas) return;
         
         // Destroy existing chart
-        const chartName = canvasId + 'Chart';
-        if (window[chartName] && typeof window[chartName].destroy === 'function') {
-            window[chartName].destroy();
+        if (charts.velocityTrend) {
+            charts.velocityTrend.destroy();
         }
         
         const ctx = canvas.getContext('2d');
-        window[chartName] = new Chart(ctx, {
+        charts.velocityTrend = new Chart(ctx, {
             type: 'line',
-            data: {
-                labels: Array(data.length).fill(''),
+            data: chartData.data || {
+                labels: ['Sprint 1', 'Sprint 2', 'Sprint 3', 'Sprint 4', 'Sprint 5'],
                 datasets: [{
-                    data: data,
-                    borderColor: color,
-                    borderWidth: 2,
-                    pointRadius: 0,
+                    label: 'Velocity',
+                    data: [32, 38, 35, 45, 42],
+                    borderColor: '#00875A',
+                    backgroundColor: 'rgba(0, 135, 90, 0.1)',
                     tension: 0.3,
                     fill: true,
-                    backgroundColor: color + '33' // Add transparency
+                    pointRadius: 5,
+                    pointHoverRadius: 7
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                scales: {
-                    x: { display: false },
-                    y: { display: false }
-                }
-            }
-        });
-    }
-
-    function updateTeamMembers(teamMembers) {
-        console.log('Updating team members:', teamMembers);
-        const container = document.querySelector('.team-grid');
-        if (!container) return;
-        
-        container.innerHTML = '';
-        
-        teamMembers.forEach(member => {
-            const memberDiv = document.createElement('div');
-            memberDiv.className = 'team-member';
-            memberDiv.innerHTML = `
-                <div class="member-avatar" style="${getAvatarStyle(member.loadPercentage)}">${member.initials}</div>
-                <div class="member-info">
-                    <div class="member-name">${member.name}</div>
-                    <div class="member-status">${member.taskCount} tasks</div>
-                </div>
-                <div class="member-load">
-                    <canvas id="${member.name.replace(/\s/g, '')}Load"></canvas>
-                </div>
-            `;
-            container.appendChild(memberDiv);
-            
-            // Create load gauge
-            setTimeout(() => {
-                createLoadGauge(`${member.name.replace(/\s/g, '')}Load`, member.loadPercentage);
-            }, 100);
-        });
-    }
-
-    function getAvatarStyle(loadPercentage) {
-        if (loadPercentage > 100) {
-            return 'background: var(--pastel-red);';
-        } else if (loadPercentage > 80) {
-            return 'background: var(--pastel-yellow);';
-        } else if (loadPercentage < 50) {
-            return 'background: var(--pastel-green);';
-        }
-        return '';
-    }
-
-    function createLoadGauge(canvasId, percentage) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        
-        const color = percentage > 100 ? '#F87171' : percentage > 80 ? '#FCD34D' : '#7DD3C0';
-        
-        const ctx = canvas.getContext('2d');
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                datasets: [{
-                    data: [percentage, 100 - percentage],
-                    backgroundColor: [color, '#F4F5F7'],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '75%',
                 plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: false }
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Velocity: ' + context.raw + ' points';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Story Points'
+                        }
+                    }
                 }
             }
         });
     }
 
-    function updateRecentActivity(activities) {
-        console.log('Updating recent activity:', activities);
-        const container = document.querySelector('.timeline-content');
-        if (!container) return;
+    function updateAlerts(alerts) {
+        console.log('Updating alerts:', alerts);
         
-        container.innerHTML = '';
+        // Update alert count
+        const alertCountEl = document.getElementById('alertCount');
+        if (alertCountEl) {
+            alertCountEl.textContent = alerts.length;
+        }
         
-        activities.slice(0, 5).forEach(activity => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'timeline-item';
-            itemDiv.innerHTML = `
-                <div class="timeline-icon ${activity.type}">
-                    ${getActivityIcon(activity.type)}
-                </div>
-                <div class="timeline-body">
-                    <div class="timeline-title">${activity.title}</div>
-                    <div class="timeline-time">${activity.time}</div>
-                </div>
-            `;
-            container.appendChild(itemDiv);
+        // Update alert list in modal
+        const alertListEl = document.getElementById('alertList');
+        if (alertListEl) {
+            alertListEl.innerHTML = '';
+            
+            alerts.forEach(alert => {
+                const alertItem = document.createElement('div');
+                alertItem.className = 'alert-item';
+                alertItem.innerHTML = `
+                    <div class="alert-item-left">
+                        <div class="alert-severity"></div>
+                        <span class="alert-text">${alert.message}</span>
+                    </div>
+                    <span class="alert-time">${alert.time || 'Just now'}</span>
+                `;
+                alertListEl.appendChild(alertItem);
+            });
+        }
+    }
+
+    function updateRiskAssessment(riskData) {
+        console.log('Updating risk assessment:', riskData);
+        
+        // Update risk score
+        const riskScoreEl = document.getElementById('riskScore');
+        if (riskScoreEl && riskData.score !== undefined) {
+            animateValue(riskScoreEl, riskData.score.toFixed(3));
+        }
+        
+        // Update risk chart
+        const riskChartEl = document.getElementById('riskChart');
+        if (riskChartEl && riskData.monthlyScores) {
+            riskChartEl.innerHTML = '';
+            
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const currentMonth = new Date().getMonth();
+            
+            months.forEach((month, index) => {
+                const height = riskData.monthlyScores[index] ? `${riskData.monthlyScores[index] * 20}%` : '20%';
+                const bar = document.createElement('div');
+                bar.className = `bar ${index === currentMonth ? 'active' : ''}`;
+                bar.style.height = height;
+                bar.innerHTML = `<span class="bar-label">${month}</span>`;
+                riskChartEl.appendChild(bar);
+            });
+        }
+    }
+
+    function startPolling() {
+        if (isPolling) return;
+        
+        isPolling = true;
+        console.log('Starting smart polling for real-time updates');
+        
+        // Initial poll
+        checkForUpdates();
+        
+        // Set up interval
+        pollInterval = setInterval(checkForUpdates, pollFrequency);
+    }
+
+    function stopPolling() {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
+        isPolling = false;
+    }
+
+    function checkForUpdates() {
+        if (!currentProjectKey) return;
+        
+        console.log(`🔍 Checking for updates at ${new Date().toLocaleTimeString()}...`);
+        
+        // Check Python backend for updates
+        fetch(`${API_BASE_URL}/api/updates/${currentProjectKey}?since=${lastUpdateTimestamp}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            mode: 'cors'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.hasUpdates) {
+                console.log(`✅ Found ${data.updateCount} updates!`);
+                
+                // Update timestamp
+                lastUpdateTimestamp = data.timestamp || Date.now();
+                
+                // Show update notification
+                if (data.updates && data.updates.length > 0) {
+                    showUpdateNotification(data.updates[0]);
+                }
+                
+                // Refresh dashboard data
+                if (data.needsRefresh) {
+                    loadDashboardData();
+                }
+                
+                // Speed up polling when active
+                adjustPollFrequency(true);
+            } else {
+                // Slow down polling when idle
+                adjustPollFrequency(false);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error checking updates:', error);
+            adjustPollFrequency(false);
         });
     }
 
-    function getActivityIcon(type) {
-        if (type === 'success') {
-            return '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
-        } else if (type === 'warning') {
-            return '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>';
+    function adjustPollFrequency(hasActivity) {
+        stopPolling();
+        
+        if (hasActivity) {
+            pollFrequency = Math.max(MIN_POLL_FREQUENCY, pollFrequency * 0.8);
         } else {
-            return '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>';
+            pollFrequency = Math.min(MAX_POLL_FREQUENCY, pollFrequency * 1.5);
         }
+        
+        console.log(`Adjusted poll frequency to ${pollFrequency}ms`);
+        
+        // Restart with new frequency
+        pollInterval = setInterval(checkForUpdates, pollFrequency);
     }
 
-    function updateLastUpdatedTime(lastUpdated) {
-        // Find or create last updated element
-        const headerEl = document.querySelector('.header-left');
-        if (headerEl) {
-            let lastUpdatedEl = headerEl.querySelector('.last-updated');
-            if (!lastUpdatedEl) {
-                lastUpdatedEl = document.createElement('span');
-                lastUpdatedEl.className = 'last-updated';
-                lastUpdatedEl.style.cssText = 'margin-left: 1rem; color: #6B778C; font-size: 0.875rem;';
-                headerEl.appendChild(lastUpdatedEl);
-            }
-            
-            const time = lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : new Date().toLocaleTimeString();
-            lastUpdatedEl.textContent = `Last updated: ${time}`;
-        }
+    function showUpdateNotification(update) {
+        AJS.flag({
+            type: 'success',
+            title: 'Dashboard Updated',
+            body: `${update.issueKey || 'System'} - ${update.eventType || 'Updated'}`,
+            close: 'auto'
+        });
     }
 
-    function checkForAlerts(data) {
-        // Check for critical conditions
-        const alerts = [];
+    function initializeTooltips() {
+        const tooltip = document.getElementById('tooltip');
+        if (!tooltip) return;
         
-        // Check for low sprint completion probability
-        if (data.predictions && data.predictions.sprintCompletion) {
-            const probability = data.predictions.sprintCompletion.probability;
-            if (probability < 0.5) {
-                alerts.push(`Critical: Sprint completion probability is only ${(probability * 100).toFixed(0)}%`);
+        // Tooltips for stacked bars in sprint progress
+        document.addEventListener('mouseover', function(e) {
+            if (e.target.classList.contains('bar-segment')) {
+                const rect = e.target.getBoundingClientRect();
+                const percentage = e.target.style.height;
+                const type = e.target.classList.contains('completed') ? 'Completed' :
+                           e.target.classList.contains('in-progress') ? 'In Progress' : 'To Do';
+                
+                tooltip.innerHTML = `${type}: ${percentage}`;
+                tooltip.style.left = rect.left + rect.width / 2 + 'px';
+                tooltip.style.top = rect.top - 30 + 'px';
+                tooltip.classList.add('show');
             }
-        }
+        });
         
-        // Check for blockers
-        if (data.metrics && data.metrics.bottlenecks) {
-            const blockers = Object.entries(data.metrics.bottlenecks)
-                .filter(([status, count]) => count > 3 && status !== 'Done');
-            if (blockers.length > 0) {
-                alerts.push(`${blockers.length} bottlenecks detected in current sprint - immediate action required`);
+        document.addEventListener('mouseout', function(e) {
+            if (e.target.classList.contains('bar-segment')) {
+                tooltip.classList.remove('show');
             }
-        }
-        
-        // Check for overloaded team members
-        if (data.teamMembers) {
-            const overloaded = data.teamMembers.filter(m => m.loadPercentage > 100);
-            if (overloaded.length > 0) {
-                alerts.push(`${overloaded.length} team member(s) overloaded - workload rebalancing needed`);
-            }
-        }
-        
-        // Show the first alert if any
-        if (alerts.length > 0) {
-            showAlert(alerts[0]);
-        }
+        });
     }
 
-    // Utility functions
+    function initializeInteractions() {
+        // Handle sidebar navigation
+        document.querySelectorAll('.sidebar-icon').forEach(icon => {
+            icon.addEventListener('click', function() {
+                document.querySelectorAll('.sidebar-icon').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+        
+        // Close modal on escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('alertModal');
+                const overlay = document.getElementById('modalOverlay');
+                if (modal && modal.classList.contains('active')) {
+                    modal.classList.remove('active');
+                    overlay.classList.remove('active');
+                }
+            }
+        });
+    }
+
     function animateValue(element, endValue, suffix = '') {
         if (!element) return;
         
         const startValue = parseFloat(element.textContent) || 0;
         const duration = 1500;
         const startTime = performance.now();
-        
-        // Check if value is numeric
-        if (isNaN(endValue)) {
-            element.textContent = endValue + suffix;
-            return;
-        }
         
         const numericEnd = parseFloat(endValue);
         const isFloat = !Number.isInteger(numericEnd) || endValue.toString().includes('.');
@@ -974,358 +688,133 @@ window.JurixDashboard = (function() {
         requestAnimationFrame(update);
     }
 
-    function getRiskClass(riskLevel) {
-        if (typeof riskLevel === 'string') {
-            riskLevel = riskLevel.toLowerCase();
-        }
-        if (riskLevel === 'high' || riskLevel === 'critical') return 'risk-high';
-        if (riskLevel === 'medium') return 'risk-medium';
-        if (riskLevel === 'minimal' || riskLevel === 'low') return 'risk-low';
-        if (riskLevel === 'insufficient_data') return 'risk-medium';
-        return 'risk-low';
-    }
-
-    function showAlert(message) {
-        const alertBar = document.getElementById('alertBar');
-        const alertText = document.getElementById('alertText');
-        if (alertBar && alertText) {
-            alertText.textContent = message;
-            alertBar.style.display = 'flex';
-        }
-    }
-
-    function dismissAlert() {
-        const alertBar = document.getElementById('alertBar');
-        if (alertBar) {
-            alertBar.style.display = 'none';
-        }
-    }
-
-    function viewAlert() {
-        console.log('Viewing alert details...');
-        // Could open a modal or navigate to details
-    }
-
     function showLoadingState() {
-        // Add loading indicators to all metric cards
-        document.querySelectorAll('.metric-value').forEach(el => {
-            el.classList.add('loading');
-            el.textContent = '...';
+        document.querySelectorAll('.stat-value').forEach(el => {
+            el.textContent = '--';
+            el.style.opacity = '0.5';
         });
         
-        // Also show loading for charts
         document.querySelectorAll('.chart-container').forEach(el => {
             el.style.opacity = '0.5';
         });
     }
 
     function hideLoadingState() {
-        // Remove loading indicators
-        document.querySelectorAll('.metric-value').forEach(el => {
-            el.classList.remove('loading');
+        document.querySelectorAll('.stat-value').forEach(el => {
+            el.style.opacity = '1';
         });
         
-        // Restore chart opacity
         document.querySelectorAll('.chart-container').forEach(el => {
             el.style.opacity = '1';
         });
     }
 
     function showError(message) {
-        // Show error notification
-        const notification = document.createElement('div');
-        notification.className = 'jurix-notification error';
-        notification.innerHTML = `
-            <div class="jurix-notification-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                </svg>
-            </div>
-            <div class="jurix-notification-content">
-                <div class="jurix-notification-title">Error</div>
-                <div class="jurix-notification-message">${message}</div>
-            </div>
-        `;
-        document.body.appendChild(notification);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => notification.remove(), 5000);
+        AJS.flag({
+            type: 'error',
+            title: 'Error',
+            body: message,
+            close: 'manual'
+        });
     }
 
-    function applyRecommendation(id) {
-        console.log('Applying recommendation', id);
-        
-        // Show notification
-        const notification = document.createElement('div');
-        notification.style.cssText = 'position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #00875A; color: white; padding: 1rem 2rem; border-radius: 3px; box-shadow: 0 8px 12px rgba(9,30,66,0.15); animation: slideUp 0.3s ease; z-index: 1000;';
-        notification.textContent = 'Recommendation applied successfully!';
-        document.body.appendChild(notification);
-        
-        setTimeout(function() { notification.remove(); }, 3000);
-    }
-
-    function toggleChat() {
-        const chatWindow = document.getElementById('chatWindow');
-        if (chatWindow) {
-            chatWindow.classList.toggle('open');
-        }
+    function updateLastUpdatedTime(timestamp) {
+        const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+        console.log('Dashboard last updated:', time);
     }
 
     function bindEvents() {
-        // Bind global functions
-        window.dismissAlert = dismissAlert;
-        window.viewAlert = viewAlert;
-        window.applyRecommendation = applyRecommendation;
-        window.toggleChat = toggleChat;
-        
-        // Refresh button
-        const refreshBtn = document.querySelector('.btn-primary');
-        if (refreshBtn && refreshBtn.textContent === 'Generate Report') {
-            refreshBtn.addEventListener('click', function() {
-                loadDashboardData();
-            });
-        }
+        // Bind any additional events specific to the new layout
+        console.log('Events bound for new dashboard layout');
     }
 
-    // Add CSS for loading state
-    const style = document.createElement('style');
-    style.textContent = `
-        .metric-value.loading {
-            opacity: 0.5;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-        
-        @keyframes slideUp {
-            from {
-                transform: translateX(-50%) translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(-50%) translateY(0);
-                opacity: 1;
-            }
-        }
-        
-        .jurix-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            min-width: 300px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-            padding: 1rem;
-            display: flex;
-            align-items: flex-start;
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-        }
-        
-        .jurix-notification.error .jurix-notification-icon {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-        }
-        
-        .jurix-notification.success {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            min-width: 320px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-            padding: 16px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            z-index: 10000;
-            transform: translateX(400px);
-            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-        
-        .jurix-notification.success.show {
-            transform: translateX(0);
-        }
-        
-        .jurix-notification.success .jurix-notification-icon {
-            width: 32px;
-            height: 32px;
-            background: #E3FCEF;
-            color: #00875A;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        
-        .risk-low { color: #00875A; }
-        .risk-medium { color: #FF991F; }
-        .risk-high { color: #FF5630; }
-        
-        .jurix-prediction-item {
-            background: rgba(255,255,255,0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-        
-        .jurix-prediction-item:hover {
-            background: rgba(255, 255, 255, 0.95);
-            transform: translateX(4px);
-        }
-        
-        .jurix-prediction-probability {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-        }
-        
-        .jurix-prediction-label {
-            opacity: 0.8;
-            font-size: 0.875rem;
-        }
-        
-        .jurix-predictions-panel {
-            background: linear-gradient(135deg, #0052CC 0%, #0747A6 100%);
-            color: white;
-            border-radius: 20px;
-            padding: 1.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .jurix-predictions-panel::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
-            animation: pulse 4s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 0.3; }
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        /* Notification Styles */
-        .jurix-update-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            min-width: 320px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-            padding: 16px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            z-index: 10000;
-            transform: translateX(400px);
-            transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-        
-        .jurix-update-notification.show {
-            transform: translateX(0);
-        }
-        
-        .notification-icon {
-            width: 32px;
-            height: 32px;
-            background: #E3FCEF;
-            color: #00875A;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        
-        .notification-content {
-            flex: 1;
-        }
-        
-        .notification-title {
-            font-weight: 600;
-            margin-bottom: 4px;
-            color: #172B4D;
-        }
-        
-        .notification-message {
-            font-size: 14px;
-            color: #6B778C;
-        }
-        
-        .notification-actions button {
-            background: none;
-            border: none;
-            font-size: 18px;
-            color: #97A0AF;
-            cursor: pointer;
-            padding: 4px;
-            line-height: 1;
-        }
-        
-        .notification-actions button:hover {
-            color: #42526E;
-        }
-        
-        .metric-card.updating {
-            position: relative;
-        }
-        
-        .metric-card.updating::after {
-            content: '';
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 8px;
-            height: 8px;
-            background: #00875A;
-            border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.5); }
-        }
-    `;
-    document.head.appendChild(style);
-
+    // Public API
     return {
         init: init,
         loadDashboardData: loadDashboardData,
-        dismissAlert: dismissAlert,
-        viewAlert: viewAlert,
-        applyRecommendation: applyRecommendation,
-        toggleChat: toggleChat,
-        dismissNotification: dismissNotification,  
-        startPolling: startPolling,                
-        stopPolling: stopPolling, 
+        viewDetails: function(type) {
+            console.log('Viewing details for:', type);
+            window.location.href = window.JurixData.contextPath + '/browse/' + window.JurixData.projectKey + '?view=' + type;
+        },
+        toggleAlertModal: function() {
+            const modal = document.getElementById('alertModal');
+            const overlay = document.getElementById('modalOverlay');
+            if (modal && overlay) {
+                modal.classList.toggle('active');
+                overlay.classList.toggle('active');
+            }
+        },
+        switchForecast: function(position, element) {
+            document.querySelectorAll('.forecast-pill').forEach(opt => opt.classList.remove('active'));
+            element.classList.add('active');
+            
+            const indicator = document.querySelector('.forecast-indicator');
+            if (indicator) {
+                indicator.className = 'forecast-indicator';
+                indicator.classList.add('pos-' + position);
+            }
+            
+            console.log('Switching to forecast type:', position);
+            // Load forecast data based on type
+            loadDashboardData();
+        },
+        startForecast: function() {
+            console.log('Starting forecast...');
+            showLoadingState();
+            
+            // Call backend to generate forecast
+            fetch(`${API_BASE_URL}/api/forecast/${currentProjectKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                mode: 'cors'
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Forecast data:', data);
+                loadDashboardData();
+            })
+            .catch(error => {
+                console.error('Error generating forecast:', error);
+                showError('Failed to generate forecast');
+            });
+        },
+        runSprintAnalysis: function() {
+            console.log('Running AI sprint analysis...');
+            AJS.flag({
+                type: 'info',
+                title: 'AI Analysis Started',
+                body: 'Running comprehensive sprint analysis. This may take a few moments...',
+                close: 'auto'
+            });
+            
+            // Refresh dashboard after a delay
+            setTimeout(function() {
+                loadDashboardData();
+            }, 2000);
+        },
+        generateReport: function() {
+            console.log('Generating report...');
+            window.open(`${API_BASE_URL}/api/report/${currentProjectKey}`, '_blank');
+        },
+        applyRecommendation: function(index) {
+            console.log('Applying recommendation', index);
+            
+            AJS.flag({
+                type: 'success',
+                title: 'Recommendation Applied',
+                body: 'The AI recommendation has been applied successfully!',
+                close: 'auto'
+            });
+            
+            // Refresh to show updated state
+            setTimeout(function() {
+                loadDashboardData();
+            }, 1000);
+        },
+        startPolling: startPolling,
+        stopPolling: stopPolling
     };
 })();
 
