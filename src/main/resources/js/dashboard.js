@@ -13,6 +13,7 @@ window.JurixDashboard = (function() {
     let pollFrequency = 5000; // Start with 5 seconds
     const MIN_POLL_FREQUENCY = 2000;
     const MAX_POLL_FREQUENCY = 30000;
+    window.currentForecastType = 'velocity'; // Track current forecast type
 
     function init() {
         console.log('🚀 Initializing JURIX Dashboard with New Layout...');
@@ -102,7 +103,7 @@ window.JurixDashboard = (function() {
     // COMPLETE REPLACEMENT for updateDashboard function in dashboard.js
 
     function updateDashboard(data) {
-        console.log('Updating dashboard with data:', data);
+        console.log('Updating dashboard with enhanced data:', data);
         
         // Update metrics
         if (data.metrics) {
@@ -119,41 +120,9 @@ window.JurixDashboard = (function() {
             updateRecommendations(data.recommendations);
         }
         
-        // Update current sprint label
-        const sprintEl = document.getElementById('currentSprint');
-        if (sprintEl && data.currentSprint) {
-            sprintEl.textContent = data.currentSprint;
-        }
-        
-        // Update charts with new data structure
-        if (data.visualizationData && data.visualizationData.charts) {
-            const charts = data.visualizationData.charts;
-            
-            // Sprint Progress
-            if (charts.sprintProgress) {
-                updateSprintProgressChart(charts.sprintProgress);
-            }
-            
-            // Burndown
-            if (charts.burndown) {
-                updateBurndownChart(charts.burndown);
-            }
-            
-            // Velocity Trend
-            if (charts.velocityTrend) {
-                updateVelocityTrendChart(charts.velocityTrend);
-            }
-            
-            // Team Workload (if exists)
-            if (charts.teamWorkload) {
-                // You can add a team workload chart update function here if needed
-                console.log('Team workload data available:', charts.teamWorkload);
-            }
-        }
-        
-        // Update risk assessment
-        if (data.riskAssessment) {
-            updateRiskAssessment(data.riskAssessment);
+        // Update charts
+        if (data.visualizationData) {
+            updateCharts(data.visualizationData);
         }
         
         // Update alerts
@@ -161,11 +130,19 @@ window.JurixDashboard = (function() {
             updateAlerts(data.alerts);
         }
         
-        // Update alert count (critical alerts from metrics)
-        const alertCountEl = document.getElementById('alertCount');
-        if (alertCountEl) {
-            const criticalAlerts = data.metrics?.criticalAlerts || 0;
-            animateValue(alertCountEl, criticalAlerts);
+        // Update risk assessment with real data
+        if (data.riskAssessment) {
+            updateRiskAssessment(data.riskAssessment);
+        }
+        
+        // NEW: Update sprint health pulse
+        if (data.sprintHealth) {
+            updateSprintHealthPulse(data.sprintHealth);
+        }
+        
+        // NEW: Update team energy meter
+        if (data.teamEnergy) {
+            updateTeamEnergyMeter(data.teamEnergy);
         }
         
         // Update last updated time
@@ -459,73 +436,280 @@ window.JurixDashboard = (function() {
     }
 
     function updateRiskAssessment(riskData) {
-        console.log('Updating risk assessment:', riskData);
+        console.log('Updating risk assessment with real data:', riskData);
         
-        // Update risk score
+        // Update risk score with animation
         const riskScoreEl = document.getElementById('riskScore');
-        if (riskScoreEl) {
-            const score = riskData?.score || 2.451;
-            animateValue(riskScoreEl, score, 3); // 3 decimal places
+        if (riskScoreEl && riskData.score !== undefined) {
+            animateValue(riskScoreEl, riskData.score, 3); // 3 decimal places
             
-            // Update risk level color based on score
-            const riskCard = document.querySelector('.risk-card');
+            // Change color based on risk level
+            const riskCard = riskScoreEl.closest('.risk-card');
             if (riskCard) {
-                // Remove existing risk classes
-                riskCard.classList.remove('risk-low', 'risk-medium', 'risk-high');
-                
-                // Add appropriate class based on score
-                if (score < 3) {
-                    riskCard.classList.add('risk-low');
-                } else if (score < 4) {
-                    riskCard.classList.add('risk-medium');
-                } else {
-                    riskCard.classList.add('risk-high');
-                }
+                riskCard.classList.remove('low-risk', 'medium-risk', 'high-risk', 'critical-risk');
+                riskCard.classList.add(`${riskData.level}-risk`);
             }
         }
         
-        // Update risk chart bars
+        // Update risk chart with real monthly data
         const riskChartEl = document.getElementById('riskChart');
-        if (riskChartEl && riskData?.monthlyScores) {
+        if (riskChartEl && riskData.monthlyScores) {
             riskChartEl.innerHTML = '';
             
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             const currentMonth = new Date().getMonth();
-            const scores = riskData.monthlyScores;
-            
-            // Find max score for scaling
-            const maxScore = Math.max(...scores, 5);
+            const maxScore = Math.max(...riskData.monthlyScores, 10);
             
             months.forEach((month, index) => {
-                const score = scores[index] || 2;
+                const score = riskData.monthlyScores[index] || 0;
                 const heightPercent = (score / maxScore) * 100;
                 
                 const bar = document.createElement('div');
                 bar.className = `bar ${index === currentMonth ? 'active' : ''}`;
                 bar.style.height = `${heightPercent}%`;
-                bar.setAttribute('data-value', score.toFixed(1));
+                bar.innerHTML = `<span class="bar-label">${month}</span>`;
                 
-                // Create label
-                const label = document.createElement('span');
-                label.className = 'bar-label';
-                label.textContent = month;
-                bar.appendChild(label);
-                
-                // Add hover tooltip
-                bar.title = `${month}: Risk Score ${score.toFixed(1)}`;
-                
-                // Color based on risk level
-                if (score < 3) {
-                    bar.style.background = '#00875A';
-                } else if (score < 4) {
-                    bar.style.background = '#FFAB00';
+                // Add color based on risk level
+                if (score > 7) {
+                    bar.style.backgroundColor = '#FF5630';
+                } else if (score > 5) {
+                    bar.style.backgroundColor = '#FFAB00';
+                } else if (score > 3) {
+                    bar.style.backgroundColor = '#36B37E';
                 } else {
-                    bar.style.background = '#DE350B';
+                    bar.style.backgroundColor = '#00875A';
                 }
+                
+                // Add tooltip on hover
+                bar.title = `${month}: Risk score ${score.toFixed(2)}`;
                 
                 riskChartEl.appendChild(bar);
             });
         }
+        
+        // Update risk factors if available
+        if (riskData.factors && riskData.factors.length > 0) {
+            const riskLabel = document.querySelector('.risk-label');
+            if (riskLabel) {
+                const topFactor = riskData.factors[0];
+                riskLabel.textContent = `Top risk: ${topFactor.factor}`;
+            }
+        }
+    }
+    function updateSprintHealthPulse(healthData) {
+        console.log('Updating sprint health pulse:', healthData);
+        
+        // Create or update sprint health widget
+        let healthWidget = document.getElementById('sprintHealthWidget');
+        if (!healthWidget) {
+            // Create a more compact widget
+            const container = document.querySelector('.charts-grid');
+            if (container) {
+                const healthCard = document.createElement('div');
+                healthCard.className = 'chart-card sprint-health-card';
+                healthCard.innerHTML = `
+                    <div id="sprintHealthWidget" class="health-widget-compact"></div>
+                `;
+                container.appendChild(healthCard);
+                healthWidget = document.getElementById('sprintHealthWidget');
+            }
+        }
+        
+        if (healthWidget) {
+            const pulseClass = healthData.status === 'healthy' ? 'pulse-healthy' : 
+                            healthData.status === 'at_risk' ? 'pulse-warning' : 'pulse-critical';
+            
+            healthWidget.innerHTML = `
+                <div class="health-compact-container">
+                    <div class="health-left">
+                        <h3 class="chart-title">Sprint Health</h3>
+                        <div class="health-score-compact">
+                            <span class="score-value" style="color: ${healthData.color}">${healthData.health_score.toFixed(0)}%</span>
+                            <span class="health-status-badge ${healthData.status}">${healthData.status.toUpperCase()}</span>
+                        </div>
+                        <div class="health-subtitle">Pulse rate: ${healthData.pulse_rate} bpm</div>
+                    </div>
+                    <div class="health-right">
+                        <div class="pulse-circle ${pulseClass}">
+                            <div class="pulse-dot" style="background-color: ${healthData.color}"></div>
+                        </div>
+                    </div>
+                </div>
+                ${healthData.critical_moments && healthData.critical_moments.length > 0 ? `
+                    <div class="critical-moments-compact">
+                        <strong>Key Risks:</strong>
+                        ${healthData.critical_moments.slice(0, 2).map(m => `<span class="risk-tag">• ${m}</span>`).join(' ')}
+                    </div>
+                ` : '<div class="health-good">✓ All systems operational</div>'}
+            `;
+        }
+    }
+
+    function updateTeamEnergyMeter(energyData) {
+        console.log('Updating team energy meter:', energyData);
+        
+        // Create or update team energy widget
+        let energyWidget = document.getElementById('teamEnergyWidget');
+        if (!energyWidget) {
+            // Create widget if it doesn't exist
+            const container = document.querySelector('.ai-left-section');
+            if (container) {
+                const energyCard = document.createElement('div');
+                energyCard.className = 'market-card';
+                energyCard.innerHTML = `
+                    <h3 class="risk-title">Team Energy Levels</h3>
+                    <div id="teamEnergyWidget" class="energy-widget"></div>
+                `;
+                container.appendChild(energyCard);
+                energyWidget = document.getElementById('teamEnergyWidget');
+            }
+        }
+        
+        if (energyWidget) {
+            const memberBars = energyData.members.map(member => {
+                const barColor = member.energy >= 70 ? '#36B37E' : 
+                            member.energy >= 40 ? '#FFAB00' : '#FF5630';
+                
+                return `
+                    <div class="energy-member">
+                        <div class="member-name">${member.name}</div>
+                        <div class="energy-bar-container">
+                            <div class="energy-bar" style="width: ${member.energy}%; background-color: ${barColor}"></div>
+                        </div>
+                        <div class="energy-info">
+                            <span class="energy-percent">${member.energy}%</span>
+                            ${member.recovery_time > 0 ? `<span class="recovery-time">${member.recovery_time.toFixed(1)}d recovery</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            energyWidget.innerHTML = `
+                <div class="team-energy-summary">
+                    <div class="avg-energy">Team Average: <strong>${energyData.average_energy.toFixed(0)}%</strong></div>
+                    <div class="at-risk">At Risk: <strong>${energyData.at_risk_count} members</strong></div>
+                </div>
+                <div class="energy-members">
+                    ${memberBars}
+                </div>
+                ${energyData.recommendations.length > 0 ? `
+                    <div class="energy-recommendations">
+                        <strong>Recommendations:</strong>
+                        ${energyData.recommendations.slice(0, 2).map(r => `<div>• ${r}</div>`).join('')}
+                    </div>
+                ` : ''}
+            `;
+        }
+    }
+
+    function displayForecastResults(forecastData) {
+        const performanceCard = document.querySelector('.performance-card');
+        if (!performanceCard) return;
+        
+        // Create forecast results display
+        const resultsDiv = document.createElement('div');
+        resultsDiv.className = 'forecast-results';
+        resultsDiv.style.marginTop = '20px';
+        
+        if (forecastData.type === 'velocity') {
+            resultsDiv.innerHTML = `
+                <div class="forecast-result-header">
+                    <h4>Velocity Forecast</h4>
+                    <span class="forecast-confidence">Confidence: ${(forecastData.data.confidence * 100).toFixed(0)}%</span>
+                </div>
+                <div class="forecast-trend ${forecastData.data.trend}">
+                    Trend: <strong>${forecastData.data.trend}</strong>
+                </div>
+                <div class="forecast-values">
+                    Next 3 sprints: ${forecastData.data.next_sprints.map(v => `<span class="forecast-value">${v}</span>`).join(' → ')}
+                </div>
+                <div class="forecast-insight">${forecastData.data.insights}</div>
+                <div class="forecast-recommendation">${forecastData.data.recommendation}</div>
+            `;
+        } else if (forecastData.type === 'burndown') {
+            resultsDiv.innerHTML = `
+                <div class="forecast-result-header">
+                    <h4>Burndown Forecast</h4>
+                    <span class="forecast-confidence ${forecastData.data.at_risk ? 'at-risk' : 'on-track'}">
+                        ${forecastData.data.at_risk ? '⚠️ At Risk' : '✅ On Track'}
+                    </span>
+                </div>
+                <div class="forecast-completion">
+                    Sprint Completion: <strong>${(forecastData.data.completion_probability * 100).toFixed(0)}%</strong>
+                </div>
+                <div class="forecast-days">Days Remaining: ${forecastData.data.days_remaining}</div>
+                <canvas id="burndownForecastChart" width="100%" height="150"></canvas>
+            `;
+            
+            // Add burndown chart after inserting HTML
+            setTimeout(() => {
+                drawBurndownForecast(forecastData.data);
+            }, 100);
+        } else if (forecastData.type === 'capacity') {
+            resultsDiv.innerHTML = `
+                <div class="forecast-result-header">
+                    <h4>Team Capacity Forecast</h4>
+                    <span class="forecast-capacity-trend ${forecastData.data.capacity_trend}">
+                        ${forecastData.data.capacity_trend === 'declining' ? '📉 Declining' : '📊 Stable'}
+                    </span>
+                </div>
+                <div class="capacity-metrics">
+                    <div>Current: ${forecastData.data.current_capacity} hrs/day</div>
+                    <div>Optimal: ${forecastData.data.optimal_capacity} hrs/day</div>
+                    <div>At Risk: ${forecastData.data.at_risk_members} members</div>
+                </div>
+                <div class="capacity-recommendations">
+                    ${forecastData.data.recommendations.map(r => `<div class="rec-item">• ${r}</div>`).join('')}
+                </div>
+            `;
+        }
+        
+        // Replace or append results
+        const existingResults = performanceCard.querySelector('.forecast-results');
+        if (existingResults) {
+            existingResults.replaceWith(resultsDiv);
+        } else {
+            performanceCard.appendChild(resultsDiv);
+        }
+    }
+
+    function drawBurndownForecast(burndownData) {
+        const canvas = document.getElementById('burndownForecastChart');
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: burndownData.ideal_burndown.length}, (_, i) => `Day ${i}`),
+                datasets: [{
+                    label: 'Ideal',
+                    data: burndownData.ideal_burndown,
+                    borderColor: '#C1C7D0',
+                    borderDash: [5, 5],
+                    fill: false
+                }, {
+                    label: 'Predicted',
+                    data: burndownData.predicted_burndown,
+                    borderColor: burndownData.at_risk ? '#FF5630' : '#36B37E',
+                    backgroundColor: burndownData.at_risk ? 'rgba(255, 86, 48, 0.1)' : 'rgba(54, 179, 126, 0.1)',
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Story Points'
+                        }
+                    }
+                }
+            }
+        });
     }
 
     function updateMetrics(metrics) {
@@ -695,18 +879,77 @@ window.JurixDashboard = (function() {
         const charts = visualizationData.charts || {};
         
         // Update sprint progress chart
-        if (charts.sprintProgress) {
-            updateSprintProgressChart(charts.sprintProgress);
+        if (charts.sprintProgress || charts.teamWorkload) {
+            // Use teamWorkload data for sprint progress if available
+            const progressData = charts.sprintProgress || charts.teamWorkload;
+            updateSprintProgressChart(progressData);
+        } else {
+            // Use default data if no data provided
+            updateSprintProgressChart({
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'Completed',
+                        data: [20, 35, 55, 75],
+                        backgroundColor: '#0052CC'
+                    }, {
+                        label: 'In Progress',
+                        data: [40, 35, 25, 15],
+                        backgroundColor: '#6B88F7'
+                    }, {
+                        label: 'To Do',
+                        data: [40, 30, 20, 10],
+                        backgroundColor: '#DFE5FF'
+                    }]
+                }
+            });
         }
         
         // Update burndown chart
         if (charts.burndown) {
             updateBurndownChart(charts.burndown);
+        } else {
+            // Use default burndown data
+            updateBurndownChart({
+                data: {
+                    labels: ['Day 0', 'Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8', 'Day 9', 'Day 10'],
+                    datasets: [{
+                        label: 'Ideal',
+                        data: [60, 54, 48, 42, 36, 30, 24, 18, 12, 6, 0],
+                        borderColor: '#C1C7D0',
+                        borderDash: [5, 5],
+                        tension: 0,
+                        fill: false
+                    }, {
+                        label: 'Actual',
+                        data: [60, 58, 52, 45, 38, 30, 25, 20, 18, null, null],
+                        borderColor: '#0052CC',
+                        backgroundColor: 'rgba(0, 82, 204, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                }
+            });
         }
         
         // Update velocity trend chart
         if (charts.velocityTrend) {
             updateVelocityTrendChart(charts.velocityTrend);
+        } else {
+            // Use default velocity data
+            updateVelocityTrendChart({
+                data: {
+                    labels: ['Week -2', 'Week -1', 'Current', 'Next Week', 'Week +2'],
+                    datasets: [{
+                        label: 'Velocity',
+                        data: [5, 6, 6, null, null],
+                        borderColor: '#00875A',
+                        backgroundColor: 'rgba(0, 135, 90, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                }
+            });
         }
     }
 
@@ -872,10 +1115,51 @@ window.JurixDashboard = (function() {
     function updateAlerts(alerts) {
         console.log('Updating alerts:', alerts);
         
+        // If no alerts provided, create default alerts based on metrics
+        if (!alerts || alerts.length === 0) {
+            // Check if we have risk data to generate alerts
+            const riskScore = window.lastDashboardData?.riskAssessment?.score || 0;
+            const sprintCompletion = window.lastDashboardData?.predictions?.sprintCompletion?.probability || 1;
+            
+            alerts = [];
+            
+            if (riskScore > 4) {
+                alerts.push({
+                    type: 'critical',
+                    message: `High risk score detected: ${riskScore.toFixed(1)}`,
+                    time: 'Just now',
+                    action: 'Review risk factors immediately'
+                });
+            }
+            
+            if (sprintCompletion < 0.7) {
+                alerts.push({
+                    type: 'warning',
+                    message: `Sprint completion at risk: ${(sprintCompletion * 100).toFixed(0)}%`,
+                    time: '2 minutes ago',
+                    action: 'Review sprint backlog'
+                });
+            }
+        }
+        
         // Update alert count
         const alertCountEl = document.getElementById('alertCount');
         if (alertCountEl) {
             alertCountEl.textContent = alerts.length;
+            
+            // Update alert card styling based on count
+            const alertCard = document.querySelector('.alert-card');
+            if (alertCard) {
+                if (alerts.length === 0) {
+                    alertCard.classList.add('no-alerts');
+                    document.querySelector('.alert-indicator').style.display = 'none';
+                    document.querySelector('.alert-dot').style.display = 'none';
+                } else {
+                    alertCard.classList.remove('no-alerts');
+                    document.querySelector('.alert-indicator').style.display = 'block';
+                    document.querySelector('.alert-dot').style.display = 'block';
+                }
+            }
         }
         
         // Update alert list in modal
@@ -883,18 +1167,22 @@ window.JurixDashboard = (function() {
         if (alertListEl) {
             alertListEl.innerHTML = '';
             
-            alerts.forEach(alert => {
-                const alertItem = document.createElement('div');
-                alertItem.className = 'alert-item';
-                alertItem.innerHTML = `
-                    <div class="alert-item-left">
-                        <div class="alert-severity"></div>
-                        <span class="alert-text">${alert.message}</span>
-                    </div>
-                    <span class="alert-time">${alert.time || 'Just now'}</span>
-                `;
-                alertListEl.appendChild(alertItem);
-            });
+            if (alerts.length === 0) {
+                alertListEl.innerHTML = '<div class="no-alerts-message">No critical alerts at this time. System is healthy!</div>';
+            } else {
+                alerts.forEach(alert => {
+                    const alertItem = document.createElement('div');
+                    alertItem.className = 'alert-item';
+                    alertItem.innerHTML = `
+                        <div class="alert-item-left">
+                            <div class="alert-severity ${alert.type}"></div>
+                            <span class="alert-text">${alert.message}</span>
+                        </div>
+                        <span class="alert-time">${alert.time || 'Just now'}</span>
+                    `;
+                    alertListEl.appendChild(alertItem);
+                });
+            }
         }
     }
 
@@ -1150,22 +1438,33 @@ window.JurixDashboard = (function() {
             }
         },
         switchForecast: function(position, element) {
+            // Update active state
             document.querySelectorAll('.forecast-pill').forEach(opt => opt.classList.remove('active'));
             element.classList.add('active');
             
+            // Move indicator dot
             const indicator = document.querySelector('.forecast-indicator');
             if (indicator) {
                 indicator.className = 'forecast-indicator';
                 indicator.classList.add('pos-' + position);
             }
             
-            console.log('Switching to forecast type:', position);
-            // Load forecast data based on type
-            loadDashboardData();
+            // Update forecast type
+            const types = ['velocity', 'burndown', 'capacity'];
+            window.currentForecastType = types[position - 1];
+            
+            console.log('Switching to forecast type:', window.currentForecastType);
         },
+
         startForecast: function() {
-            console.log('Starting forecast...');
-            showLoadingState();
+            console.log('Starting forecast for type:', window.currentForecastType);
+            
+            // Show loading state
+            const forecastCard = document.querySelector('.performance-card');
+            if (forecastCard) {
+                const originalContent = forecastCard.innerHTML;
+                forecastCard.innerHTML += '<div class="forecast-loading">Generating AI forecast...</div>';
+            }
             
             // Call backend to generate forecast
             fetch(`${API_BASE_URL}/api/forecast/${currentProjectKey}`, {
@@ -1173,16 +1472,31 @@ window.JurixDashboard = (function() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({
+                    type: window.currentForecastType
+                }),
                 mode: 'cors'
             })
             .then(response => response.json())
             .then(data => {
                 console.log('Forecast data:', data);
-                loadDashboardData();
+                
+                if (data.status === 'success') {
+                    displayForecastResults(data);
+                } else {
+                    throw new Error(data.error || 'Failed to generate forecast');
+                }
             })
             .catch(error => {
                 console.error('Error generating forecast:', error);
-                showError('Failed to generate forecast');
+                showError('Failed to generate forecast: ' + error.message);
+            })
+            .finally(() => {
+                // Remove loading state
+                const loadingEl = document.querySelector('.forecast-loading');
+                if (loadingEl) {
+                    loadingEl.remove();
+                }
             });
         },
         runSprintAnalysis: function() {

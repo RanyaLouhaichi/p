@@ -1083,6 +1083,385 @@
                 grid-template-columns: 1fr;
             }
         }
+        /* Add these styles to the existing <style> section in dashboard.vm */
+
+        /* Risk levels */
+        .risk-card.low-risk .risk-value { color: #36B37E; }
+        .risk-card.medium-risk .risk-value { color: #FFAB00; }
+        .risk-card.high-risk .risk-value { color: #FF5630; }
+        .risk-card.critical-risk .risk-value { color: #DE350B; }
+
+        /* Forecast Results */
+        .forecast-results {
+            background: #f7f8fa;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .forecast-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .forecast-result-header h4 {
+            margin: 0;
+            font-size: 16px;
+            color: #172b4d;
+        }
+
+        .forecast-confidence {
+            font-size: 12px;
+            color: #5e6c84;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .forecast-trend {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .forecast-trend.increasing { color: #36B37E; }
+        .forecast-trend.declining { color: #FF5630; }
+        .forecast-trend.stable { color: #6B778C; }
+
+        .forecast-values {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin: 12px 0;
+        }
+
+        .forecast-value {
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #0052CC;
+        }
+
+        .forecast-insight {
+            font-size: 13px;
+            color: #6b778c;
+            margin: 8px 0;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            border-left: 3px solid #0052CC;
+        }
+
+        .forecast-recommendation {
+            font-size: 13px;
+            color: #172b4d;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+
+        .forecast-loading {
+            text-align: center;
+            padding: 20px;
+            color: #5e6c84;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Sprint Health Pulse */
+        .health-pulse-container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .health-score {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .health-status {
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            color: #5e6c84;
+        }
+
+        .pulse-animation {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+
+        .pulse-dot {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            animation: heartbeat 1s ease-in-out infinite;
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        .critical-moments {
+            text-align: left;
+            font-size: 12px;
+            color: #5e6c84;
+            margin-top: 16px;
+            padding: 12px;
+            background: #f4f5f7;
+            border-radius: 6px;
+        }
+
+        /* Team Energy Meter */
+        .team-energy-summary {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 12px;
+            background: #f7f8fa;
+            border-radius: 8px;
+        }
+
+        .energy-member {
+            margin-bottom: 16px;
+        }
+
+        .member-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #172b4d;
+        }
+
+        .energy-bar-container {
+            height: 8px;
+            background: #e4e6ea;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .energy-bar {
+            height: 100%;
+            transition: width 1s ease-out;
+        }
+
+        .energy-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #5e6c84;
+        }
+
+        .recovery-time {
+            color: #FF5630;
+        }
+
+        .energy-recommendations {
+            margin-top: 16px;
+            padding: 12px;
+            background: #fff5f5;
+            border-radius: 6px;
+            font-size: 12px;
+            border: 1px solid #ffebe6;
+        }
+
+        .at-risk {
+            background: #fff5f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .capacity-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .capacity-metrics > div {
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .capacity-recommendations {
+            font-size: 13px;
+            color: #172b4d;
+        }
+
+        .rec-item {
+            margin: 4px 0;
+            padding-left: 8px;
+        }
+        /* Compact Sprint Health Card */
+        .sprint-health-card {
+            max-width: 100%;
+        }
+
+        .health-widget-compact {
+            padding: 0;
+        }
+
+        .health-compact-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .health-left {
+            flex: 1;
+        }
+
+        .health-score-compact {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0;
+        }
+
+        .score-value {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .health-status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .health-status-badge.healthy {
+            background: #E3FCEF;
+            color: #006644;
+        }
+
+        .health-status-badge.at_risk {
+            background: #FFFAE6;
+            color: #974F0C;
+        }
+
+        .health-status-badge.critical {
+            background: #FFEBE6;
+            color: #AE2A19;
+        }
+
+        .health-subtitle {
+            font-size: 13px;
+            color: #6B778C;
+        }
+
+        .health-right {
+            display: flex;
+            align-items: center;
+        }
+
+        .pulse-circle {
+            width: 80px;
+            height: 80px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pulse-circle .pulse-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .pulse-healthy .pulse-dot {
+            animation: pulse-healthy-animation 2s ease-in-out infinite;
+        }
+
+        .pulse-warning .pulse-dot {
+            animation: pulse-warning-animation 1.5s ease-in-out infinite;
+        }
+
+        .pulse-critical .pulse-dot {
+            animation: pulse-critical-animation 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse-healthy-animation {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 135, 90, 0.7); }
+            50% { transform: scale(1.1); box-shadow: 0 0 0 20px rgba(0, 135, 90, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 135, 90, 0); }
+        }
+
+        @keyframes pulse-warning-animation {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 171, 0, 0.7); }
+            50% { transform: scale(1.15); box-shadow: 0 0 0 25px rgba(255, 171, 0, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 171, 0, 0); }
+        }
+
+        @keyframes pulse-critical-animation {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 86, 48, 0.7); }
+            50% { transform: scale(1.2); box-shadow: 0 0 0 30px rgba(255, 86, 48, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 86, 48, 0); }
+        }
+
+        .critical-moments-compact {
+            padding: 12px 20px;
+            background: #FFF5F5;
+            border-top: 1px solid #FFEBE6;
+            font-size: 13px;
+            color: #AE2A19;
+        }
+
+        .risk-tag {
+            margin-left: 8px;
+        }
+
+        .health-good {
+            padding: 12px 20px;
+            background: #E3FCEF;
+            border-top: 1px solid #ABF5D1;
+            font-size: 13px;
+            color: #006644;
+            font-weight: 500;
+        }
+
+        /* Alert styles when no alerts */
+        .alert-card.no-alerts {
+            opacity: 0.7;
+        }
+
+        .alert-card.no-alerts .alert-value {
+            color: #42526E;
+        }
+
+        .alert-card.no-alerts .alert-details {
+            color: #6B778C;
+        }
+
+        .no-alerts-message {
+            text-align: center;
+            padding: 40px;
+            color: #6B778C;
+            font-size: 14px;
+        }
+
+        .alert-severity.critical {
+            background: #FF5630;
+        }
+
+        .alert-severity.warning {
+            background: #FFAB00;
+        }
     </style>
 </head>
 <body>
