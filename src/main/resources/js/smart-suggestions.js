@@ -344,71 +344,658 @@ window.SmartSuggestions = (function() {
     
     function createSuggestionsPanel(suggestions) {
         let html = `
-            <div id="smart-suggestions-panel" class="module">
-                <div class="mod-header">
-                    <h2>
-                        <span class="aui-icon aui-icon-small aui-iconfont-lightbulb"></span>
-                        Suggested Articles
-                        <span class="suggestion-count">(${suggestions.length})</span>
-                    </h2>
+            <div id="smart-suggestions-panel" class="jurix-suggestions-module">
+                <div class="jurix-suggestions-header">
+                    <div class="jurix-header-left">
+                        <div class="jurix-icon-wrapper">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                        </div>
+                        <h3>AI Suggestions</h3>
+                        <span class="jurix-badge">${suggestions.length}</span>
+                    </div>
+                    <div class="jurix-header-actions">
+                        <button class="jurix-icon-btn" onclick="SmartSuggestions.minimizePanel()" title="Minimize">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14"/>
+                            </svg>
+                        </button>
+                        <button class="jurix-icon-btn" onclick="SmartSuggestions.closePanel()" title="Close">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
-                <div class="mod-content">
-                    <div class="suggestions-list">
+                <div class="jurix-suggestions-body">
         `;
         
         suggestions.forEach((suggestion, index) => {
-            const relevanceClass = suggestion.relevance_score > 0.7 ? 'high-relevance' : 
-                                  suggestion.relevance_score > 0.4 ? 'medium-relevance' : 'low-relevance';
-            
             const relevancePercent = Math.round(suggestion.relevance_score * 100);
+            const relevanceLevel = suggestion.relevance_score > 0.7 ? 'high' : 
+                                suggestion.relevance_score > 0.4 ? 'medium' : 'low';
             
             html += `
-                <div class="suggestion-item ${relevanceClass}" data-article-id="${suggestion.article_id}">
-                    <div class="suggestion-header">
-                        <h4 class="suggestion-title">
-                            <a href="#" class="article-link" data-article-id="${suggestion.article_id}">
+                <div class="jurix-suggestion-card" data-article-id="${suggestion.article_id}" data-relevance="${relevanceLevel}">
+                    <div class="jurix-relevance-indicator ${relevanceLevel}">
+                        <div class="jurix-relevance-bar" style="width: ${relevancePercent}%"></div>
+                    </div>
+                    
+                    <div class="jurix-suggestion-content">
+                        <h4 class="jurix-suggestion-title">
+                            <a href="#" class="jurix-article-link" data-article-id="${suggestion.article_id}">
                                 ${AJS.escapeHtml(suggestion.title)}
                             </a>
                         </h4>
-                        <div class="suggestion-relevance">
-                            <span class="aui-lozenge aui-lozenge-subtle aui-lozenge-${relevanceClass === 'high-relevance' ? 'success' : relevanceClass === 'medium-relevance' ? 'current' : 'default'}">
+                        
+                        <div class="jurix-suggestion-meta">
+                            <span class="jurix-relevance-score">
                                 ${relevancePercent}% match
                             </span>
+                            <span class="jurix-meta-separator">•</span>
+                            <span class="jurix-suggestion-reason">
+                                ${AJS.escapeHtml(suggestion.suggestion_reason)}
+                            </span>
                         </div>
-                    </div>
-                    <div class="suggestion-reason">
-                        <span class="aui-icon aui-icon-small aui-iconfont-info"></span>
-                        ${AJS.escapeHtml(suggestion.suggestion_reason)}
-                    </div>
-                    <div class="suggestion-preview">
-                        ${AJS.escapeHtml(suggestion.content)}
-                    </div>
-                    <div class="suggestion-feedback">
-                        <span class="feedback-prompt">Was this helpful?</span>
-                        <button class="aui-button aui-button-subtle feedback-helpful" 
-                                data-article-id="${suggestion.article_id}">
-                            <span class="aui-icon aui-icon-small aui-iconfont-approve"></span>
-                            Helpful
-                        </button>
-                        <button class="aui-button aui-button-subtle feedback-not-relevant" 
-                                data-article-id="${suggestion.article_id}">
-                            <span class="aui-icon aui-icon-small aui-iconfont-cross-circle"></span>
-                            Not Relevant
-                        </button>
+                        
+                        <p class="jurix-suggestion-preview">
+                            ${AJS.escapeHtml(suggestion.content)}
+                        </p>
+                        
+                        <div class="jurix-suggestion-actions">
+                            <button class="jurix-thumb-btn jurix-thumb-up" data-article-id="${suggestion.article_id}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/>
+                                </svg>
+                                <span>Helpful</span>
+                            </button>
+                            <button class="jurix-thumb-btn jurix-thumb-down" data-article-id="${suggestion.article_id}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3zm7-13h3a2 2 0 012 2v7a2 2 0 01-2 2h-3"/>
+                                </svg>
+                                <span>Not helpful</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
         });
         
         html += `
+                </div>
+                <div class="jurix-minimized-state" onclick="SmartSuggestions.restorePanel()">
+                    <span class="jurix-minimized-icon">💡</span>
+                    <span>AI Suggestions (${suggestions.length})</span>
+                </div>
+            </div>
+        `;
+        
+        // Add the modern styles
+        addModernStyles();
+        
+        return html;
+    }
+
+    function showLoadingState() {
+        // Remove any existing panel
+        AJS.$('#smart-suggestions-panel').remove();
+        
+        const loadingHtml = `
+            <div id="smart-suggestions-panel" class="jurix-suggestions-module loading">
+                <div class="jurix-suggestions-header">
+                    <div class="jurix-header-left">
+                        <div class="jurix-icon-wrapper">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                        </div>
+                        <h3>AI Suggestions</h3>
+                    </div>
+                </div>
+                <div class="jurix-suggestions-body">
+                    <div class="jurix-loading-state">
+                        <div class="jurix-spinner">
+                            <div class="jurix-spinner-dot"></div>
+                            <div class="jurix-spinner-dot"></div>
+                            <div class="jurix-spinner-dot"></div>
+                        </div>
+                        <p>Finding relevant articles...</p>
                     </div>
                 </div>
             </div>
         `;
         
-        return html;
+        // Insert in the same location logic
+        const rightPanel = AJS.$('#viewissuesidebar');
+        if (rightPanel.length > 0) {
+            const peopleModule = rightPanel.find('.people-module');
+            if (peopleModule.length > 0) {
+                peopleModule.after(loadingHtml);
+            } else {
+                rightPanel.prepend(loadingHtml);
+            }
+        } else {
+            AJS.$('.issue-main-column').prepend(loadingHtml);
+        }
+        
+        // Trigger animation after insertion
+        setTimeout(function() {
+            AJS.$('#smart-suggestions-panel').addClass('suggestions-loaded');
+        }, 10);
     }
-    
+
+    function addModernStyles() {
+        const styleId = 'jurix-suggestions-modern-styles';
+        if (document.getElementById(styleId)) return;
+        
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            /* Modern Suggestions Panel */
+            .jurix-suggestions-module {
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(10px);
+                border-radius: 12px;
+                box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+                border: 1px solid rgba(0, 0, 0, 0.06);
+                overflow: hidden;
+                margin-bottom: 20px;
+                transition: all 0.3s ease;
+                opacity: 0;
+                transform: translateY(10px);
+                position: relative;
+            }
+            
+            .jurix-suggestions-module.suggestions-loaded {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            
+            .jurix-suggestions-module.minimized {
+                height: auto !important;
+            }
+            
+            .jurix-suggestions-module.minimized .jurix-suggestions-header,
+            .jurix-suggestions-module.minimized .jurix-suggestions-body {
+                display: none;
+            }
+            
+            .jurix-suggestions-module.minimized .jurix-minimized-state {
+                display: flex;
+            }
+            
+            /* Header */
+            .jurix-suggestions-header {
+                background: linear-gradient(135deg, #0052CC 0%, #0747A6 100%);
+                padding: 14px 18px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .jurix-header-left {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .jurix-icon-wrapper {
+                width: 32px;
+                height: 32px;
+                background: rgba(255, 255, 255, 0.2);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+            }
+            
+            .jurix-suggestions-header h3 {
+                margin: 0;
+                color: white;
+                font-size: 15px;
+                font-weight: 600;
+                letter-spacing: -0.2px;
+            }
+            
+            .jurix-badge {
+                background: rgba(255, 255, 255, 0.25);
+                color: white;
+                padding: 3px 8px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 600;
+            }
+            
+            .jurix-header-actions {
+                display: flex;
+                gap: 6px;
+            }
+            
+            .jurix-icon-btn {
+                width: 28px;
+                height: 28px;
+                border: none;
+                background: rgba(255, 255, 255, 0.15);
+                border-radius: 6px;
+                color: white;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s ease;
+            }
+            
+            .jurix-icon-btn:hover {
+                background: rgba(255, 255, 255, 0.25);
+                transform: scale(1.05);
+            }
+            
+            /* Body */
+            .jurix-suggestions-body {
+                padding: 6px;
+                max-height: 500px;
+                overflow-y: auto;
+            }
+            
+            .jurix-suggestions-body::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            .jurix-suggestions-body::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            
+            .jurix-suggestions-body::-webkit-scrollbar-thumb {
+                background: rgba(0, 0, 0, 0.1);
+                border-radius: 3px;
+            }
+            
+            /* Suggestion Cards */
+            .jurix-suggestion-card {
+                background: #FAFBFC;
+                border-radius: 8px;
+                padding: 16px;
+                margin-bottom: 6px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                position: relative;
+                border: 1px solid transparent;
+                overflow: hidden;
+            }
+            
+            .jurix-suggestion-card:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0, 82, 204, 0.08);
+                border-color: rgba(0, 82, 204, 0.15);
+                background: white;
+            }
+            
+            /* Relevance Indicator */
+            .jurix-relevance-indicator {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: rgba(0, 0, 0, 0.05);
+                overflow: hidden;
+            }
+            
+            .jurix-relevance-bar {
+                height: 100%;
+                background: #0052CC;
+                transition: width 0.3s ease;
+            }
+            
+            .jurix-relevance-indicator.high .jurix-relevance-bar {
+                background: #00875A;
+            }
+            
+            .jurix-relevance-indicator.medium .jurix-relevance-bar {
+                background: #0065FF;
+            }
+            
+            .jurix-relevance-indicator.low .jurix-relevance-bar {
+                background: #6B778C;
+            }
+            
+            /* Content */
+            .jurix-suggestion-content {
+                padding-top: 6px;
+            }
+            
+            .jurix-suggestion-title {
+                font-size: 14px;
+                font-weight: 600;
+                margin: 0 0 6px 0;
+                line-height: 1.4;
+            }
+            
+            .jurix-article-link {
+                color: #172B4D;
+                text-decoration: none;
+                transition: color 0.2s ease;
+            }
+            
+            .jurix-article-link:hover {
+                color: #0052CC;
+            }
+            
+            /* Meta Information */
+            .jurix-suggestion-meta {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 10px;
+                font-size: 12px;
+                color: #6B778C;
+            }
+            
+            .jurix-relevance-score {
+                font-weight: 600;
+                color: #0052CC;
+            }
+            
+            .jurix-meta-separator {
+                color: #C1C7D0;
+            }
+            
+            .jurix-suggestion-reason {
+                flex: 1;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            
+            /* Preview */
+            .jurix-suggestion-preview {
+                font-size: 13px;
+                line-height: 1.5;
+                color: #5E6C84;
+                margin: 0 0 12px 0;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            
+            /* Actions - Always visible, minimal style */
+            .jurix-suggestion-actions {
+                display: flex;
+                gap: 16px;
+                align-items: center;
+            }
+            
+            .jurix-thumb-btn {
+                padding: 0;
+                border: none;
+                background: none;
+                font-size: 12px;
+                color: #6B778C;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            
+            .jurix-thumb-btn:hover {
+                color: #42526E;
+            }
+            
+            .jurix-thumb-up:hover {
+                color: #00875A;
+            }
+            
+            .jurix-thumb-down:hover {
+                color: #DE350B;
+            }
+            
+            .jurix-thumb-btn.feedback-given {
+                pointer-events: none;
+            }
+            
+            .jurix-thumb-up.feedback-given {
+                color: #00875A;
+            }
+            
+            .jurix-thumb-down.feedback-given {
+                color: #DE350B;
+            }
+            
+            /* Loading State */
+            .jurix-loading-state {
+                padding: 80px 20px;
+                text-align: center;
+            }
+            
+            .jurix-spinner {
+                display: flex;
+                justify-content: center;
+                gap: 4px;
+                margin-bottom: 16px;
+            }
+            
+            .jurix-spinner-dot {
+                width: 8px;
+                height: 8px;
+                background: #0052CC;
+                border-radius: 50%;
+                animation: bounce 1.4s ease-in-out infinite;
+            }
+            
+            .jurix-spinner-dot:nth-child(1) { animation-delay: 0s; }
+            .jurix-spinner-dot:nth-child(2) { animation-delay: 0.2s; }
+            .jurix-spinner-dot:nth-child(3) { animation-delay: 0.4s; }
+            
+            @keyframes bounce {
+                0%, 80%, 100% {
+                    transform: scale(0.8);
+                    opacity: 0.5;
+                }
+                40% {
+                    transform: scale(1.2);
+                    opacity: 1;
+                }
+            }
+            
+            .jurix-loading-state p {
+                color: #6B778C;
+                font-size: 14px;
+                margin: 0;
+            }
+            
+            /* Minimized State */
+            .jurix-minimized-state {
+                display: none;
+                padding: 12px 18px;
+                background: linear-gradient(135deg, #0052CC 0%, #0747A6 100%);
+                color: white;
+                cursor: pointer;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+                font-weight: 500;
+            }
+            
+            .jurix-minimized-icon {
+                font-size: 18px;
+            }
+            
+            .jurix-minimized-state:hover {
+                background: linear-gradient(135deg, #0747A6 0%, #0052CC 100%);
+            }
+            
+            /* No Suggestions State */
+            .no-suggestions {
+                padding: 60px 20px;
+                text-align: center;
+            }
+            
+            .no-suggestions p {
+                color: #6B778C;
+                font-size: 14px;
+                margin: 0 0 8px 0;
+            }
+            
+            .suggestion-help-text {
+                font-size: 12px;
+                color: #97A0AF;
+            }
+            
+            /* Error State */
+            .error-suggestions {
+                padding: 40px 20px;
+                text-align: center;
+            }
+            
+            .error-suggestions .aui-icon {
+                color: #DE350B;
+                margin-bottom: 12px;
+            }
+            
+            .error-suggestions p {
+                color: #5E6C84;
+                font-size: 14px;
+                margin: 0 0 16px 0;
+            }
+            
+            .retry-button {
+                background: white;
+                border: 1px solid #DE350B;
+                color: #DE350B;
+                padding: 6px 14px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            
+            .retry-button:hover {
+                background: #FFEBE6;
+                transform: translateY(-1px);
+            }
+            
+            /* Animation for cards appearing */
+            .jurix-suggestion-card {
+                animation: cardSlideIn 0.3s ease forwards;
+                opacity: 0;
+            }
+            
+            @keyframes cardSlideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .jurix-suggestion-card:nth-child(1) { animation-delay: 0.05s; }
+            .jurix-suggestion-card:nth-child(2) { animation-delay: 0.1s; }
+            .jurix-suggestion-card:nth-child(3) { animation-delay: 0.15s; }
+            .jurix-suggestion-card:nth-child(4) { animation-delay: 0.2s; }
+            .jurix-suggestion-card:nth-child(5) { animation-delay: 0.25s; }
+            
+            /* Responsive adjustments */
+            @media (max-width: 1200px) {
+                .jurix-suggestions-module {
+                    margin-top: 20px;
+                }
+            }
+        `;
+        
+        document.head.appendChild(style);
+    }
+
+    // Update the bindFeedbackEvents function
+    function bindFeedbackEvents() {
+        // Helpful feedback
+        AJS.$('.jurix-thumb-up').off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const articleId = AJS.$(this).data('article-id');
+            sendFeedback(articleId, true);
+            
+            // Visual feedback
+            AJS.$(this).addClass('feedback-given');
+            AJS.$(this).prop('disabled', true);
+            AJS.$(this).siblings('.jurix-thumb-down').prop('disabled', true).css('opacity', '0.3');
+        });
+        
+        // Not helpful feedback
+        AJS.$('.jurix-thumb-down').off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const articleId = AJS.$(this).data('article-id');
+            sendFeedback(articleId, false);
+            
+            // Visual feedback
+            AJS.$(this).addClass('feedback-given');
+            AJS.$(this).prop('disabled', true);
+            AJS.$(this).siblings('.jurix-thumb-up').prop('disabled', true).css('opacity', '0.3');
+        });
+        
+        // Article link clicks
+        AJS.$('.jurix-article-link').off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const articleId = AJS.$(this).data('article-id');
+            
+            // Track click as implicit positive feedback
+            sendFeedback(articleId, true);
+            
+            // Show article content
+            AJS.flag({
+                type: 'info',
+                title: 'Opening Article',
+                body: 'Article viewer coming soon! Article ID: ' + articleId,
+                close: 'auto'
+            });
+        });
+    }
+
+    // Add these new functions to SmartSuggestions object
+    window.SmartSuggestions = window.SmartSuggestions || {};
+
+    SmartSuggestions.minimizePanel = function() {
+        AJS.$('#smart-suggestions-panel').addClass('minimized');
+        // Store minimized state in session
+        sessionStorage.setItem('jurix-suggestions-minimized', 'true');
+    };
+
+    SmartSuggestions.restorePanel = function() {
+        AJS.$('#smart-suggestions-panel').removeClass('minimized');
+        sessionStorage.removeItem('jurix-suggestions-minimized');
+    };
+
+    SmartSuggestions.closePanel = function() {
+        const panel = AJS.$('#smart-suggestions-panel');
+        panel.css('opacity', '0').css('transform', 'translateY(-10px)');
+        setTimeout(function() {
+            panel.remove();
+        }, 300);
+        // Cache this preference for the session
+        sessionStorage.setItem('jurix-suggestions-closed-' + currentIssueKey, 'true');
+    };
+
+    // Check if panel should be hidden on load
+    function checkPanelState() {
+        if (sessionStorage.getItem('jurix-suggestions-closed-' + currentIssueKey)) {
+            return false; // Don't show panel
+        }
+        if (sessionStorage.getItem('jurix-suggestions-minimized')) {
+            setTimeout(function() {
+                SmartSuggestions.minimizePanel();
+            }, 100);
+        }
+        return true;
+    }
     function bindFeedbackEvents() {
         // Helpful feedback
         AJS.$('.feedback-helpful').off('click').on('click', function(e) {

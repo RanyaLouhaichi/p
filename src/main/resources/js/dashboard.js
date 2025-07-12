@@ -49,7 +49,10 @@ window.JurixDashboard = (function() {
     }
     
     function loadDashboardData() {
-        if (!currentProjectKey) return;
+        if (!currentProjectKey) {
+            console.error('No project key specified');
+            return;
+        }
         
         console.log(`Loading dashboard data for project: ${currentProjectKey}`);
         
@@ -74,8 +77,17 @@ window.JurixDashboard = (function() {
             console.log('Dashboard data received:', data);
             
             if (data.status === 'success') {
+                // Store the data for debugging
+                window.lastDashboardData = data;
+                
+                // Update dashboard with all the data
                 updateDashboard(data);
+                
+                // Hide loading state
                 hideLoadingState();
+                
+                // Show success notification
+                console.log('✅ Dashboard updated successfully');
             } else {
                 throw new Error(data.error || 'Failed to load dashboard data');
             }
@@ -87,7 +99,11 @@ window.JurixDashboard = (function() {
         });
     }
 
+    // COMPLETE REPLACEMENT for updateDashboard function in dashboard.js
+
     function updateDashboard(data) {
+        console.log('Updating dashboard with data:', data);
+        
         // Update metrics
         if (data.metrics) {
             updateMetrics(data.metrics);
@@ -103,14 +119,36 @@ window.JurixDashboard = (function() {
             updateRecommendations(data.recommendations);
         }
         
-        // Update charts
-        if (data.visualizationData) {
-            updateCharts(data.visualizationData);
+        // Update current sprint label
+        const sprintEl = document.getElementById('currentSprint');
+        if (sprintEl && data.currentSprint) {
+            sprintEl.textContent = data.currentSprint;
         }
         
-        // Update alerts
-        if (data.alerts) {
-            updateAlerts(data.alerts);
+        // Update charts with new data structure
+        if (data.visualizationData && data.visualizationData.charts) {
+            const charts = data.visualizationData.charts;
+            
+            // Sprint Progress
+            if (charts.sprintProgress) {
+                updateSprintProgressChart(charts.sprintProgress);
+            }
+            
+            // Burndown
+            if (charts.burndown) {
+                updateBurndownChart(charts.burndown);
+            }
+            
+            // Velocity Trend
+            if (charts.velocityTrend) {
+                updateVelocityTrendChart(charts.velocityTrend);
+            }
+            
+            // Team Workload (if exists)
+            if (charts.teamWorkload) {
+                // You can add a team workload chart update function here if needed
+                console.log('Team workload data available:', charts.teamWorkload);
+            }
         }
         
         // Update risk assessment
@@ -118,8 +156,376 @@ window.JurixDashboard = (function() {
             updateRiskAssessment(data.riskAssessment);
         }
         
+        // Update alerts
+        if (data.alerts) {
+            updateAlerts(data.alerts);
+        }
+        
+        // Update alert count (critical alerts from metrics)
+        const alertCountEl = document.getElementById('alertCount');
+        if (alertCountEl) {
+            const criticalAlerts = data.metrics?.criticalAlerts || 0;
+            animateValue(alertCountEl, criticalAlerts);
+        }
+        
         // Update last updated time
         updateLastUpdatedTime(data.lastUpdated);
+    }
+
+    // ADD these new functions to dashboard.js (don't replace existing ones, just add):
+
+    function updateSprintProgressChart(chartData) {
+        console.log('Updating sprint progress chart:', chartData);
+        
+        const canvas = document.getElementById('sprintProgressChart');
+        if (!canvas) {
+            console.error('Sprint progress canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart if exists
+        if (charts.sprintProgress) {
+            charts.sprintProgress.destroy();
+        }
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Use provided data or generate default
+        const data = chartData?.data || {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [{
+                label: 'Completed',
+                data: [10, 25, 45, 60],
+                backgroundColor: '#0052CC',
+                stack: 'stack0'
+            }, {
+                label: 'In Progress',
+                data: [30, 35, 30, 25],
+                backgroundColor: '#6B88F7',
+                stack: 'stack0'
+            }, {
+                label: 'To Do',
+                data: [60, 40, 25, 15],
+                backgroundColor: '#DFE5FF',
+                stack: 'stack0'
+            }]
+        };
+        
+        charts.sprintProgress = new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: false
+                    },
+                    legend: {
+                        display: false  // We have our own legend in HTML
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y || 0;
+                                return label + ': ' + value + ' tickets';
+                            },
+                            afterLabel: function(context) {
+                                // Calculate percentage
+                                const datasetIndex = context.datasetIndex;
+                                const dataIndex = context.dataIndex;
+                                let total = 0;
+                                
+                                // Sum all values in this stack for this data point
+                                data.datasets.forEach((dataset) => {
+                                    total += dataset.data[dataIndex] || 0;
+                                });
+                                
+                                const value = context.parsed.y || 0;
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                return percentage + '% of total';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            stepSize: 10
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateBurndownChart(chartData) {
+        console.log('Updating burndown chart:', chartData);
+        
+        const canvas = document.getElementById('burndownChart');
+        if (!canvas) {
+            console.error('Burndown canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        if (charts.burndown) {
+            charts.burndown.destroy();
+        }
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Use provided data or defaults
+        const data = chartData?.data || {
+            labels: ['Day 0', 'Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8', 'Day 9', 'Day 10'],
+            datasets: [{
+                label: 'Ideal',
+                data: [60, 54, 48, 42, 36, 30, 24, 18, 12, 6, 0],
+                borderColor: '#C1C7D0',
+                borderDash: [5, 5],
+                tension: 0,
+                fill: false,
+                pointRadius: 3,
+                pointHoverRadius: 5
+            }, {
+                label: 'Actual',
+                data: [60, 58, 52, 45, 38, 30, 25, 20, null, null, null],
+                borderColor: '#0052CC',
+                backgroundColor: 'rgba(0, 82, 204, 0.1)',
+                tension: 0.3,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        };
+        
+        charts.burndown = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y + ' story points';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Story Points',
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateVelocityTrendChart(chartData) {
+        console.log('Updating velocity trend chart:', chartData);
+        
+        const canvas = document.getElementById('velocityTrendChart');
+        if (!canvas) {
+            console.error('Velocity trend canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        if (charts.velocityTrend) {
+            charts.velocityTrend.destroy();
+        }
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Use provided data or defaults
+        const data = chartData?.data || {
+            labels: ['Sprint 1', 'Sprint 2', 'Sprint 3', 'Sprint 4', 'Sprint 5'],
+            datasets: [{
+                label: 'Velocity',
+                data: [32, 38, 35, 45, 42],
+                borderColor: '#00875A',
+                backgroundColor: 'rgba(0, 135, 90, 0.1)',
+                tension: 0.3,
+                fill: true,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#00875A',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        };
+        
+        charts.velocityTrend = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Velocity: ' + context.parsed.y + ' points';
+                            },
+                            afterLabel: function(context) {
+                                // Show trend
+                                const dataIndex = context.dataIndex;
+                                if (dataIndex > 0) {
+                                    const prevValue = context.dataset.data[dataIndex - 1];
+                                    const currentValue = context.parsed.y;
+                                    const change = currentValue - prevValue;
+                                    const changePercent = ((change / prevValue) * 100).toFixed(1);
+                                    return 'Change: ' + (change >= 0 ? '+' : '') + change + ' (' + changePercent + '%)';
+                                }
+                                return '';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Story Points',
+                            font: {
+                                size: 12
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateRiskAssessment(riskData) {
+        console.log('Updating risk assessment:', riskData);
+        
+        // Update risk score
+        const riskScoreEl = document.getElementById('riskScore');
+        if (riskScoreEl) {
+            const score = riskData?.score || 2.451;
+            animateValue(riskScoreEl, score, 3); // 3 decimal places
+            
+            // Update risk level color based on score
+            const riskCard = document.querySelector('.risk-card');
+            if (riskCard) {
+                // Remove existing risk classes
+                riskCard.classList.remove('risk-low', 'risk-medium', 'risk-high');
+                
+                // Add appropriate class based on score
+                if (score < 3) {
+                    riskCard.classList.add('risk-low');
+                } else if (score < 4) {
+                    riskCard.classList.add('risk-medium');
+                } else {
+                    riskCard.classList.add('risk-high');
+                }
+            }
+        }
+        
+        // Update risk chart bars
+        const riskChartEl = document.getElementById('riskChart');
+        if (riskChartEl && riskData?.monthlyScores) {
+            riskChartEl.innerHTML = '';
+            
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const currentMonth = new Date().getMonth();
+            const scores = riskData.monthlyScores;
+            
+            // Find max score for scaling
+            const maxScore = Math.max(...scores, 5);
+            
+            months.forEach((month, index) => {
+                const score = scores[index] || 2;
+                const heightPercent = (score / maxScore) * 100;
+                
+                const bar = document.createElement('div');
+                bar.className = `bar ${index === currentMonth ? 'active' : ''}`;
+                bar.style.height = `${heightPercent}%`;
+                bar.setAttribute('data-value', score.toFixed(1));
+                
+                // Create label
+                const label = document.createElement('span');
+                label.className = 'bar-label';
+                label.textContent = month;
+                bar.appendChild(label);
+                
+                // Add hover tooltip
+                bar.title = `${month}: Risk Score ${score.toFixed(1)}`;
+                
+                // Color based on risk level
+                if (score < 3) {
+                    bar.style.background = '#00875A';
+                } else if (score < 4) {
+                    bar.style.background = '#FFAB00';
+                } else {
+                    bar.style.background = '#DE350B';
+                }
+                
+                riskChartEl.appendChild(bar);
+            });
+        }
     }
 
     function updateMetrics(metrics) {
@@ -657,7 +1063,7 @@ window.JurixDashboard = (function() {
         });
     }
 
-    function animateValue(element, endValue, suffix = '') {
+    function animateValue(element, endValue, decimalPlaces = 0, suffix = '') {
         if (!element) return;
         
         const startValue = parseFloat(element.textContent) || 0;
@@ -665,7 +1071,6 @@ window.JurixDashboard = (function() {
         const startTime = performance.now();
         
         const numericEnd = parseFloat(endValue);
-        const isFloat = !Number.isInteger(numericEnd) || endValue.toString().includes('.');
         
         function update(currentTime) {
             const elapsed = currentTime - startTime;
@@ -674,8 +1079,8 @@ window.JurixDashboard = (function() {
             const easeOut = 1 - Math.pow(1 - progress, 4);
             const current = startValue + (numericEnd - startValue) * easeOut;
             
-            if (isFloat) {
-                element.textContent = current.toFixed(1) + suffix;
+            if (decimalPlaces > 0) {
+                element.textContent = current.toFixed(decimalPlaces) + suffix;
             } else {
                 element.textContent = Math.floor(current) + suffix;
             }
