@@ -391,19 +391,7 @@
             border: 1px solid #e4e6ea;
         }
 
-        /* Creative accent - subtle geometric pattern */
-        .ai-insights-wrapper::after {
-            content: '';
-            position: absolute;
-            top: -30px;
-            right: -30px;
-            width: 150px;
-            height: 150px;
-            background: linear-gradient(45deg, transparent 48%, #f0f2f5 48%, #f0f2f5 52%, transparent 52%);
-            background-size: 30px 30px;
-            opacity: 0.5;
-            transform: rotate(45deg);
-        }
+        
 
         .ai-header {
             margin-bottom: 28px;
