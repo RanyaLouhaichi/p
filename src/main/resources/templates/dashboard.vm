@@ -74,9 +74,9 @@
         .sidebar {
             position: fixed;
             left: 0;
-            top: 0;
+            top: 40px;
             width: 56px;
-            height: 100vh;
+            height: calc(100vh - 40px);
             background-color: white;
             box-shadow: 1px 0 3px rgba(0,0,0,0.06);
             display: flex;
@@ -869,7 +869,19 @@
         }
 
         .forecast-start-btn:hover {
-            background-color: #0747A6;
+            background-color: #0747A6 !important;
+            color: white !important;
+        }
+
+        /* Make sure the text stays visible */
+        .forecast-start-btn span {
+            position: relative;
+            z-index: 1;
+            color: white !important;
+        }
+
+        .forecast-start-btn:hover span {
+            color: white !important;
         }
 
         /* Modal */
@@ -1660,7 +1672,7 @@
                             </div>
                             
                             <button class="apply-btn forecast-start-btn" onclick="JurixDashboard.startForecast()">
-                                Start forecast
+                                <span>Start forecast</span>
                             </button>
                         </div>
 
@@ -1714,6 +1726,8 @@
         apiBaseUrl: '$apiBaseUrl',
         contextPath: '$contextPath'
     };
+    // INITIALIZE THE FORECAST TYPE
+    window.currentForecastType = 'velocity';
 
     // Additional dashboard functions that work with the new layout
     window.JurixDashboard = window.JurixDashboard || {};
@@ -1742,14 +1756,29 @@
         indicator.className = 'forecast-indicator';
         indicator.classList.add('pos-' + position);
         
+        // UPDATE THE FORECAST TYPE - THIS WAS MISSING!
+        const types = ['velocity', 'burndown', 'capacity'];
+        window.currentForecastType = types[position - 1];
+        
         // Update forecast data
-        console.log('Switching to forecast type:', position);
+        console.log('Switching to forecast type:', window.currentForecastType);
+        
+        // Clear any existing results when switching
+        const forecastCard = document.querySelector('.performance-card');
+        if (forecastCard) {
+            const resultsContainer = forecastCard.querySelector('.forecast-results');
+            if (resultsContainer) {
+                resultsContainer.remove();
+            }
+        }
     };
     
     JurixDashboard.startForecast = function() {
-        console.log('Starting forecast...');
-        // Show loading state and fetch forecast data
-        JurixDashboard.loadDashboardData();
+        console.log('Starting forecast for type:', window.currentForecastType);
+        // Call the dashboard.js implementation
+        if (window.JurixDashboard && window.JurixDashboard.startForecast) {
+            window.JurixDashboard.startForecast();
+        }
     };
     
     JurixDashboard.runSprintAnalysis = function() {

@@ -1367,3 +1367,195 @@
 .issue-main-column #smart-suggestions-panel {
     margin: 20px 0;
 }
+
+/* Add these styles to the existing style.textContent in the init function */
+
+/* Forecast metrics styling */
+.forecast-metrics {
+    background: #f7f8fa;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e4e6ea;
+}
+
+.metric-row:last-child {
+    border-bottom: none;
+}
+
+.metric-label {
+    color: #5e6c84;
+    font-size: 13px;
+}
+
+.metric-value {
+    font-weight: 600;
+    color: #172b4d;
+    font-size: 14px;
+}
+
+/* Capacity specific styles */
+.capacity-overview {
+    padding: 20px;
+    text-align: center;
+}
+
+.capacity-gauge-container {
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.capacity-label {
+    font-size: 14px;
+    color: #5e6c84;
+    margin-bottom: 8px;
+}
+
+.capacity-percentage {
+    font-size: 36px;
+    font-weight: 700;
+    color: #172b4d;
+    margin-bottom: 12px;
+}
+
+.capacity-gauge {
+    width: 100%;
+    height: 20px;
+    background: #e4e6ea;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.gauge-fill {
+    height: 100%;
+    transition: width 1s ease-out;
+    border-radius: 10px;
+}
+
+.gauge-fill.stable {
+    background: linear-gradient(90deg, #36B37E 0%, #00875A 100%);
+}
+
+.gauge-fill.declining {
+    background: linear-gradient(90deg, #FFAB00 0%, #FF8B00 100%);
+}
+
+.gauge-fill.overloaded {
+    background: linear-gradient(90deg, #FF5630 0%, #DE350B 100%);
+}
+
+.capacity-status {
+    font-size: 13px;
+    color: #5e6c84;
+    font-style: italic;
+}
+
+/* Overloaded members */
+.overloaded-members {
+    margin-top: 16px;
+    padding: 16px;
+    background: #FFF5F5;
+    border-radius: 8px;
+    border: 1px solid #FFEBE6;
+}
+
+.overloaded-members h5 {
+    margin: 0 0 12px 0;
+    color: #DE350B;
+    font-size: 14px;
+}
+
+.member-load {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 13px;
+}
+
+.member-name {
+    font-weight: 600;
+    color: #172b4d;
+}
+
+.member-overload {
+    color: #DE350B;
+}
+
+/* Burndown specific */
+.forecast-completion {
+    margin: 16px 0;
+}
+
+.completion-bar {
+    margin-top: 8px;
+}
+
+.completion-fill.at-risk {
+    background: linear-gradient(90deg, #FF5630 0%, #DE350B 100%);
+}
+
+.completion-fill.on-track {
+    background: linear-gradient(90deg, #36B37E 0%, #00875A 100%);
+}
+
+/* Recommendations */
+.forecast-recommendations {
+    margin-top: 16px;
+    padding: 16px;
+    background: #E3FCEF;
+    border-radius: 8px;
+    border: 1px solid #ABF5D1;
+}
+
+.forecast-recommendations h5 {
+    margin: 0 0 12px 0;
+    color: #006644;
+    font-size: 14px;
+}
+
+.recommendation-item {
+    display: flex;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 13px;
+}
+
+.rec-number {
+    width: 24px;
+    height: 24px;
+    background: #006644;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.rec-text {
+    color: #172b4d;
+    line-height: 1.5;
+}
+
+/* Capacity recommendations */
+.capacity-recommendations {
+    margin-top: 16px;
+    padding: 16px;
+    background: #F7F8FA;
+    border-radius: 8px;
+}
+
+.capacity-recommendations h5 {
+    margin: 0 0 12px 0;
+    color: #172b4d;
+    font-size: 14px;
+}

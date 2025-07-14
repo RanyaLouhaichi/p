@@ -207,7 +207,7 @@ window.JurixDashboard = (function() {
                 border: 2px solid #FFAB00;
             }
             
-            .metric-value {
+            .capacity-metrics .metric-value {
                 font-size: 24px;
                 font-weight: 600;
                 color: #172b4d;
@@ -1092,7 +1092,7 @@ window.JurixDashboard = (function() {
             const loadingHtml = `
                 <div class="forecast-loading">
                     <div class="loading-spinner"></div>
-                    <span>Generating AI forecast...</span>
+                    <span>Generating ${window.currentForecastType} forecast...</span>
                 </div>
             `;
             
@@ -1106,20 +1106,20 @@ window.JurixDashboard = (function() {
             
             resultsContainer.innerHTML = loadingHtml;
             
-            // Call backend to generate forecast
+            // Call backend to generate forecast with the correct type
             fetch(`${API_BASE_URL}/api/forecast/${currentProjectKey}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    type: window.currentForecastType
+                    type: window.currentForecastType  // This sends the correct type
                 }),
                 mode: 'cors'
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Forecast data:', data);
+                console.log('Forecast data received:', data);
                 
                 if (data.status === 'success') {
                     displayEnhancedForecastResults(data, resultsContainer);
@@ -1131,7 +1131,7 @@ window.JurixDashboard = (function() {
                 console.error('Error generating forecast:', error);
                 resultsContainer.innerHTML = `
                     <div class="forecast-error">
-                        <span>⚠️ Failed to generate forecast</span>
+                        <span>⚠️ Failed to generate forecast: ${error.message}</span>
                     </div>
                 `;
             });
@@ -1145,17 +1145,37 @@ window.JurixDashboard = (function() {
         let resultsHtml = '';
         
         if (type === 'velocity') {
+            // Check if we have chart data
+            const hasChartData = data.chart && data.chart.data;
+            
             resultsHtml = `
                 <div class="forecast-result-header">
                     <h4>Velocity Forecast</h4>
-                    <span class="forecast-confidence">Confidence: ${(data.confidence * 100).toFixed(0)}%</span>
+                    <span class="forecast-confidence">Confidence: ${Math.round((data.confidence || 0.7) * 100)}%</span>
                 </div>
-                <div class="forecast-trend ${data.trend}">
-                    <div class="trend-indicator ${data.trend}"></div>
-                    Trend: <strong>${data.trend}</strong>
+                <div class="forecast-trend ${data.trend || 'stable'}">
+                    <div class="trend-indicator ${data.trend || 'stable'}"></div>
+                    Trend: <strong>${data.trend || 'stable'}</strong>
+                    ${data.trend_percentage ? ` (${data.trend_percentage > 0 ? '+' : ''}${data.trend_percentage.toFixed(1)}%)` : ''}
                 </div>
-                <div class="forecast-visual">
-                    <canvas id="velocityForecastChart" height="150"></canvas>
+                ${hasChartData ? `
+                    <div class="forecast-visual">
+                        <canvas id="velocityForecastChart" height="150"></canvas>
+                    </div>
+                ` : ''}
+                <div class="forecast-metrics">
+                    <div class="metric-row">
+                        <span class="metric-label">Current Velocity:</span>
+                        <span class="metric-value">${data.current_velocity || 0} points/week</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Next Week Estimate:</span>
+                        <span class="metric-value">${data.next_week_estimate || 0} points</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Historical Average:</span>
+                        <span class="metric-value">${(data.historical_average || 0).toFixed(1)} points</span>
+                    </div>
                 </div>
                 <div class="forecast-insight-card">
                     <div class="forecast-insight-icon">
@@ -1166,75 +1186,165 @@ window.JurixDashboard = (function() {
                     </div>
                     <div class="forecast-insight-content">
                         <div class="forecast-insight-title">Insight</div>
-                        <div class="forecast-insight-text">${data.insights || 'Analyzing velocity patterns...'}</div>
+                        <div class="forecast-insight-text">${data.insights || 'Based on historical data and current sprint progress, velocity is expected to remain stable.'}</div>
                     </div>
                 </div>
-                <div class="forecast-insight-card">
-                    <div class="forecast-insight-icon">
-                        <svg viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
-                        </svg>
+                ${data.recommendations && data.recommendations.length > 0 ? `
+                    <div class="forecast-insight-card">
+                        <div class="forecast-insight-icon">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
+                        </div>
+                        <div class="forecast-insight-content">
+                            <div class="forecast-insight-title">Recommendations</div>
+                            <div class="forecast-insight-text">
+                                ${data.recommendations.map(r => `• ${r}`).join('<br>')}
+                            </div>
+                        </div>
                     </div>
-                    <div class="forecast-insight-content">
-                        <div class="forecast-insight-title">Recommendation</div>
-                        <div class="forecast-insight-text">${data.recommendation}</div>
-                    </div>
-                </div>
+                ` : ''}
             `;
         } else if (type === 'burndown') {
             const riskClass = data.at_risk ? 'at-risk' : 'on-track';
+            const hasChartData = data.chart && data.chart.data;
+            
             resultsHtml = `
                 <div class="forecast-result-header">
-                    <h4>Burndown Forecast</h4>
+                    <h4>Burndown Rate Forecast</h4>
                     <span class="forecast-confidence ${riskClass}">
                         ${data.at_risk ? '⚠️ At Risk' : '✅ On Track'}
                     </span>
                 </div>
                 <div class="forecast-completion">
-                    Sprint Completion: <strong>${(data.completion_probability * 100).toFixed(0)}%</strong>
+                    Sprint Completion: <strong>${Math.round((data.completion_probability || 0) * 100)}%</strong>
                     <div class="completion-bar">
-                        <div class="completion-fill" style="width: ${data.completion_probability * 100}%"></div>
+                        <div class="completion-fill ${riskClass}" style="width: ${(data.completion_probability || 0) * 100}%"></div>
                     </div>
                 </div>
-                <div class="forecast-visual">
-                    <canvas id="burndownForecastChart" height="200"></canvas>
+                ${hasChartData ? `
+                    <div class="forecast-visual">
+                        <canvas id="burndownForecastChart" height="200"></canvas>
+                    </div>
+                ` : ''}
+                <div class="forecast-metrics">
+                    <div class="metric-row">
+                        <span class="metric-label">Days Remaining:</span>
+                        <span class="metric-value">${data.days_remaining || 0} days</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Remaining Work:</span>
+                        <span class="metric-value">${data.remaining_work || 0} points</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Daily Velocity Needed:</span>
+                        <span class="metric-value">${(data.daily_velocity_needed || 0).toFixed(1)} points/day</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-label">Current Velocity:</span>
+                        <span class="metric-value">${(data.current_velocity || 0).toFixed(1)} points/day</span>
+                    </div>
                 </div>
-                <div class="forecast-days">
-                    <span class="days-icon">📅</span>
-                    Days Remaining: <strong>${data.days_remaining}</strong>
-                </div>
+                ${data.insights ? `
+                    <div class="forecast-insight-card ${riskClass}">
+                        <div class="forecast-insight-icon">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M13 7.5a1 1 0 11-2 0 1 1 0 012 0zm-3 3.75a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v4.25h.75a.75.75 0 010 1.5h-3a.75.75 0 010-1.5h.75V12h-.75a.75.75 0 01-.75-.75z"/>
+                                <path fill-rule="evenodd" d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zM2.5 12a9.5 9.5 0 1119 0 9.5 9.5 0 01-19 0z"/>
+                            </svg>
+                        </div>
+                        <div class="forecast-insight-content">
+                            <div class="forecast-insight-title">Analysis</div>
+                            <div class="forecast-insight-text">${data.insights}</div>
+                        </div>
+                    </div>
+                ` : ''}
+                ${data.recommendations && data.recommendations.length > 0 ? `
+                    <div class="forecast-recommendations">
+                        <h5>Recommended Actions:</h5>
+                        ${data.recommendations.map((rec, i) => `
+                            <div class="recommendation-item">
+                                <span class="rec-number">${i + 1}</span>
+                                <span class="rec-text">${rec}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
             `;
         } else if (type === 'capacity') {
-            const trendClass = data.capacity_trend === 'declining' ? 'declining' : 'stable';
+            const trendClass = data.capacity_trend === 'declining' ? 'declining' : 
+                            data.capacity_trend === 'overloaded' ? 'overloaded' : 'stable';
+            const hasChartData = data.chart && data.chart.data;
+            
             resultsHtml = `
                 <div class="forecast-result-header">
                     <h4>Team Capacity Forecast</h4>
                     <span class="forecast-capacity-trend ${trendClass}">
-                        ${data.capacity_trend === 'declining' ? '📉 Declining' : '📊 Stable'}
+                        ${data.capacity_trend === 'declining' ? '📉 Declining' : 
+                        data.capacity_trend === 'overloaded' ? '⚠️ Overloaded' :
+                        data.capacity_trend === 'underutilized' ? '📊 Underutilized' : '✅ Stable'}
                     </span>
                 </div>
+                <div class="capacity-overview">
+                    <div class="capacity-gauge-container">
+                        <div class="capacity-label">Team Utilization</div>
+                        <div class="capacity-percentage">${(data.utilization_percentage || 0).toFixed(0)}%</div>
+                        <div class="capacity-gauge">
+                            <div class="gauge-fill ${trendClass}" style="width: ${Math.min(data.utilization_percentage || 0, 100)}%"></div>
+                        </div>
+                        <div class="capacity-status">${data.trend_reason || ''}</div>
+                    </div>
+                </div>
+                ${hasChartData ? `
+                    <div class="forecast-visual">
+                        <canvas id="capacityForecastChart" height="150"></canvas>
+                    </div>
+                ` : ''}
                 <div class="capacity-metrics">
                     <div class="metric-card">
-                        <div class="metric-value">${data.current_capacity}</div>
+                        <div class="metric-value">${data.current_capacity || 0}</div>
                         <div class="metric-label">Current hrs/day</div>
                     </div>
                     <div class="metric-card optimal">
-                        <div class="metric-value">${data.optimal_capacity.toFixed(1)}</div>
+                        <div class="metric-value">${(data.optimal_capacity || 0).toFixed(1)}</div>
                         <div class="metric-label">Optimal hrs/day</div>
                     </div>
                     <div class="metric-card ${data.at_risk_members > 0 ? 'warning' : ''}">
-                        <div class="metric-value">${data.at_risk_members}</div>
+                        <div class="metric-value">${data.at_risk_members || 0}</div>
                         <div class="metric-label">At Risk Members</div>
                     </div>
                 </div>
-                <div class="capacity-visual">
-                    <div class="capacity-gauge">
-                        <div class="gauge-fill" style="width: ${(data.current_capacity / 10) * 100}%"></div>
+                ${data.overloaded_members && data.overloaded_members.length > 0 ? `
+                    <div class="overloaded-members">
+                        <h5>Overloaded Team Members:</h5>
+                        ${data.overloaded_members.map(member => `
+                            <div class="member-load">
+                                <span class="member-name">${member.name}</span>
+                                <span class="member-overload">${member.current_load} tickets (${(member.overload_factor * 100).toFixed(0)}% over capacity)</span>
+                            </div>
+                        `).join('')}
                     </div>
-                </div>
-                <div class="capacity-recommendations">
-                    ${data.recommendations.map(r => `<div class="rec-item">• ${r}</div>`).join('')}
-                </div>
+                ` : ''}
+                ${data.insights ? `
+                    <div class="forecast-insight-card">
+                        <div class="forecast-insight-icon">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M13 7.5a1 1 0 11-2 0 1 1 0 012 0zm-3 3.75a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v4.25h.75a.75.75 0 010 1.5h-3a.75.75 0 010-1.5h.75V12h-.75a.75.75 0 01-.75-.75z"/>
+                                <path fill-rule="evenodd" d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zM2.5 12a9.5 9.5 0 1119 0 9.5 9.5 0 01-19 0z"/>
+                            </svg>
+                        </div>
+                        <div class="forecast-insight-content">
+                            <div class="forecast-insight-title">Team Status</div>
+                            <div class="forecast-insight-text">${data.insights}</div>
+                        </div>
+                    </div>
+                ` : ''}
+                ${data.recommendations && data.recommendations.length > 0 ? `
+                    <div class="capacity-recommendations">
+                        <h5>Recommendations:</h5>
+                        ${data.recommendations.map(r => `<div class="rec-item">• ${r}</div>`).join('')}
+                    </div>
+                ` : ''}
             `;
         }
         
@@ -1248,12 +1358,172 @@ window.JurixDashboard = (function() {
             container.style.opacity = '1';
             
             // Draw charts if needed
-            if (type === 'velocity') {
-                drawVelocityForecast(data);
-            } else if (type === 'burndown') {
-                drawEnhancedBurndownForecast(data);
+            if (type === 'velocity' && data.chart) {
+                drawVelocityForecastEnhanced(data);
+            } else if (type === 'burndown' && data.chart) {
+                drawBurndownForecastEnhanced(data);
+            } else if (type === 'capacity' && data.chart) {
+                drawCapacityForecastEnhanced(data);
             }
         }, 100);
+    }
+
+    function drawVelocityForecastEnhanced(data) {
+        const canvas = document.getElementById('velocityForecastChart');
+        if (!canvas || !data.chart || !data.chart.data) return;
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Destroy existing chart if any
+        if (window.velocityForecastChartInstance) {
+            window.velocityForecastChartInstance.destroy();
+        }
+        
+        window.velocityForecastChartInstance = new Chart(ctx, {
+            type: data.chart.type || 'line',
+            data: data.chart.data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + ' points';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + ' pts';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function drawBurndownForecastEnhanced(data) {
+        const canvas = document.getElementById('burndownForecastChart');
+        if (!canvas || !data.chart || !data.chart.data) return;
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Destroy existing chart if any
+        if (window.burndownForecastChartInstance) {
+            window.burndownForecastChartInstance.destroy();
+        }
+        
+        window.burndownForecastChartInstance = new Chart(ctx, {
+            type: data.chart.type || 'line',
+            data: data.chart.data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + (context.parsed.y || 0) + ' points';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Story Points'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function drawCapacityForecastEnhanced(data) {
+        const canvas = document.getElementById('capacityForecastChart');
+        if (!canvas || !data.chart || !data.chart.data) return;
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Destroy existing chart if any
+        if (window.capacityForecastChartInstance) {
+            window.capacityForecastChartInstance.destroy();
+        }
+        
+        window.capacityForecastChartInstance = new Chart(ctx, {
+            type: data.chart.type || 'line',
+            data: data.chart.data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + ' hrs/day';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Hours per Day'
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
     }
 
     function drawVelocityForecast(data) {
@@ -2214,6 +2484,8 @@ window.JurixDashboard = (function() {
             }
         },
         switchForecast: function(position, element) {
+            console.log('Switching forecast to position:', position);
+            
             // Update active state
             document.querySelectorAll('.forecast-pill').forEach(opt => opt.classList.remove('active'));
             element.classList.add('active');
@@ -2225,11 +2497,20 @@ window.JurixDashboard = (function() {
                 indicator.classList.add('pos-' + position);
             }
             
-            // Update forecast type
+            // Update forecast type based on position
             const types = ['velocity', 'burndown', 'capacity'];
             window.currentForecastType = types[position - 1];
             
-            console.log('Switching to forecast type:', window.currentForecastType);
+            console.log('Updated forecast type to:', window.currentForecastType);
+            
+            // Clear any existing results when switching
+            const forecastCard = document.querySelector('.performance-card');
+            if (forecastCard) {
+                const resultsContainer = forecastCard.querySelector('.forecast-results');
+                if (resultsContainer) {
+                    resultsContainer.remove();
+                }
+            }
         },
 
         startForecast: function() {
