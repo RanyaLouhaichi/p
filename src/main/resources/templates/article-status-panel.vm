@@ -1,0 +1,75 @@
+#if($hasArticle)
+<div class="module toggle-wrap">
+    <div class="mod-header">
+        <h3>AI-Generated Article</h3>
+    </div>
+    <div class="mod-content">
+        <div class="article-status-content">
+            <div class="status-indicator">
+                #if($approvalStatus == "approved")
+                    <span class="aui-lozenge aui-lozenge-success">Approved</span>
+                #elseif($approvalStatus == "rejected")
+                    <span class="aui-lozenge aui-lozenge-error">Rejected</span>
+                #else
+                    <span class="aui-lozenge aui-lozenge-current">Pending Review</span>
+                #end
+                <span class="article-version">v$articleVersion</span>
+            </div>
+            
+            <div class="article-actions">
+                <button class="aui-button aui-button-primary view-article-btn" 
+                        onclick="ArticleReview.openArticleReview('$issueKey')">
+                    <span class="aui-icon aui-icon-small aui-iconfont-document"></span>
+                    Review Article
+                </button>
+            </div>
+            
+            #if($articleStatus == "error")
+            <div class="article-error-msg">
+                <span class="aui-icon aui-icon-small aui-iconfont-warning"></span>
+                Article generation failed. Please try again.
+            </div>
+            #end
+        </div>
+    </div>
+</div>
+
+<style>
+.article-status-content {
+    padding: 10px;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.article-version {
+    font-size: 12px;
+    color: #6B778C;
+    font-weight: 600;
+}
+
+.article-actions {
+    margin-top: 12px;
+}
+
+.view-article-btn {
+    width: 100%;
+}
+
+.article-error-msg {
+    margin-top: 12px;
+    padding: 8px;
+    background: #FFEBE6;
+    border-radius: 3px;
+    color: #DE350B;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+</style>
+#end

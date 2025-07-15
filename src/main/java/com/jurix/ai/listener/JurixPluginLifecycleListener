@@ -1,0 +1,56 @@
+package com.jurix.ai.lifecycle;
+
+import com.atlassian.plugin.event.PluginEventListener;
+import com.atlassian.plugin.event.events.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Named;
+
+@Named
+public class JurixPluginLifecycleListener {
+    
+    private static final Logger log = LoggerFactory.getLogger(JurixPluginLifecycleListener.class);
+    private static final String PLUGIN_KEY = "com.jurix.ai.jurix-ai-plugin";
+    
+    @PluginEventListener
+    public void onPluginEnabled(PluginEnabledEvent event) {
+        if (PLUGIN_KEY.equals(event.getPlugin().getKey())) {
+            log.info("🚀 ============================================");
+            log.info("🚀 JURIX AI PLUGIN ENABLED SUCCESSFULLY!");
+            log.info("🚀 ============================================");
+            log.info("🚀 Plugin Key: {}", event.getPlugin().getKey());
+            log.info("🚀 Plugin Name: {}", event.getPlugin().getName());
+            log.info("🚀 Plugin Version: {}", event.getPlugin().getPluginInformation().getVersion());
+            log.info("🚀 Plugin State: {}", event.getPlugin().getPluginState());
+            log.info("🚀 ============================================");
+        }
+    }
+    
+    @PluginEventListener
+    public void onPluginDisabled(PluginDisabledEvent event) {
+        if (PLUGIN_KEY.equals(event.getPlugin().getKey())) {
+            log.info("🔴 ============================================");
+            log.info("🔴 JURIX AI PLUGIN DISABLED");
+            log.info("🔴 ============================================");
+        }
+    }
+    
+    @PluginEventListener
+    public void onPluginModuleEnabled(PluginModuleEnabledEvent event) {
+        if (event.getModule().getPlugin().getKey().equals(PLUGIN_KEY)) {
+            log.info("✅ JURIX Module Enabled: {} ({})", 
+                event.getModule().getName(), 
+                event.getModule().getKey());
+        }
+    }
+    
+    @PluginEventListener
+    public void onPluginModuleDisabled(PluginModuleDisabledEvent event) {
+        if (event.getModule().getPlugin().getKey().equals(PLUGIN_KEY)) {
+            log.warn("⚠️ JURIX Module Disabled: {} ({})", 
+                event.getModule().getName(), 
+                event.getModule().getKey());
+        }
+    }
+}

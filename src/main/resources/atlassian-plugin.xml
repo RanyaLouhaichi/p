@@ -24,29 +24,26 @@
         <context>jira.navigator.advanced</context>
         <context>jira.create</context>
     </web-resource>
-
-    <!-- REMOVE THIS ENTIRE SECTION - Active Objects is causing the error -->
-    <!--
-    <ao key="ao-module" name="Active Objects Module">
-        <description>The Active Objects module for this plugin.</description>
-        <entity>com.jurix.ai.ao.AIAnalytics</entity>
-        <entity>com.jurix.ai.ao.GeneratedArticle</entity>
-        <entity>com.jurix.ai.ao.Prediction</entity>
-        <entity>com.jurix.ai.ao.DashboardUpdate</entity>
-    </ao>
-    -->
+    
+    <!-- Article Review Resources -->
+    <web-resource key="jurix-article-review-resources" name="JURIX Article Review Resources">
+        <dependency>com.atlassian.auiplugin:ajs</dependency>
+        <dependency>com.atlassian.auiplugin:aui-flag</dependency>
+        
+        <resource type="download" name="article-review.js" location="/js/article-review.js"/>
+        
+        <context>atl.general</context>
+        <context>jira.view.issue</context>
+        <context>jira.navigator.simple</context>
+        <context>jira.navigator.advanced</context>
+    </web-resource>
     
     <!-- Component Imports for Dependency Injection -->
     <component-import key="userManager" interface="com.atlassian.sal.api.user.UserManager"/>
     <component-import key="pluginSettingsFactory" interface="com.atlassian.sal.api.pluginsettings.PluginSettingsFactory"/>
     <component-import key="templateRenderer" interface="com.atlassian.templaterenderer.TemplateRenderer"/>
     <component-import key="eventPublisher" interface="com.atlassian.event.api.EventPublisher"/>
-    
-    <!-- REMOVE THESE TOO - Not needed without Active Objects -->
-    <!--
-    <component-import key="activeObjects" interface="com.atlassian.activeobjects.external.ActiveObjects"/>
     <component-import key="cacheManager" interface="com.atlassian.cache.CacheManager"/>
-    -->
 
     <!-- Component Declarations -->
     <component key="jurixConfiguration" class="com.jurix.ai.config.JurixConfiguration"/>
@@ -56,17 +53,22 @@
     <component key="notificationService" class="com.jurix.ai.service.NotificationService"/>
     <component key="dashboardService" class="com.jurix.ai.service.DashboardService"/>
     
-    <!-- Dashboard Update Service - Keep this, it's now using in-memory storage -->
+    <!-- Dashboard Update Service -->
     <component key="dashboardUpdateService" class="com.jurix.ai.service.DashboardUpdateService">
         <description>Service for tracking dashboard updates</description>
     </component>
+    
+    <!-- Article Generation Service -->
+    <component key="articleGenerationService" class="com.jurix.ai.service.ArticleGenerationService">
+        <description>Service for managing article generation and notifications</description>
+    </component>
 
-    <!-- Issue Event Listener - Keep this -->
+    <!-- Issue Event Listener -->
     <component key="issueEventListener" class="com.jurix.ai.listener.IssueEventListener">
-        <description>Listens to issue events for real-time dashboard updates</description>
+        <description>Listens to issue events for real-time dashboard updates and article generation</description>
     </component>
     
-    <!-- REST Module - This will auto-discover @Named REST classes -->
+    <!-- REST Module -->
     <rest name="JURIX REST API" key="jurix-rest" path="/jurix" version="1.0">
         <description>REST endpoints for JURIX AI Assistant</description>
     </rest>
@@ -100,6 +102,15 @@
         <description>Shows AI-powered article suggestions for the current issue</description>
         <context-provider class="com.jurix.ai.panel.SmartSuggestionsPanelProvider"/>
         <resource name="view" type="velocity" location="/templates/smart-suggestions-panel.vm"/>
+        <condition class="com.atlassian.jira.plugin.webfragment.conditions.UserLoggedInCondition"/>
+    </web-panel>
+    
+    <!-- Article Status Panel -->
+    <web-panel key="article-status-panel" name="AI Article Status Panel" 
+               location="atl.jira.view.issue.right.context" weight="100">
+        <description>Shows AI article generation status</description>
+        <context-provider class="com.jurix.ai.panel.ArticleStatusPanelProvider"/>
+        <resource name="view" type="velocity" location="/templates/article-status-panel.vm"/>
         <condition class="com.atlassian.jira.plugin.webfragment.conditions.UserLoggedInCondition"/>
     </web-panel>
 </atlassian-plugin>
