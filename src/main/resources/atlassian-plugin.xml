@@ -17,12 +17,14 @@
         <resource type="download" name="chat-widget.js" location="/js/chat-widget.js"/>
         <resource type="download" name="smart-suggestions.js" location="/js/smart-suggestions.js"/>
         <resource type="download" name="live-suggestions.js" location="/js/live-suggestions.js"/>
+        <resource type="download" name="article-trigger.js" location="/js/article-trigger.js"/>
         
         <context>atl.general</context>
         <context>jira.global</context>
         <context>jira.navigator.simple</context>
         <context>jira.navigator.advanced</context>
         <context>jira.create</context>
+        <context>jira.view.issue</context>
     </web-resource>
     
     <!-- Article Review Resources -->
@@ -60,7 +62,7 @@
     
     <!-- Article Generation Service -->
     <component key="articleGenerationService" class="com.jurix.ai.service.ArticleGenerationService">
-        <description>Service for managing article generation and notifications</description>
+        <description>Service for managing article generation</description>
     </component>
 
     <!-- Issue Event Listener -->
@@ -85,6 +87,12 @@
              class="com.jurix.ai.servlet.TestServlet">
         <description>Test servlet</description>
         <url-pattern>/jurix-test</url-pattern>
+    </servlet>
+
+    <!-- Article Test Servlet -->
+    <servlet key="article-test-servlet" name="Article Test Servlet" 
+            class="com.jurix.ai.servlet.ArticleTestServlet">
+        <url-pattern>/jurix-article-test</url-pattern>
     </servlet>
     
     <!-- Web Item for Project Navigation -->

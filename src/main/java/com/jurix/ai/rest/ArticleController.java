@@ -1,8 +1,5 @@
 package com.jurix.ai.rest;
 
-import com.atlassian.jira.component.ComponentAccessor;
-import com.atlassian.jira.security.JiraAuthenticationContext;
-import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.plugins.rest.common.security.AnonymousAllowed;
 import com.jurix.ai.service.ArticleGenerationService;
 import com.google.gson.Gson;
@@ -17,7 +14,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -41,55 +37,6 @@ public class ArticleController {
     }
     
     @GET
-    @Path("/notifications")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getNotifications() {
-        try {
-            JiraAuthenticationContext authContext = ComponentAccessor.getJiraAuthenticationContext();
-            ApplicationUser user = authContext.getLoggedInUser();
-            
-            if (user == null) {
-                return Response.status(Response.Status.UNAUTHORIZED).build();
-            }
-            
-            List<ArticleGenerationService.Notification> notifications = 
-                articleService.getUserNotifications(user.getKey());
-            
-            return Response.ok(notifications).build();
-            
-        } catch (Exception e) {
-            log.error("Error getting notifications", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(createErrorResponse("Failed to get notifications"))
-                .build();
-        }
-    }
-    
-    @POST
-    @Path("/notifications/{notificationId}/read")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response markNotificationRead(@PathParam("notificationId") String notificationId) {
-        try {
-            JiraAuthenticationContext authContext = ComponentAccessor.getJiraAuthenticationContext();
-            ApplicationUser user = authContext.getLoggedInUser();
-            
-            if (user == null) {
-                return Response.status(Response.Status.UNAUTHORIZED).build();
-            }
-            
-            articleService.markNotificationRead(user.getKey(), notificationId);
-            
-            return Response.ok(createSuccessResponse("Notification marked as read")).build();
-            
-        } catch (Exception e) {
-            log.error("Error marking notification as read", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(createErrorResponse("Failed to update notification"))
-                .build();
-        }
-    }
-    
-    @GET
     @Path("/{issueKey}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getArticle(@PathParam("issueKey") String issueKey) {
@@ -106,7 +53,6 @@ public class ArticleController {
             response.put("issueKey", issueKey);
             response.put("article", articleData.article);
             response.put("status", articleData.status);
-            response.put("version", articleData.version);
             response.put("createdAt", articleData.createdAt);
             
             return Response.ok(response).build();
@@ -115,57 +61,6 @@ public class ArticleController {
             log.error("Error getting article", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity(createErrorResponse("Failed to get article"))
-                .build();
-        }
-    }
-    
-    @POST
-    @Path("/{issueKey}/feedback")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response submitFeedback(@PathParam("issueKey") String issueKey, Map<String, Object> feedbackData) {
-        try {
-            String feedback = (String) feedbackData.get("feedback");
-            String action = (String) feedbackData.get("action"); // refine, approve, reject
-            
-            // First update local state
-            articleService.updateArticleFeedback(issueKey, feedback, action);
-            
-            // Then call Python backend
-            String backendUrl = "http://localhost:5001/api/article/feedback/" + issueKey;
-            
-            RequestBody body = RequestBody.create(
-                okhttp3.MediaType.parse("application/json"),
-                gson.toJson(feedbackData)
-            );
-            
-            Request request = new Request.Builder()
-                .url(backendUrl)
-                .post(body)
-                .addHeader("Content-Type", "application/json")
-                .build();
-            
-            try (okhttp3.Response response = httpClient.newCall(request).execute()) {
-                String responseBody = response.body().string();
-                
-                if (response.isSuccessful()) {
-                    // Parse and store updated article
-                    Map<String, Object> result = gson.fromJson(responseBody, Map.class);
-                    articleService.storeArticleData(issueKey, result);
-                    
-                    return Response.ok(result).build();
-                } else {
-                    log.error("Backend error: {} - {}", response.code(), responseBody);
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                        .entity(createErrorResponse("Failed to process feedback"))
-                        .build();
-                }
-            }
-            
-        } catch (Exception e) {
-            log.error("Error submitting feedback", e);
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(createErrorResponse("Failed to submit feedback"))
                 .build();
         }
     }
@@ -207,7 +102,7 @@ public class ArticleController {
                             String responseBody = response.body().string();
                             Map<String, Object> result = gson.fromJson(responseBody, Map.class);
                             articleService.storeArticleData(issueKey, result);
-                            articleService.createNotification(issueKey, "Article ready for review");
+                            articleService.createNotification(issueKey, "Article ready");
                         }
                     } finally {
                         response.close();

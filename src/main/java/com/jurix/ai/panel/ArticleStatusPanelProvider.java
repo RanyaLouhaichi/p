@@ -36,7 +36,7 @@ public class ArticleStatusPanelProvider extends AbstractJiraContextProvider {
             if (articleData != null) {
                 contextMap.put("hasArticle", true);
                 contextMap.put("articleStatus", articleData.status);
-                contextMap.put("articleVersion", articleData.version);
+                contextMap.put("articleVersion", 1); // Default version
                 
                 if (articleData.article != null) {
                     contextMap.put("approvalStatus", articleData.article.get("approval_status"));

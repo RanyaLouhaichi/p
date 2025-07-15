@@ -3,6 +3,8 @@ package com.jurix.ai.rest;
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.security.JiraAuthenticationContext;
 import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.jira.issue.IssueManager;
+import com.atlassian.jira.issue.MutableIssue;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,6 +130,87 @@ public class JurixRestResource {
             // Return mock data as fallback
             return Response.ok(createMockDashboard(projectKey)).build();
         }
+    }
+
+    @POST
+    @Path("/trigger-article/{issueKey}")
+    public Response triggerArticleGeneration(@PathParam("issueKey") String issueKey) {
+        // FORCE LOG TO CONSOLE AND FILE
+        System.out.println("ARTICLE TRIGGER: " + issueKey);
+        log.error("ARTICLE TRIGGER CALLED FOR: " + issueKey); // ERROR level always shows
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("issueKey", issueKey);
+        response.put("timestamp", System.currentTimeMillis());
+        
+        try {
+            // Get issue details
+            IssueManager issueManager = ComponentAccessor.getIssueManager();
+            MutableIssue issue = issueManager.getIssueObject(issueKey);
+            
+            if (issue == null) {
+                response.put("status", "error");
+                response.put("message", "Issue not found");
+                return Response.status(404).entity(response).build();
+            }
+            
+            // Prepare data for Python backend
+            Map<String, Object> issueData = new HashMap<>();
+            issueData.put("key", issue.getKey());
+            issueData.put("summary", issue.getSummary());
+            issueData.put("description", issue.getDescription());
+            issueData.put("status", issue.getStatus().getName());
+            issueData.put("type", issue.getIssueType().getName());
+            issueData.put("projectKey", issue.getProjectObject().getKey());
+            
+            // Call Python backend DIRECTLY
+            String pythonUrl = "http://localhost:5001/api/article/generate/" + issueKey;
+            
+            URL url = new URL(pythonUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(30000);
+            
+            // Send data
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = gson.toJson(issueData).getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+            
+            // Get response
+            int responseCode = conn.getResponseCode();
+            log.error("PYTHON RESPONSE CODE: " + responseCode); // Force log
+            
+            // Read response
+            StringBuilder responseBody = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(
+                        responseCode >= 200 && responseCode < 300 ? 
+                        conn.getInputStream() : conn.getErrorStream(), "utf-8"))) {
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    responseBody.append(responseLine.trim());
+                }
+            }
+            
+            response.put("pythonResponse", responseBody.toString());
+            response.put("pythonStatusCode", responseCode);
+            response.put("status", responseCode == 200 ? "success" : "error");
+            
+            conn.disconnect();
+            
+            log.error("ARTICLE GENERATION COMPLETE: " + response); // Force log
+            
+        } catch (Exception e) {
+            log.error("ARTICLE GENERATION ERROR", e);
+            response.put("status", "error");
+            response.put("error", e.getMessage());
+        }
+        
+        return Response.ok(response).build();
     }
     
     /**

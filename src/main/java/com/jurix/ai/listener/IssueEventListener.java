@@ -22,6 +22,12 @@ import javax.inject.Named;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.io.OutputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.SocketTimeoutException;
 
 @Named("issueEventListener")
 public class IssueEventListener implements InitializingBean, DisposableBean {
@@ -65,9 +71,9 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
         try {
             // Initialize HTTP client
             this.httpClient = new OkHttpClient.Builder()
-                .connectTimeout(5, TimeUnit.SECONDS)
-                .writeTimeout(5, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
+                .connectTimeout(30, TimeUnit.SECONDS)     // 30 seconds to connect
+                .writeTimeout(30, TimeUnit.SECONDS)       // 30 seconds to write  
+                .readTimeout(500, TimeUnit.SECONDS) 
                 .build();
             
             // Register with event publisher
@@ -95,100 +101,58 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
 
     @EventListener
     public void onIssueEvent(IssueEvent event) {
-        // Log EVERY event to debug
-        log.info("🎯 ==========================================");
-        log.info("🎯 ISSUE EVENT RECEIVED!");
-        log.info("🎯 ==========================================");
-        
         try {
             Long eventTypeId = event.getEventTypeId();
             Issue issue = event.getIssue();
             
-            log.info("📋 Event Details:");
-            log.info("   Event Type ID: {}", eventTypeId);
-            log.info("   Event Type Name: {}", getEventTypeName(eventTypeId));
-            log.info("   Event Class: {}", event.getClass().getName());
-            
-            // Log ALL event type IDs for debugging
-            log.info("📋 Event Type Constants:");
-            log.info("   ISSUE_CREATED_ID = {}", EventType.ISSUE_CREATED_ID);
-            log.info("   ISSUE_UPDATED_ID = {}", EventType.ISSUE_UPDATED_ID);
-            log.info("   ISSUE_RESOLVED_ID = {}", EventType.ISSUE_RESOLVED_ID);
-            log.info("   ISSUE_CLOSED_ID = {}", EventType.ISSUE_CLOSED_ID);
-            log.info("   ISSUE_WORKSTARTED_ID = {}", EventType.ISSUE_WORKSTARTED_ID);
-            log.info("   ISSUE_WORKSTOPPED_ID = {}", EventType.ISSUE_WORKSTOPPED_ID);
-            log.info("   ISSUE_REOPENED_ID = {}", EventType.ISSUE_REOPENED_ID);
-            
             if (issue == null) {
-                log.warn("⚠️ Issue is null, skipping event");
+                log.warn("Issue is null, skipping event");
                 return;
             }
             
-            log.info("📋 Issue Details:");
-            log.info("   Key: {}", issue.getKey());
-            log.info("   Status: {}", issue.getStatus().getName());
-            log.info("   Status ID: {}", issue.getStatus().getId());
-            log.info("   Project: {}", issue.getProjectObject().getKey());
-            log.info("   Type: {}", issue.getIssueType().getName());
-            
-            // Check if this is ANY kind of status change
-            if (event.getChangeLog() != null && event.getChangeLog().getRelated("ChildChangeItem") != null) {
-                log.info("📋 Change Log Items:");
-                Collection<?> changeItems = event.getChangeLog().getRelated("ChildChangeItem");
-                for (Object item : changeItems) {
-                    log.info("   Change Item: {}", item);
-                }
-            }
+            // Add simple logging to verify events are received
+            log.info("JURIX Event: Issue {} - Type {} - Status {}", 
+                     issue.getKey(), getEventTypeName(eventTypeId), issue.getStatus().getName());
             
             String projectKey = issue.getProjectObject().getKey();
             String eventType = getEventTypeName(eventTypeId);
             
-            // Always handle dashboard update
+            // Always handle dashboard update (YOUR EXISTING CODE THAT WORKS)
             new Thread(() -> {
                 handleDashboardUpdate(projectKey, issue, eventType);
             }).start();
             
-            // Special logging for status transitions
-            if (eventTypeId.equals(EventType.ISSUE_UPDATED_ID)) {
-                log.info("🔍 ISSUE UPDATED EVENT - Checking for status change...");
-                // For updated events, check if status changed to resolved
-                String currentStatus = issue.getStatus().getName();
-                if (RESOLVED_STATUSES.contains(currentStatus)) {
-                    log.info("✅ Issue status is now RESOLVED: {}", currentStatus);
-                    log.info("🚀 Triggering article generation for status change!");
+            // NEW: Simple article generation check
+            String currentStatus = issue.getStatus().getName();
+            
+            // Check if issue is in a resolved status
+            if (RESOLVED_STATUSES.contains(currentStatus)) {
+                log.info("Issue {} has resolved status: {}", issue.getKey(), currentStatus);
+                
+                // Check if we should generate article
+                String cacheKey = "article_generation:" + issue.getKey();
+                
+                if (!articleService.isArticleGenerationInProgress(cacheKey)) {
+                    ArticleGenerationService.ArticleData existingArticle = 
+                        articleService.getArticleData(issue.getKey());
                     
-                    // Trigger article generation
-                    new Thread(() -> {
-                        try {
-                            handleArticleGeneration(issue);
-                        } catch (Exception e) {
-                            log.error("❌ Error in article generation thread", e);
-                        }
-                    }).start();
+                    if (existingArticle == null) {
+                        log.info("Starting article generation for issue: {}", issue.getKey());
+                        
+                        new Thread(() -> {
+                            try {
+                                handleArticleGeneration(issue);
+                            } catch (Exception e) {
+                                log.error("Error in article generation thread", e);
+                            }
+                        }).start();
+                    }
                 }
             }
             
-            // Also check for resolution events
-            boolean shouldGenerate = shouldGenerateArticle(eventTypeId, issue);
-            log.info("📝 Should generate article (standard check): {}", shouldGenerate);
-            
-            if (shouldGenerate) {
-                log.info("🚀 STARTING ARTICLE GENERATION (from resolution event)!");
-                new Thread(() -> {
-                    try {
-                        handleArticleGeneration(issue);
-                    } catch (Exception e) {
-                        log.error("❌ Error in article generation thread", e);
-                    }
-                }).start();
-            }
-            
         } catch (Exception e) {
-            log.error("❌ Error handling issue event", e);
-            e.printStackTrace();
+            log.error("Error handling issue event", e);
         }
-        
-        log.info("🏁 ========== EVENT PROCESSING COMPLETE ==========");
     }
     
     private void handleDashboardUpdate(String projectKey, Issue issue, String eventType) {
@@ -254,12 +218,8 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
     
     private void handleArticleGeneration(Issue issue) {
         try {
-            log.info("🎊 ==========================================");
-            log.info("🎊 ARTICLE GENERATION STARTED");
-            log.info("🎊 Issue: {}", issue.getKey());
-            log.info("🎊 ==========================================");
+            log.info("🎊 ARTICLE GENERATION STARTED for: {}", issue.getKey());
             
-            // Mark as in progress
             String cacheKey = "article_generation:" + issue.getKey();
             articleService.markGenerationInProgress(cacheKey);
             
@@ -272,58 +232,68 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
             issueData.put("type", issue.getIssueType().getName());
             issueData.put("projectKey", issue.getProjectObject().getKey());
             
-            if (issue.getResolution() != null) {
-                issueData.put("resolution", issue.getResolution().getName());
+            String articleGenUrl = "http://localhost:5001/api/article/generate/" + issue.getKey();
+            log.info("🌐 Calling Python backend: {}", articleGenUrl);
+            
+            // Use URLConnection with explicit timeout
+            URL url = new URL(articleGenUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+            
+            // Set LONG timeouts
+            conn.setConnectTimeout(30000);  // 30 seconds
+            conn.setReadTimeout(600000);     // 10 MINUTES!
+            
+            log.info("⏱️ Timeouts set: connect=30s, read=10min");
+            
+            // Send request
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = gson.toJson(issueData).getBytes("utf-8");
+                os.write(input, 0, input.length);
             }
             
-            // Call article generation API
-            String articleGenUrl = "http://localhost:5001/api/article/generate/" + issue.getKey();
-            log.info("🌐 Calling: {}", articleGenUrl);
+            // Get response
+            int responseCode = conn.getResponseCode();
+            log.info("📨 Response code: {}", responseCode);
             
-            RequestBody body = RequestBody.create(
-                MediaType.parse("application/json"),
-                gson.toJson(issueData)
-            );
-            
-            Request request = new Request.Builder()
-                .url(articleGenUrl)
-                .post(body)
-                .addHeader("Content-Type", "application/json")
-                .build();
-            
-            httpClient.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    log.error("❌ Failed to generate article for {}: {}", issue.getKey(), e.getMessage());
-                    articleService.markGenerationComplete(cacheKey);
-                    articleService.storeGenerationError(issue.getKey(), e.getMessage());
-                }
-                
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    try {
-                        if (response.isSuccessful()) {
-                            String responseBody = response.body().string();
-                            log.info("✅ Article generated successfully for {}", issue.getKey());
-                            
-                            Map<String, Object> result = gson.fromJson(responseBody, Map.class);
-                            articleService.storeArticleData(issue.getKey(), result);
-                            articleService.createNotification(issue.getKey(), issue.getSummary());
-                            
-                        } else {
-                            log.error("❌ Article generation failed with status: {}", response.code());
-                            articleService.storeGenerationError(issue.getKey(), 
-                                "Generation failed with status: " + response.code());
-                        }
-                    } finally {
-                        response.close();
-                        articleService.markGenerationComplete(cacheKey);
+            if (responseCode == 200) {
+                // Read response
+                StringBuilder response = new StringBuilder();
+                try (BufferedReader br = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), "utf-8"))) {
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        response.append(responseLine.trim());
                     }
                 }
-            });
+                
+                String responseBody = response.toString();
+                log.info("✅ Article generated successfully for {}", issue.getKey());
+                
+                Map<String, Object> result = gson.fromJson(responseBody, Map.class);
+                articleService.storeArticleData(issue.getKey(), result);
+                articleService.createNotification(issue.getKey(), issue.getSummary());
+                
+            } else {
+                log.error("❌ Python backend returned error: {}", responseCode);
+                articleService.storeGenerationError(issue.getKey(), "HTTP " + responseCode);
+            }
             
+            conn.disconnect();
+            articleService.markGenerationComplete(cacheKey);
+            
+        } catch (SocketTimeoutException e) {
+            log.error("❌ TIMEOUT after waiting! Issue: {}", issue.getKey());
+            log.error("❌ The Python backend is taking too long. Consider:");
+            log.error("❌ 1. Making the Python endpoint return immediately with a task ID");
+            log.error("❌ 2. Polling for completion later");
+            log.error("❌ 3. Using a message queue");
+            articleService.storeGenerationError(issue.getKey(), "Timeout: " + e.getMessage());
         } catch (Exception e) {
-            log.error("❌ Error in article generation process: " + issue.getKey(), e);
+            log.error("❌ Error generating article for {}: {}", issue.getKey(), e.getMessage(), e);
+            articleService.storeGenerationError(issue.getKey(), e.getMessage());
         }
     }
     
