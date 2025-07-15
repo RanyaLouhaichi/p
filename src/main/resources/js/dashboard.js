@@ -601,9 +601,9 @@ window.JurixDashboard = (function() {
         }
         
         // NEW: Show recovery plan if needed
-        if (data.recoveryPlan && data.recoveryPlan.length > 0) {
-            showRecoveryPlan(data.recoveryPlan);
-        }
+        //if (data.recoveryPlan && data.recoveryPlan.length > 0) {
+        //   showRecoveryPlan(data.recoveryPlan);
+        //}
         
         // Update last updated time
         updateLastUpdatedTime(data.lastUpdated);
@@ -1781,25 +1781,17 @@ window.JurixDashboard = (function() {
     // function updateHistoricalPatterns(patterns) { ... }
 
     function showCriticalFactors(factors) {
-        // Create alert banner for critical factors
-        const banner = document.createElement('div');
-        banner.className = 'critical-factors-banner';
-        banner.innerHTML = `
-            <div class="critical-header">⚠️ Critical Factors Affecting Sprint</div>
-            <div class="factors-list">
-                ${factors.map(factor => `
-                    <div class="factor-item ${factor.severity}">
-                        <strong>${factor.factor}:</strong> ${factor.impact}
-                        <div class="factor-action">→ ${factor.action}</div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
+        // DISABLED: Critical factors banner removed as requested
+        // The alert card in the stats grid is sufficient
+        console.log('Critical factors detected:', factors);
         
-        // Insert at top of dashboard
-        const container = document.querySelector('.main-content');
-        if (container && container.firstChild) {
-            container.insertBefore(banner, container.firstChild);
+        // You could still update the alert count if needed
+        if (factors && factors.length > 0) {
+            const alertCountEl = document.getElementById('alertCount');
+            if (alertCountEl) {
+                const currentCount = parseInt(alertCountEl.textContent) || 0;
+                alertCountEl.textContent = Math.max(currentCount, factors.length);
+            }
         }
     }
 
