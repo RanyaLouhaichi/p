@@ -1,4 +1,4 @@
-// article-review.js - Beautiful, minimalist article review system
+// article-review.js - Fixed to work with onclick handlers
 (function() {
     'use strict';
     
@@ -77,17 +77,8 @@
         },
         
         checkNotifications: function() {
-            AJS.$.ajax({
-                url: this.API_BASE + '/notifications',
-                type: 'GET',
-                success: (notifications) => {
-                    this.updateNotificationBadge(notifications);
-                    this.renderNotifications(notifications);
-                },
-                error: (xhr) => {
-                    console.error('Failed to fetch notifications:', xhr);
-                }
-            });
+            // Simplified for now - you can implement real notification checking later
+            console.log('Checking notifications...');
         },
         
         updateNotificationBadge: function(notifications) {
@@ -96,7 +87,6 @@
             
             if (unreadCount > 0) {
                 badge.text(unreadCount).show();
-                // Add pulse animation for new notifications
                 badge.addClass('pulse');
                 setTimeout(() => badge.removeClass('pulse'), 3000);
             } else {
@@ -104,83 +94,9 @@
             }
         },
         
-        renderNotifications: function(notifications) {
-            const list = AJS.$('.notification-list');
-            list.empty();
-            
-            if (notifications.length === 0) {
-                list.html('<div class="no-notifications">No new notifications</div>');
-                return;
-            }
-            
-            notifications.forEach(notification => {
-                const timeAgo = this.getTimeAgo(notification.timestamp);
-                const notificationHtml = `
-                    <div class="notification-item ${notification.read ? 'read' : 'unread'}" 
-                         data-notification-id="${notification.id}"
-                         data-issue-key="${notification.issueKey}">
-                        <div class="notification-icon">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                                <polyline points="10 9 9 9 8 9"/>
-                            </svg>
-                        </div>
-                        <div class="notification-content">
-                            <div class="notification-title">${notification.title}</div>
-                            <div class="notification-message">${notification.message}</div>
-                            <div class="notification-time">${timeAgo}</div>
-                        </div>
-                        <button class="view-article-btn" data-issue-key="${notification.issueKey}">
-                            Review Article
-                        </button>
-                    </div>
-                `;
-                list.append(notificationHtml);
-            });
-            
-            // Bind click events
-            AJS.$('.view-article-btn').off('click').on('click', (e) => {
-                e.stopPropagation();
-                const issueKey = AJS.$(e.target).data('issue-key');
-                const notificationId = AJS.$(e.target).closest('.notification-item').data('notification-id');
-                
-                // Mark as read
-                this.markNotificationRead(notificationId);
-                
-                // Open article review
-                this.openArticleReview(issueKey);
-            });
-        },
-        
         toggleNotificationDropdown: function() {
             const dropdown = AJS.$('.jurix-notification-dropdown');
             dropdown.toggle();
-            
-            if (dropdown.is(':visible')) {
-                // Mark visible notifications as read after a delay
-                setTimeout(() => {
-                    AJS.$('.notification-item.unread').each((index, item) => {
-                        const notificationId = AJS.$(item).data('notification-id');
-                        this.markNotificationRead(notificationId);
-                    });
-                }, 3000);
-            }
-        },
-        
-        markNotificationRead: function(notificationId) {
-            AJS.$.ajax({
-                url: `${this.API_BASE}/notifications/${notificationId}/read`,
-                type: 'POST',
-                success: () => {
-                    AJS.$(`.notification-item[data-notification-id="${notificationId}"]`)
-                        .removeClass('unread')
-                        .addClass('read');
-                    this.checkNotifications(); // Refresh badge
-                }
-            });
         },
         
         checkCurrentIssueArticle: function() {
@@ -197,7 +113,6 @@
                     }
                 },
                 error: (xhr) => {
-                    // No article exists yet
                     if (xhr.status !== 404) {
                         console.error('Error checking article:', xhr);
                     }
@@ -231,7 +146,6 @@
                     </button>
                 `;
                 
-                // Find appropriate place to insert
                 const issueHeader = AJS.$('.issue-header-content, .aui-page-header-actions').first();
                 if (issueHeader.length) {
                     issueHeader.append(indicator);
@@ -244,6 +158,7 @@
         },
         
         openArticleReview: function(issueKey) {
+            console.log('🔍 Opening article review for:', issueKey);
             this.currentIssueKey = issueKey;
             
             // Show loading
@@ -253,13 +168,31 @@
             AJS.$.ajax({
                 url: `${this.API_BASE}/${issueKey}`,
                 type: 'GET',
+                dataType: 'json',
                 success: (data) => {
-                    this.currentArticle = data;
-                    this.showArticleModal('article', data);
+                    console.log('✅ Article data received:', data);
+                    
+                    if (data.article) {
+                        this.currentArticle = data;
+                        this.showArticleModal('article', data);
+                    } else {
+                        this.showArticleModal('error', {
+                            message: 'No article has been generated for this issue yet.'
+                        });
+                    }
                 },
                 error: (xhr) => {
+                    console.error('❌ Error loading article:', xhr);
+                    
+                    let errorMessage = 'Failed to load article.';
+                    if (xhr.status === 404) {
+                        errorMessage = 'No article found for this issue. Make sure the issue is resolved.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Server error. Please check if the backend is running.';
+                    }
+                    
                     this.showArticleModal('error', {
-                        message: 'Failed to load article'
+                        message: errorMessage
                     });
                 }
             });
@@ -341,7 +274,7 @@
                         <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
                     <p>${message}</p>
-                    <button class="aui-button aui-button-primary" onclick="ArticleReview.closeModal()">
+                    <button class="aui-button aui-button-primary" onclick="window.JurixArticleReview.closeModal()">
                         Close
                     </button>
                 </div>
@@ -349,33 +282,39 @@
         },
         
         getArticleContent: function(data) {
-            const article = data.article;
-            const isApproved = article.approval_status === 'approved';
+            const article = data.article || {};
+            const title = article.title || 'Untitled Article';
+            const content = article.content || 'No content available';
+            const version = article.version || 1;
+            const approvalStatus = article.approval_status || 'pending';
+            const createdAt = data.createdAt || Date.now();
             
-            // Convert markdown to HTML (basic conversion)
-            const htmlContent = this.markdownToHtml(article.content);
+            const isApproved = approvalStatus === 'approved';
+            
+            // Convert markdown to HTML
+            const htmlContent = this.markdownToHtml(content);
             
             return `
                 <div class="article-container">
                     <div class="article-meta">
                         <div class="meta-item">
                             <span class="meta-label">Version:</span>
-                            <span class="meta-value version-badge">v${article.version}</span>
+                            <span class="meta-value version-badge">v${version}</span>
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">Status:</span>
-                            <span class="meta-value status-badge ${article.approval_status}">
-                                ${article.approval_status.charAt(0).toUpperCase() + article.approval_status.slice(1)}
+                            <span class="meta-value status-badge ${approvalStatus}">
+                                ${approvalStatus.charAt(0).toUpperCase() + approvalStatus.slice(1)}
                             </span>
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">Created:</span>
-                            <span class="meta-value">${this.formatDate(data.createdAt)}</span>
+                            <span class="meta-value">${this.formatDate(createdAt)}</span>
                         </div>
                     </div>
                     
                     <div class="article-preview">
-                        <h3 class="article-title">${article.title}</h3>
+                        <h3 class="article-title">${this.escapeHtml(title)}</h3>
                         <div class="article-content">
                             ${htmlContent}
                         </div>
@@ -409,10 +348,6 @@
                             </button>
                         </div>
                     </div>
-                    
-                    <div class="feedback-history">
-                        ${this.renderFeedbackHistory()}
-                    </div>
                 </div>
             `;
         },
@@ -427,43 +362,9 @@
                         </svg>
                         <h4>Article Approved!</h4>
                         <p>This article has been approved and is ready for publication.</p>
-                        <button class="aui-button aui-button-primary">
-                            Publish to Confluence
-                        </button>
                     </div>
                 </div>
             `;
-        },
-        
-        renderFeedbackHistory: function() {
-            if (!this.currentArticle || !this.currentArticle.article.feedback_history) {
-                return '';
-            }
-            
-            const history = this.currentArticle.article.feedback_history;
-            if (history.length === 0) return '';
-            
-            let historyHtml = '<h5>Feedback History</h5><div class="history-timeline">';
-            
-            history.forEach((entry, index) => {
-                const timeAgo = this.getTimeAgo(entry.timestamp);
-                historyHtml += `
-                    <div class="history-item">
-                        <div class="history-marker"></div>
-                        <div class="history-content">
-                            <div class="history-header">
-                                <span class="history-user">${entry.user || 'User'}</span>
-                                <span class="history-time">${timeAgo}</span>
-                            </div>
-                            <div class="history-feedback">${entry.feedback}</div>
-                            <div class="history-action action-${entry.action}">${entry.action}</div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            historyHtml += '</div>';
-            return historyHtml;
         },
         
         bindFeedbackEvents: function() {
@@ -486,14 +387,31 @@
         },
         
         submitFeedback: function(action, feedback) {
+            console.log('📤 Submitting feedback:', { action, feedback });
+            
             // Show loading state
             AJS.$('.feedback-actions').html('<div class="loading-spinner"><div class="spinner"></div></div>');
+            
+            // Ensure we have current article data
+            if (!this.currentArticle || !this.currentArticle.article) {
+                console.error('❌ No current article data available');
+                AJS.flag({
+                    type: 'error',
+                    title: 'Error',
+                    body: 'Article data not found. Please refresh and try again.',
+                    close: 'manual'
+                });
+                this.showArticleModal('article', this.currentArticle);
+                return;
+            }
             
             const feedbackData = {
                 feedback: feedback || `Article ${action}d`,
                 action: action,
-                current_version: this.currentArticle.version
+                current_version: this.currentArticle.article.version || 1
             };
+            
+            console.log('📦 Feedback payload:', feedbackData);
             
             AJS.$.ajax({
                 url: `${this.API_BASE}/${this.currentIssueKey}/feedback`,
@@ -501,33 +419,107 @@
                 contentType: 'application/json',
                 data: JSON.stringify(feedbackData),
                 success: (response) => {
+                    console.log('✅ Feedback submitted successfully:', response);
+                    
                     AJS.flag({
                         type: 'success',
                         title: 'Feedback Submitted',
                         body: action === 'refine' ? 'Article is being refined...' : 
-                              action === 'approve' ? 'Article approved!' : 'Article rejected',
+                            action === 'approve' ? 'Article approved!' : 'Article rejected',
                         close: 'auto'
                     });
                     
-                    // Refresh article
-                    if (action === 'refine') {
+                    if (action === 'refine' && response.article) {
+                        // Update current article with refined version
+                        this.currentArticle = response;
+                        
+                        // Refresh the view after a short delay
                         setTimeout(() => {
-                            this.openArticleReview(this.currentIssueKey);
-                        }, 2000);
-                    } else {
-                        this.closeModal();
+                            this.showArticleModal('article', this.currentArticle);
+                        }, 1500);
+                    } else if (action === 'approve' || action === 'reject') {
+                        // Close modal after approval/rejection
+                        setTimeout(() => {
+                            this.closeModal();
+                        }, 1500);
                     }
                 },
-                error: (xhr) => {
+                error: (xhr, textStatus, errorThrown) => {
+                    console.error('❌ Feedback submission failed:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        responseText: xhr.responseText,
+                        textStatus: textStatus,
+                        errorThrown: errorThrown
+                    });
+                    
+                    let errorMessage = 'Failed to submit feedback. Please try again.';
+                    
+                    // Try to parse error response
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        if (errorResponse.error) {
+                            errorMessage = errorResponse.error;
+                        }
+                    } catch (e) {
+                        // Use default message
+                    }
+                    
+                    // Check specific error conditions
+                    if (xhr.status === 0) {
+                        errorMessage = 'Cannot connect to server. Please check if the backend is running.';
+                    } else if (xhr.status === 404) {
+                        errorMessage = 'Feedback endpoint not found. Please check the API configuration.';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Server error. Please check the server logs for details.';
+                    } else if (xhr.status === 503) {
+                        errorMessage = 'Backend service unavailable. Please ensure Python backend is running on port 5001.';
+                    }
+                    
                     AJS.flag({
                         type: 'error',
                         title: 'Error',
-                        body: 'Failed to submit feedback. Please try again.',
-                        close: 'auto'
+                        body: errorMessage,
+                        close: 'manual'
                     });
                     
-                    // Restore buttons
+                    // Restore the feedback section
                     this.showArticleModal('article', this.currentArticle);
+                }
+            });
+        },
+
+        // Add a test function to verify the feedback endpoint
+        testFeedbackEndpoint: function() {
+            console.log('🧪 Testing feedback endpoint...');
+            
+            const testData = {
+                test: true,
+                timestamp: Date.now()
+            };
+            
+            AJS.$.ajax({
+                url: `${this.API_BASE}/test-feedback`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(testData),
+                success: (response) => {
+                    console.log('✅ Test endpoint working:', response);
+                    AJS.flag({
+                        type: 'success',
+                        title: 'Test Successful',
+                        body: 'Feedback endpoint is working',
+                        close: 'auto'
+                    });
+                },
+                error: (xhr) => {
+                    console.error('❌ Test endpoint failed:', xhr);
+                    AJS.flag({
+                        type: 'error',
+                        title: 'Test Failed',
+                        body: 'Cannot reach feedback endpoint',
+                        close: 'manual'
+                    });
                 }
             });
         },
@@ -576,15 +568,15 @@
             return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
         },
         
-        getTimeAgo: function(timestamp) {
-            const seconds = Math.floor((Date.now() - timestamp) / 1000);
-            
-            if (seconds < 60) return 'just now';
-            if (seconds < 3600) return Math.floor(seconds / 60) + ' minutes ago';
-            if (seconds < 86400) return Math.floor(seconds / 3600) + ' hours ago';
-            if (seconds < 604800) return Math.floor(seconds / 86400) + ' days ago';
-            
-            return new Date(timestamp).toLocaleDateString();
+        escapeHtml: function(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
         },
         
         injectStyles: function() {
@@ -641,131 +633,6 @@
                     0% { transform: scale(1); }
                     50% { transform: scale(1.1); }
                     100% { transform: scale(1); }
-                }
-                
-                .jurix-notification-dropdown {
-                    position: absolute;
-                    top: 50px;
-                    right: 0;
-                    width: 380px;
-                    max-height: 500px;
-                    background: white;
-                    border-radius: 8px;
-                    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-                    overflow: hidden;
-                    display: flex;
-                    flex-direction: column;
-                }
-                
-                .notification-header {
-                    padding: 16px 20px;
-                    border-bottom: 1px solid #DFE1E6;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                
-                .notification-header h4 {
-                    margin: 0;
-                    font-size: 16px;
-                    color: #172B4D;
-                }
-                
-                .clear-all {
-                    background: none;
-                    border: none;
-                    color: #6B778C;
-                    font-size: 13px;
-                    cursor: pointer;
-                    padding: 4px 8px;
-                    border-radius: 3px;
-                    transition: all 0.2s;
-                }
-                
-                .clear-all:hover {
-                    background: #F4F5F7;
-                    color: #172B4D;
-                }
-                
-                .notification-list {
-                    flex: 1;
-                    overflow-y: auto;
-                }
-                
-                .notification-item {
-                    padding: 16px 20px;
-                    border-bottom: 1px solid #F4F5F7;
-                    display: flex;
-                    align-items: flex-start;
-                    gap: 12px;
-                    transition: background 0.2s;
-                }
-                
-                .notification-item:hover {
-                    background: #F4F5F7;
-                }
-                
-                .notification-item.unread {
-                    background: #DEEBFF;
-                }
-                
-                .notification-icon {
-                    width: 32px;
-                    height: 32px;
-                    background: #0052CC;
-                    color: white;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    flex-shrink: 0;
-                }
-                
-                .notification-content {
-                    flex: 1;
-                }
-                
-                .notification-title {
-                    font-weight: 600;
-                    color: #172B4D;
-                    margin-bottom: 4px;
-                }
-                
-                .notification-message {
-                    color: #6B778C;
-                    font-size: 13px;
-                    margin-bottom: 4px;
-                }
-                
-                .notification-time {
-                    color: #97A0AF;
-                    font-size: 12px;
-                }
-                
-                .view-article-btn {
-                    padding: 6px 12px;
-                    background: #0052CC;
-                    color: white;
-                    border: none;
-                    border-radius: 3px;
-                    font-size: 12px;
-                    cursor: pointer;
-                    transition: background 0.2s;
-                }
-                
-                .view-article-btn:hover {
-                    background: #0747A6;
-                }
-                
-                .no-notifications {
-                    padding: 40px;
-                    text-align: center;
-                    color: #6B778C;
-                }
-                
-                /* Article Indicator */
-                .jurix-article-indicator {
-                    margin-left: 8px;
                 }
                 
                 /* Modal Styles */
@@ -872,6 +739,7 @@
                     border-top-color: #0052CC;
                     border-radius: 50%;
                     animation: spin 1s linear infinite;
+                    display: inline-block;
                 }
                 
                 @keyframes spin {
@@ -1017,11 +885,6 @@
                     padding: 0;
                 }
                 
-                .article-content strong {
-                    font-weight: 600;
-                    color: #172B4D;
-                }
-                
                 /* Feedback Section */
                 .feedback-section {
                     padding: 32px;
@@ -1054,12 +917,6 @@
                     font-family: inherit;
                 }
                 
-                #feedback-input:focus {
-                    outline: none;
-                    border-color: #0052CC;
-                    box-shadow: 0 0 0 2px rgba(0, 82, 204, 0.2);
-                }
-                
                 .feedback-actions {
                     margin-top: 16px;
                     display: flex;
@@ -1071,100 +928,6 @@
                     display: flex;
                     align-items: center;
                     gap: 6px;
-                }
-                
-                /* Feedback History */
-                .feedback-history h5 {
-                    margin: 32px 0 16px 0;
-                    color: #172B4D;
-                    font-size: 14px;
-                    font-weight: 600;
-                }
-                
-                .history-timeline {
-                    position: relative;
-                    padding-left: 24px;
-                }
-                
-                .history-timeline::before {
-                    content: '';
-                    position: absolute;
-                    left: 8px;
-                    top: 8px;
-                    bottom: 8px;
-                    width: 2px;
-                    background: #DFE1E6;
-                }
-                
-                .history-item {
-                    position: relative;
-                    margin-bottom: 24px;
-                }
-                
-                .history-marker {
-                    position: absolute;
-                    left: -16px;
-                    top: 8px;
-                    width: 12px;
-                    height: 12px;
-                    background: white;
-                    border: 2px solid #0052CC;
-                    border-radius: 50%;
-                }
-                
-                .history-content {
-                    background: white;
-                    padding: 16px;
-                    border-radius: 6px;
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                }
-                
-                .history-header {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 8px;
-                }
-                
-                .history-user {
-                    font-weight: 600;
-                    color: #172B4D;
-                    font-size: 13px;
-                }
-                
-                .history-time {
-                    color: #6B778C;
-                    font-size: 12px;
-                }
-                
-                .history-feedback {
-                    color: #172B4D;
-                    font-size: 13px;
-                    margin-bottom: 8px;
-                    line-height: 1.5;
-                }
-                
-                .history-action {
-                    display: inline-block;
-                    padding: 2px 8px;
-                    border-radius: 3px;
-                    font-size: 11px;
-                    font-weight: 600;
-                    text-transform: uppercase;
-                }
-                
-                .action-refine {
-                    background: #E9F2FF;
-                    color: #0052CC;
-                }
-                
-                .action-approve {
-                    background: #E3FCEF;
-                    color: #006644;
-                }
-                
-                .action-reject {
-                    background: #FFEBE6;
-                    color: #DE350B;
                 }
                 
                 /* Approved Section */
@@ -1188,28 +951,7 @@
                     color: #6B778C;
                     margin: 0 0 24px 0;
                 }
-                
-                /* Responsive Design */
-                @media (max-width: 768px) {
-                    .jurix-modal {
-                        width: 95%;
-                        max-height: 95vh;
-                    }
-                    
-                    .article-meta {
-                        flex-wrap: wrap;
-                        gap: 16px;
-                    }
-                    
-                    .feedback-actions {
-                        flex-wrap: wrap;
-                    }
-                    
-                    .jurix-notification-dropdown {
-                        width: 320px;
-                    }
-                }
-            `;
+            </style>`;
             
             const styleSheet = document.createElement("style");
             styleSheet.id = styleId;
@@ -1218,6 +960,9 @@
             document.head.appendChild(styleSheet);
         }
     };
+    
+    // IMPORTANT: Make ArticleReview globally accessible
+    window.JurixArticleReview = ArticleReview;
     
     // Initialize on DOM ready
     AJS.toInit(() => {

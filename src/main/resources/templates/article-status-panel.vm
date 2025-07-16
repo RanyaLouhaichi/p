@@ -18,7 +18,7 @@
             
             <div class="article-actions">
                 <button class="aui-button aui-button-primary view-article-btn" 
-                        onclick="ArticleReview.openArticleReview('$issueKey')">
+                        onclick="window.JurixArticleReview.openArticleReview('$issueKey')">
                     <span class="aui-icon aui-icon-small aui-iconfont-document"></span>
                     Review Article
                 </button>
