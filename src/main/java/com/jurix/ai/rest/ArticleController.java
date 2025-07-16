@@ -344,6 +344,7 @@ public class ArticleController {
         response.put("timestamp", System.currentTimeMillis());
         
         return Response.ok(response).build();
+    }
     
     @GET
     @Path("/test/{issueKey}")
