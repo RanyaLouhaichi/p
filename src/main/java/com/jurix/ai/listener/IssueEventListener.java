@@ -16,12 +16,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 import java.net.URL;
 import java.net.HttpURLConnection;
 import java.io.OutputStream;
@@ -48,6 +52,20 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
     
     // Track registration status
     private boolean registered = false;
+    
+    // Redis connection for persistent storage
+    private JedisPool jedisPool;
+    
+    // Redis keys
+    private static final String ARTICLE_GENERATED_PREFIX = "article_generated:";
+    private static final String ARTICLE_IN_PROGRESS_PREFIX = "article_in_progress:";
+    private static final String LISTENER_STARTUP_TIME = "listener_startup_time";
+    
+    // Track current session startup time
+    private long startupTime;
+    
+    // Time to wait before considering an "in progress" generation as stale
+    private static final long IN_PROGRESS_TIMEOUT_MS = 900000; // 15 minutes
 
     @Inject
     public IssueEventListener(@ComponentImport EventPublisher eventPublisher,
@@ -57,9 +75,6 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
         this.updateService = updateService;
         this.articleService = articleService;
         log.info("🚀 IssueEventListener CONSTRUCTOR called");
-        log.info("   EventPublisher: {}", eventPublisher);
-        log.info("   DashboardUpdateService: {}", updateService);
-        log.info("   ArticleGenerationService: {}", articleService);
     }
 
     @Override
@@ -69,10 +84,20 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
         log.info("🟢 ==========================================");
         
         try {
+            // Initialize Redis connection
+            initializeRedis();
+            
+            // Record startup time
+            startupTime = System.currentTimeMillis();
+            try (Jedis jedis = jedisPool.getResource()) {
+                jedis.set(LISTENER_STARTUP_TIME, String.valueOf(startupTime));
+            }
+            log.info("📝 Recorded startup time: {}", new Date(startupTime));
+            
             // Initialize HTTP client
             this.httpClient = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)     // 30 seconds to connect
-                .writeTimeout(30, TimeUnit.SECONDS)       // 30 seconds to write  
+                .connectTimeout(30, TimeUnit.SECONDS)
+                .writeTimeout(30, TimeUnit.SECONDS)  
                 .readTimeout(500, TimeUnit.SECONDS) 
                 .build();
             
@@ -81,11 +106,67 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
             eventPublisher.register(this);
             registered = true;
             log.info("✅ SUCCESSFULLY REGISTERED with EventPublisher!");
-            log.info("✅ Listener is now active and waiting for events");
+            
+            // Clean up any stale "in progress" entries
+            cleanupStaleInProgressEntries();
             
         } catch (Exception e) {
             log.error("❌ Failed to register event listener!", e);
             throw e;
+        }
+    }
+
+    private void initializeRedis() {
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setMaxTotal(128);
+        poolConfig.setMaxIdle(128);
+        poolConfig.setMinIdle(16);
+        poolConfig.setTestOnBorrow(true);
+        poolConfig.setTestOnReturn(true);
+        poolConfig.setTestWhileIdle(true);
+        poolConfig.setNumTestsPerEvictionRun(3);
+        poolConfig.setBlockWhenExhausted(true);
+        
+        // Connect to Redis
+        jedisPool = new JedisPool(poolConfig, "localhost", 6379, 2000);
+        
+        // Test connection
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.ping();
+            log.info("✅ Connected to Redis for persistent article tracking");
+        } catch (Exception e) {
+            log.error("❌ Failed to connect to Redis", e);
+            throw new RuntimeException("Redis connection required for article tracking", e);
+        }
+    }
+
+    private void cleanupStaleInProgressEntries() {
+        try (Jedis jedis = jedisPool.getResource()) {
+            Set<String> inProgressKeys = jedis.keys(ARTICLE_IN_PROGRESS_PREFIX + "*");
+            int cleaned = 0;
+            
+            for (String key : inProgressKeys) {
+                String value = jedis.get(key);
+                if (value != null) {
+                    try {
+                        long timestamp = Long.parseLong(value);
+                        if (System.currentTimeMillis() - timestamp > IN_PROGRESS_TIMEOUT_MS) {
+                            jedis.del(key);
+                            cleaned++;
+                        }
+                    } catch (NumberFormatException e) {
+                        // Invalid value, delete it
+                        jedis.del(key);
+                        cleaned++;
+                    }
+                }
+            }
+            
+            if (cleaned > 0) {
+                log.info("🧹 Cleaned up {} stale in-progress entries", cleaned);
+            }
+        } catch (Exception e) {
+            log.error("Error cleaning up stale entries", e);
         }
     }
 
@@ -95,6 +176,9 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
         if (registered) {
             eventPublisher.unregister(this);
             registered = false;
+        }
+        if (jedisPool != null && !jedisPool.isClosed()) {
+            jedisPool.close();
         }
         log.info("JURIX Issue Event Listener unregistered");
     }
@@ -110,48 +194,146 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
                 return;
             }
             
-            // Add simple logging to verify events are received
-            log.info("JURIX Event: Issue {} - Type {} - Status {}", 
-                     issue.getKey(), getEventTypeName(eventTypeId), issue.getStatus().getName());
-            
+            String issueKey = issue.getKey();
             String projectKey = issue.getProjectObject().getKey();
             String eventType = getEventTypeName(eventTypeId);
             
-            // Always handle dashboard update (YOUR EXISTING CODE THAT WORKS)
+            // Get issue resolution date
+            Date resolutionDate = issue.getResolutionDate();
+            
+            log.info("📌 Event: {} - Issue: {} - Status: {} - Resolution Date: {}", 
+                     eventType, issueKey, issue.getStatus().getName(), resolutionDate);
+            
+            // Always handle dashboard update in a separate thread
             new Thread(() -> {
                 handleDashboardUpdate(projectKey, issue, eventType);
             }).start();
             
-            // NEW: Simple article generation check
-            String currentStatus = issue.getStatus().getName();
+            // CRITICAL: Only generate articles for issues that were JUST resolved
+            // (not for issues that were already resolved before startup)
             
-            // Check if issue is in a resolved status
-            if (RESOLVED_STATUSES.contains(currentStatus)) {
-                log.info("Issue {} has resolved status: {}", issue.getKey(), currentStatus);
+            // First check: Is this an update event on an already resolved issue?
+            if (eventTypeId.equals(EventType.ISSUE_UPDATED_ID)) {
                 
-                // Check if we should generate article
-                String cacheKey = "article_generation:" + issue.getKey();
-                
-                if (!articleService.isArticleGenerationInProgress(cacheKey)) {
-                    ArticleGenerationService.ArticleData existingArticle = 
-                        articleService.getArticleData(issue.getKey());
-                    
-                    if (existingArticle == null) {
-                        log.info("Starting article generation for issue: {}", issue.getKey());
-                        
-                        new Thread(() -> {
-                            try {
-                                handleArticleGeneration(issue);
-                            } catch (Exception e) {
-                                log.error("Error in article generation thread", e);
-                            }
-                        }).start();
-                    }
+                // If the issue has a resolution date that's before our startup time,
+                // it was already resolved when we started - skip it
+                if (resolutionDate != null && resolutionDate.getTime() < startupTime) {
+                    log.info("⏭️ Skipping article generation - issue {} was resolved before startup", issueKey);
+                    return;
                 }
             }
             
+            // Only process article generation for RESOLUTION events
+            boolean isResolutionEvent = eventTypeId.equals(EventType.ISSUE_RESOLVED_ID) || 
+                                      eventTypeId.equals(EventType.ISSUE_CLOSED_ID);
+            
+            if (!isResolutionEvent) {
+                log.debug("Not a resolution event, skipping article generation for {}", issueKey);
+                return;
+            }
+            
+            String currentStatus = issue.getStatus().getName();
+            
+            // Check if issue is in a resolved status
+            if (!RESOLVED_STATUSES.contains(currentStatus)) {
+                log.debug("Issue {} not in resolved status ({}), skipping", issueKey, currentStatus);
+                return;
+            }
+            
+            // Check Redis for existing article generation
+            if (hasArticleBeenGenerated(issueKey)) {
+                log.info("✅ Article already generated for issue: {}, skipping", issueKey);
+                return;
+            }
+            
+            // Check if article generation is already in progress
+            if (!markArticleGenerationInProgress(issueKey)) {
+                log.info("⚠️ Article generation already in progress for issue: {}, skipping", issueKey);
+                return;
+            }
+            
+            // Check if article already exists in storage
+            ArticleGenerationService.ArticleData existingArticle = 
+                articleService.getArticleData(issueKey);
+            
+            if (existingArticle != null && existingArticle.status != null && 
+                !existingArticle.status.equals("error")) {
+                log.info("📄 Article already exists in storage for issue: {}, marking as complete", issueKey);
+                markArticleGenerationComplete(issueKey);
+                return;
+            }
+            
+            // ARTICLE GENERATION TEMPORARILY DISABLED FOR TESTING
+            log.info("⏸️ Article generation DISABLED for testing - would generate for: {}", issueKey);
+            
+            /* COMMENTED OUT FOR TESTING - Remove this comment block to re-enable
+            // Start article generation in a separate thread
+            log.info("🚀 Starting article generation for newly resolved issue: {}", issueKey);
+            
+            new Thread(() -> {
+                try {
+                    handleArticleGeneration(issue);
+                    markArticleGenerationComplete(issueKey);
+                } catch (Exception e) {
+                    log.error("Error in article generation thread for {}", issueKey, e);
+                    // Remove from in-progress on error
+                    clearArticleGenerationInProgress(issueKey);
+                }
+            }).start();
+            */
+            
         } catch (Exception e) {
             log.error("Error handling issue event", e);
+        }
+    }
+    
+    private boolean hasArticleBeenGenerated(String issueKey) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.exists(ARTICLE_GENERATED_PREFIX + issueKey);
+        } catch (Exception e) {
+            log.error("Error checking if article was generated for {}", issueKey, e);
+            // On error, assume it was generated to prevent duplicates
+            return true;
+        }
+    }
+    
+    private boolean markArticleGenerationInProgress(String issueKey) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            String key = ARTICLE_IN_PROGRESS_PREFIX + issueKey;
+            // Set if not exists, with 15 minute expiry
+            Long result = jedis.setnx(key, String.valueOf(System.currentTimeMillis()));
+            if (result == 1) {
+                jedis.expire(key, 900); // 15 minutes
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("Error marking article generation in progress for {}", issueKey, e);
+            return false;
+        }
+    }
+    
+    private void clearArticleGenerationInProgress(String issueKey) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.del(ARTICLE_IN_PROGRESS_PREFIX + issueKey);
+        } catch (Exception e) {
+            log.error("Error clearing in-progress status for {}", issueKey, e);
+        }
+    }
+    
+    private void markArticleGenerationComplete(String issueKey) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            // Mark as complete with timestamp
+            jedis.set(ARTICLE_GENERATED_PREFIX + issueKey, String.valueOf(System.currentTimeMillis()));
+            // Set expiry to 30 days
+            jedis.expire(ARTICLE_GENERATED_PREFIX + issueKey, 2592000);
+            
+            // Clear in-progress flag
+            clearArticleGenerationInProgress(issueKey);
+            
+            log.info("✅ Marked article generation complete for {}", issueKey);
+        } catch (Exception e) {
+            log.error("Error marking article generation complete for {}", issueKey, e);
         }
     }
     
@@ -176,63 +358,22 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
         }
     }
     
-    private boolean shouldGenerateArticle(Long eventTypeId, Issue issue) {
-        log.info("🤔 Checking if article should be generated...");
-        
-        // Check if this is a resolution event
-        boolean isResolutionEvent = eventTypeId.equals(EventType.ISSUE_RESOLVED_ID) || 
-                                   eventTypeId.equals(EventType.ISSUE_CLOSED_ID);
-        log.info("   Is resolution event: {}", isResolutionEvent);
-        
-        if (!isResolutionEvent) {
-            return false;
-        }
-        
-        // Check if status is resolved
-        Status currentStatus = issue.getStatus();
-        String statusName = currentStatus != null ? currentStatus.getName() : "null";
-        boolean isResolvedStatus = currentStatus != null && RESOLVED_STATUSES.contains(statusName);
-        log.info("   Current status: '{}', Is resolved: {}", statusName, isResolvedStatus);
-        
-        if (!isResolvedStatus) {
-            return false;
-        }
-        
-        // Check if article already exists or is being generated
-        String cacheKey = "article_generation:" + issue.getKey();
-        boolean inProgress = articleService.isArticleGenerationInProgress(cacheKey);
-        log.info("   Generation in progress: {}", inProgress);
-        
-        if (inProgress) {
-            return false;
-        }
-        
-        // Check issue type
-        String issueType = issue.getIssueType().getName();
-        List<String> articleEligibleTypes = Arrays.asList("Bug", "Story", "Task", "Improvement");
-        boolean eligibleType = articleEligibleTypes.contains(issueType);
-        log.info("   Issue type: '{}', Eligible: {}", issueType, eligibleType);
-        
-        return eligibleType;
-    }
-    
     private void handleArticleGeneration(Issue issue) {
+        String issueKey = issue.getKey();
+        
         try {
-            log.info("🎊 ARTICLE GENERATION STARTED for: {}", issue.getKey());
-            
-            String cacheKey = "article_generation:" + issue.getKey();
-            articleService.markGenerationInProgress(cacheKey);
+            log.info("🎊 ARTICLE GENERATION STARTED for: {}", issueKey);
             
             // Prepare issue data
             Map<String, Object> issueData = new HashMap<>();
-            issueData.put("key", issue.getKey());
+            issueData.put("key", issueKey);
             issueData.put("summary", issue.getSummary());
             issueData.put("description", issue.getDescription());
             issueData.put("status", issue.getStatus().getName());
             issueData.put("type", issue.getIssueType().getName());
             issueData.put("projectKey", issue.getProjectObject().getKey());
             
-            String articleGenUrl = "http://localhost:5001/api/article/generate/" + issue.getKey();
+            String articleGenUrl = "http://localhost:5001/api/article/generate/" + issueKey;
             log.info("🌐 Calling Python backend: {}", articleGenUrl);
             
             // Use URLConnection with explicit timeout
@@ -244,7 +385,7 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
             
             // Set LONG timeouts
             conn.setConnectTimeout(30000);  // 30 seconds
-            conn.setReadTimeout(600000);     // 10 MINUTES!
+            conn.setReadTimeout(600000);     // 10 MINUTES
             
             log.info("⏱️ Timeouts set: connect=30s, read=10min");
             
@@ -270,30 +411,25 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
                 }
                 
                 String responseBody = response.toString();
-                log.info("✅ Article generated successfully for {}", issue.getKey());
+                log.info("✅ Article generated successfully for {}", issueKey);
                 
                 Map<String, Object> result = gson.fromJson(responseBody, Map.class);
-                articleService.storeArticleData(issue.getKey(), result);
-                articleService.createNotification(issue.getKey(), issue.getSummary());
+                articleService.storeArticleData(issueKey, result);
+                articleService.createNotification(issueKey, issue.getSummary());
                 
             } else {
                 log.error("❌ Python backend returned error: {}", responseCode);
-                articleService.storeGenerationError(issue.getKey(), "HTTP " + responseCode);
+                articleService.storeGenerationError(issueKey, "HTTP " + responseCode);
             }
             
             conn.disconnect();
-            articleService.markGenerationComplete(cacheKey);
             
         } catch (SocketTimeoutException e) {
-            log.error("❌ TIMEOUT after waiting! Issue: {}", issue.getKey());
-            log.error("❌ The Python backend is taking too long. Consider:");
-            log.error("❌ 1. Making the Python endpoint return immediately with a task ID");
-            log.error("❌ 2. Polling for completion later");
-            log.error("❌ 3. Using a message queue");
-            articleService.storeGenerationError(issue.getKey(), "Timeout: " + e.getMessage());
+            log.error("❌ TIMEOUT after waiting! Issue: {}", issueKey);
+            articleService.storeGenerationError(issueKey, "Timeout: " + e.getMessage());
         } catch (Exception e) {
-            log.error("❌ Error generating article for {}: {}", issue.getKey(), e.getMessage(), e);
-            articleService.storeGenerationError(issue.getKey(), e.getMessage());
+            log.error("❌ Error generating article for {}: {}", issueKey, e.getMessage(), e);
+            articleService.storeGenerationError(issueKey, e.getMessage());
         }
     }
     
@@ -336,7 +472,7 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     if (response.isSuccessful()) {
-                        log.info("✅ Successfully notified Python backend");
+                        log.debug("Successfully notified Python backend");
                     }
                     response.close();
                 }

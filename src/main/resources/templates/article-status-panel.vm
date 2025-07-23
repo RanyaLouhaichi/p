@@ -1,75 +1,514 @@
 #if($hasArticle)
-<div class="module toggle-wrap">
-    <div class="mod-header">
-        <h3>AI-Generated Article</h3>
-    </div>
-    <div class="mod-content">
-        <div class="article-status-content">
-            <div class="status-indicator">
-                #if($approvalStatus == "approved")
-                    <span class="aui-lozenge aui-lozenge-success">Approved</span>
-                #elseif($approvalStatus == "rejected")
-                    <span class="aui-lozenge aui-lozenge-error">Rejected</span>
-                #else
-                    <span class="aui-lozenge aui-lozenge-current">Pending Review</span>
-                #end
-                <span class="article-version">v$articleVersion</span>
+<div class="jurix-article-panel">
+    <div class="jurix-panel-header">
+        <div class="header-content">
+            <div class="header-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <path d="M16 13H8M16 17H8M10 9H8"/>
+                </svg>
             </div>
-            
-            <div class="article-actions">
-                <button class="aui-button aui-button-primary view-article-btn" 
-                        onclick="window.JurixArticleReview.openArticleReview('$issueKey')">
-                    <span class="aui-icon aui-icon-small aui-iconfont-document"></span>
-                    Review Article
-                </button>
+            <h3 class="panel-title">AI Article</h3>
+            <div class="ai-badge">
+                <span class="ai-indicator"></span>
+                AI Generated
             </div>
-            
-            #if($articleStatus == "error")
-            <div class="article-error-msg">
-                <span class="aui-icon aui-icon-small aui-iconfont-warning"></span>
-                Article generation failed. Please try again.
-            </div>
-            #end
         </div>
+    </div>
+    
+    <div class="jurix-panel-content">
+        <!-- Article Preview Card -->
+        <div class="article-preview-card">
+            <div class="preview-header">
+                <div class="status-section">
+                    #if($approvalStatus == "approved")
+                        <div class="status-badge approved">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            <span>Approved</span>
+                        </div>
+                    #elseif($approvalStatus == "rejected")
+                        <div class="status-badge rejected">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <line x1="18" y1="6" x2="6" y2="18"/>
+                                <line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                            <span>Rejected</span>
+                        </div>
+                    #else
+                        <div class="status-badge pending">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            <span>Pending Review</span>
+                        </div>
+                    #end
+                    <div class="version-tag">v$articleVersion</div>
+                </div>
+            </div>
+            
+            <div class="preview-content">
+                <div class="preview-text">
+                    #if($articlePreview)
+                        <p>$articlePreview</p>
+                    #else
+                        <p>AI-generated documentation ready for review. Click below to read the full article and provide feedback.</p>
+                    #end
+                </div>
+                
+                <div class="preview-meta">
+                    <div class="meta-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <span>$articleDate</span>
+                    </div>
+                    #if($wordCount)
+                    <div class="meta-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                        <span>$wordCount words</span>
+                    </div>
+                    #end
+                </div>
+            </div>
+            
+            <div class="action-section">
+                <button class="jurix-primary-btn" onclick="window.JurixArticleReview.openArticleReview('$issueKey')">
+                    <span>Review Article</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                </button>
+                
+                #if($approvalStatus == "approved")
+                <button class="jurix-secondary-btn" onclick="window.location.href='$exportUrl'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    <span>Export</span>
+                </button>
+                #end
+            </div>
+        </div>
+        
+        #if($articleStatus == "error")
+        <div class="error-notification">
+            <div class="error-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+            </div>
+            <div class="error-content">
+                <p class="error-title">Generation Failed</p>
+                <p class="error-message">We couldn't generate the article. Please try again.</p>
+            </div>
+            <button class="retry-btn" onclick="retryGeneration()">Retry</button>
+        </div>
+        #end
+        
+        <!-- AI Insights -->
+        #if($aiInsights)
+        <div class="ai-insights">
+            <h4>AI Insights</h4>
+            <div class="insights-grid">
+                <div class="insight-item">
+                    <div class="insight-icon quality">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                    </div>
+                    <div class="insight-content">
+                        <span class="insight-label">Quality Score</span>
+                        <span class="insight-value">$qualityScore%</span>
+                    </div>
+                </div>
+                <div class="insight-item">
+                    <div class="insight-icon completeness">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                    </div>
+                    <div class="insight-content">
+                        <span class="insight-label">Completeness</span>
+                        <span class="insight-value">$completeness%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        #end
     </div>
 </div>
 
 <style>
-.article-status-content {
-    padding: 10px;
+/* JURIX Article Panel - Modern Design */
+.jurix-article-panel {
+    background: var(--jurix-white, #FFFFFF);
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.status-indicator {
+.jurix-article-panel:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Panel Header */
+.jurix-panel-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 16px 20px;
+}
+
+.header-content {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 12px;
 }
 
-.article-version {
-    font-size: 12px;
-    color: #6B778C;
+.header-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #0052CC 0%, #0747A6 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 16px;
     font-weight: 600;
+    color: #172B4D;
+    flex: 1;
 }
 
-.article-actions {
-    margin-top: 12px;
-}
-
-.view-article-btn {
-    width: 100%;
-}
-
-.article-error-msg {
-    margin-top: 12px;
-    padding: 8px;
-    background: #FFEBE6;
-    border-radius: 3px;
-    color: #DE350B;
-    font-size: 13px;
+.ai-badge {
     display: flex;
     align-items: center;
     gap: 6px;
+    padding: 4px 12px;
+    background: rgba(0, 82, 204, 0.08);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #0052CC;
+}
+
+.ai-indicator {
+    width: 6px;
+    height: 6px;
+    background: #0052CC;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Panel Content */
+.jurix-panel-content {
+    padding: 20px;
+}
+
+/* Article Preview Card */
+.article-preview-card {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.status-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Status Badges */
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.status-badge.approved {
+    background: linear-gradient(135deg, #E3FCEF 0%, #D7F9E5 100%);
+    color: #00875A;
+    border: 1px solid rgba(0, 135, 90, 0.2);
+}
+
+.status-badge.rejected {
+    background: linear-gradient(135deg, #FFEBE6 0%, #FFE0D6 100%);
+    color: #DE350B;
+    border: 1px solid rgba(222, 53, 11, 0.2);
+}
+
+.status-badge.pending {
+    background: linear-gradient(135deg, #FFF7E6 0%, #FFF3D6 100%);
+    color: #FF8B00;
+    border: 1px solid rgba(255, 139, 0, 0.2);
+}
+
+.version-tag {
+    padding: 4px 10px;
+    background: rgba(0, 82, 204, 0.1);
+    color: #0052CC;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Preview Content */
+.preview-content {
+    margin-bottom: 16px;
+}
+
+.preview-text {
+    color: #5E6C84;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+.preview-meta {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #6B778C;
+    font-size: 13px;
+}
+
+.meta-item svg {
+    color: #8993A4;
+}
+
+/* Action Section */
+.action-section {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.jurix-primary-btn {
+    flex: 1;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #0052CC 0%, #0747A6 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.jurix-primary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 82, 204, 0.3);
+}
+
+.jurix-secondary-btn {
+    padding: 10px 16px;
+    background: white;
+    color: #505F79;
+    border: 1px solid #DFE1E6;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.jurix-secondary-btn:hover {
+    background: #F4F5F7;
+    border-color: #C1C7D0;
+}
+
+/* Error Notification */
+.error-notification {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, #FFF5F5 0%, #FFEBE6 100%);
+    border: 1px solid rgba(222, 53, 11, 0.2);
+    border-radius: 8px;
+    margin-top: 16px;
+}
+
+.error-icon {
+    width: 40px;
+    height: 40px;
+    background: #FFEBE6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #DE350B;
+    flex-shrink: 0;
+}
+
+.error-content {
+    flex: 1;
+}
+
+.error-title {
+    margin: 0 0 4px 0;
+    font-weight: 600;
+    color: #172B4D;
+    font-size: 14px;
+}
+
+.error-message {
+    margin: 0;
+    color: #6B778C;
+    font-size: 13px;
+}
+
+.retry-btn {
+    padding: 8px 16px;
+    background: white;
+    color: #DE350B;
+    border: 1px solid #DE350B;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.retry-btn:hover {
+    background: #DE350B;
+    color: white;
+}
+
+/* AI Insights */
+.ai-insights {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.ai-insights h4 {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #172B4D;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.insight-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #F4F5F7;
+    border-radius: 8px;
+}
+
+.insight-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.insight-icon.quality {
+    background: linear-gradient(135deg, #FFF7E6 0%, #FFECCC 100%);
+    color: #FF8B00;
+}
+
+.insight-icon.completeness {
+    background: linear-gradient(135deg, #E3FCEF 0%, #C6F6D5 100%);
+    color: #00875A;
+}
+
+.insight-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.insight-label {
+    font-size: 12px;
+    color: #6B778C;
+    margin-bottom: 2px;
+}
+
+.insight-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #172B4D;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .action-section {
+        flex-direction: column;
+    }
+    
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .preview-meta {
+        flex-direction: column;
+        gap: 8px;
+    }
 }
 </style>
 #end
