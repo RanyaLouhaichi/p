@@ -2,7 +2,7 @@ window.SmartSuggestions = (function() {
     'use strict';
     
     const API_BASE = AJS.contextPath() + '/rest/jurix/1.0';
-    const BACKEND_URL = 'http://localhost:5001';
+    const BACKEND_URL = 'http://host.docker.internal:5001';
     let currentIssueKey = null;
     let suggestionsCache = {};
     let isLoadingInProgress = false;

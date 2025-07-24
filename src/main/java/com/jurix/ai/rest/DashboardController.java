@@ -16,12 +16,15 @@ import org.slf4j.LoggerFactory;
 
 import com.atlassian.plugins.rest.common.security.AnonymousAllowed;
 import com.atlassian.sal.api.user.UserManager;
+import javax.ws.rs.Consumes;
 
 /**
  * REST endpoint for dashboard data
  */
 @Named
 @Path("/dashboard")
+@Consumes({MediaType.APPLICATION_JSON})
+@Produces({MediaType.APPLICATION_JSON})
 public class DashboardController {
     private static final Logger log = LoggerFactory.getLogger(DashboardController.class);
     

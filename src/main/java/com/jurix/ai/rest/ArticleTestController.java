@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 
 @Named
 @Path("/article-test")
+@Consumes({MediaType.APPLICATION_JSON})
+@Produces({MediaType.APPLICATION_JSON})
 public class ArticleTestController {
     
     private static final Logger log = LoggerFactory.getLogger(ArticleTestController.class);
@@ -112,7 +114,7 @@ public class ArticleTestController {
             log.info("📦 Prepared issue data: {}", gson.toJson(issueData));
             
             // Call article generation API
-            String articleGenUrl = "http://localhost:5001/api/article/generate/" + issue.getKey();
+            String articleGenUrl = "http://host.docker.internal:5001/api/article/generate/" + issue.getKey();
             log.info("🌐 Calling URL: {}", articleGenUrl);
             
             RequestBody body = RequestBody.create(
@@ -180,7 +182,7 @@ public class ArticleTestController {
         log.info("🔍 Checking Python backend connection...");
         
         try {
-            String healthUrl = "http://localhost:5001/health";
+            String healthUrl = "http://host.docker.internal:5001/health";
             Request request = new Request.Builder()
                 .url(healthUrl)
                 .get()

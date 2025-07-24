@@ -5,6 +5,10 @@
     <meta charset="utf-8">
     <meta name="decorator" content="atl.general">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    #if($webResourceManager)
+      $webResourceManager.requireResource("com.yourcompany.jurix-ai-plugin:jurix-ai-resources")
+    #end
     
     ## Chart.js for charts
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>

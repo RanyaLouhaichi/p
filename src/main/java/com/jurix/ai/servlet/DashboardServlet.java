@@ -84,7 +84,7 @@ public class DashboardServlet extends HttpServlet {
         context.put("dashboardData", "{}"); // Empty JSON, will be loaded by JS
         
         // Backend API configuration
-        context.put("apiBaseUrl", "http://localhost:5001");
+        context.put("apiBaseUrl", "http://host.docker.internal:5001");
         
         // Pass project key to JavaScript
         context.put("jsProjectKey", projectKey);

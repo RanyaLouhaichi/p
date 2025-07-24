@@ -7,5 +7,5 @@
         http://www.atlassian.com/schema/atlassian-scanner
         http://www.atlassian.com/schema/atlassian-scanner/atlassian-scanner.xsd">
 
-    <atlassian-scanner:scan-indexes/>
+    <!-- Empty beans file -->
 </beans>

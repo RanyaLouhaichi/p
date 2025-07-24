@@ -14,6 +14,8 @@ import java.util.*;
 
 @Named
 @Path("/updates")
+@Consumes({MediaType.APPLICATION_JSON})
+@Produces({MediaType.APPLICATION_JSON})
 public class UpdatesController {
     private static final Logger log = LoggerFactory.getLogger(UpdatesController.class);
     

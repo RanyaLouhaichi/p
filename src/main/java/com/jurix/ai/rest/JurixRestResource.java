@@ -31,7 +31,7 @@ public class JurixRestResource {
     private final Gson gson = new Gson();
     
     // Backend API URL - configure this based on your setup
-    private static final String BACKEND_API_URL = "http://localhost:5001";
+    private static final String BACKEND_API_URL = "http://host.docker.internal:5001";
     
     @GET
     @Path("/health")
@@ -164,7 +164,7 @@ public class JurixRestResource {
             issueData.put("projectKey", issue.getProjectObject().getKey());
             
             // Call Python backend DIRECTLY
-            String pythonUrl = "http://localhost:5001/api/article/generate/" + issueKey;
+            String pythonUrl = "http://host.docker.internal:5001/api/article/generate/" + issueKey;
             
             URL url = new URL(pythonUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();

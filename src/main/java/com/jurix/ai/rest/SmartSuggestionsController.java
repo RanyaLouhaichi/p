@@ -25,6 +25,8 @@ import com.google.gson.Gson;
 
 @Named
 @Path("/suggestions")
+@Consumes({MediaType.APPLICATION_JSON})
+@Produces({MediaType.APPLICATION_JSON})
 public class SmartSuggestionsController {
     private static final Logger log = LoggerFactory.getLogger(SmartSuggestionsController.class);
     private final Gson gson = new Gson();
@@ -104,7 +106,7 @@ public class SmartSuggestionsController {
             );
             
             Request request = new Request.Builder()
-                .url("http://localhost:5001/api/suggest-articles")
+                .url("http://host.docker.internal:5001/api/suggest-articles")
                 .post(body)
                 .build();
             

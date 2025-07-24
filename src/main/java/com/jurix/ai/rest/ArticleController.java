@@ -22,6 +22,8 @@ import java.util.concurrent.TimeUnit;
 
 @Named
 @Path("/article")
+@Consumes({MediaType.APPLICATION_JSON})
+@Produces({MediaType.APPLICATION_JSON})
 public class ArticleController {
     
     private static final Logger log = LoggerFactory.getLogger(ArticleController.class);
@@ -65,7 +67,7 @@ public class ArticleController {
             // If not found locally, check Python backend
             log.info("🔍 Article not in local storage, checking Python backend...");
             
-            String backendUrl = "http://localhost:5001/api/article/status/" + issueKey;
+            String backendUrl = "http://host.docker.internal:5001/api/article/status/" + issueKey;
             Request request = new Request.Builder()
                 .url(backendUrl)
                 .get()
@@ -116,7 +118,7 @@ public class ArticleController {
                     );
                     
                     Request genRequest = new Request.Builder()
-                        .url("http://localhost:5001/api/article/generate/" + issueKey)
+                        .url("http://host.docker.internal:5001/api/article/generate/" + issueKey)
                         .post(body)
                         .build();
                     
@@ -183,7 +185,7 @@ public class ArticleController {
             issueData.put("projectKey", issue.getProjectObject().getKey());
             
             // Call Python backend
-            String backendUrl = "http://localhost:5001/api/article/generate/" + issueKey;
+            String backendUrl = "http://host.docker.internal:5001/api/article/generate/" + issueKey;
             
             RequestBody body = RequestBody.create(
                 okhttp3.MediaType.parse("application/json"),
@@ -247,7 +249,7 @@ public class ArticleController {
             }
             
             // Check if Python backend is available
-            String healthUrl = "http://localhost:5001/health";
+            String healthUrl = "http://host.docker.internal:5001/health";
             try {
                 Request healthCheck = new Request.Builder()
                     .url(healthUrl)
@@ -270,7 +272,7 @@ public class ArticleController {
             }
             
             // Forward to Python backend
-            String backendUrl = "http://localhost:5001/api/article/feedback/" + issueKey;
+            String backendUrl = "http://host.docker.internal:5001/api/article/feedback/" + issueKey;
             log.info("📤 Forwarding to Python backend: {}", backendUrl);
             
             RequestBody body = RequestBody.create(

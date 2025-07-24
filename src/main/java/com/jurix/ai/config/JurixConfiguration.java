@@ -13,7 +13,7 @@ import javax.inject.Named;
 public class JurixConfiguration {
     private static final String PLUGIN_KEY = "com.jurix.ai";
     private static final String BACKEND_URL_KEY = PLUGIN_KEY + ".backend.url";
-    private static final String DEFAULT_BACKEND_URL = "http://localhost:5001";
+    private static final String DEFAULT_BACKEND_URL = "http://host.docker.internal:5001";
     
     private final PluginSettingsFactory pluginSettingsFactory;
     

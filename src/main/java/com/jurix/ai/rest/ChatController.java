@@ -30,6 +30,8 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
  */
 @Named
 @Path("/chat")
+@Consumes({MediaType.APPLICATION_JSON})
+@Produces({MediaType.APPLICATION_JSON})
 public class ChatController {
     private static final Logger log = LoggerFactory.getLogger(ChatController.class);
     
