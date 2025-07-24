@@ -6,7 +6,7 @@ window.JurixDashboard = (function() {
     let updateInterval = null;
     let currentProjectKey = null;
     const UPDATE_FREQUENCY = 30000; // 30 seconds
-    const API_BASE_URL = 'http://host.docker.internal:5001'; // Python backend
+    // const API_BASE_URL = 'http://host.docker.internal:5001'; // REMOVE THIS
     let lastUpdateTimestamp = Date.now();
     let pollInterval = null;
     let isPolling = false;
@@ -492,15 +492,20 @@ window.JurixDashboard = (function() {
         // Show loading state
         showLoadingState();
         
-        // Fetch data from Python backend
-        fetch(`${API_BASE_URL}/api/dashboard/${currentProjectKey}`, {
+        // Use the Jira REST endpoint which will proxy to Python backend
+        const jiraRestUrl = `${window.location.origin}/rest/jurix/1.0/dashboard/${currentProjectKey}`;
+        
+        console.log('Calling URL:', jiraRestUrl);
+        
+        fetch(jiraRestUrl, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-            },
-            mode: 'cors'
+                'Accept': 'application/json'
+            }
         })
         .then(response => {
+            console.log('Response status:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -509,7 +514,7 @@ window.JurixDashboard = (function() {
         .then(data => {
             console.log('Dashboard data received:', data);
             
-            if (data.status === 'success') {
+            if (data.status === 'success' || data.project_id) {
                 // Store the data for debugging
                 window.lastDashboardData = data;
                 
@@ -1081,6 +1086,7 @@ window.JurixDashboard = (function() {
         }
     }
 
+    // Update the forecast function
     function initializeSprintForecast() {
         window.JurixDashboard.startForecast = function() {
             console.log('Starting forecast for type:', window.currentForecastType);
@@ -1088,7 +1094,7 @@ window.JurixDashboard = (function() {
             const forecastCard = document.querySelector('.performance-card');
             if (!forecastCard) return;
             
-            // Show loading animation with fixed text
+            // Show loading animation
             const loadingHtml = `
                 <div class="forecast-loading">
                     <div class="loading-spinner"></div>
@@ -1096,7 +1102,6 @@ window.JurixDashboard = (function() {
                 </div>
             `;
             
-            // Find or create results container
             let resultsContainer = forecastCard.querySelector('.forecast-results');
             if (!resultsContainer) {
                 resultsContainer = document.createElement('div');
@@ -1106,16 +1111,17 @@ window.JurixDashboard = (function() {
             
             resultsContainer.innerHTML = loadingHtml;
             
-            // Call backend to generate forecast with the correct type
-            fetch(`${API_BASE_URL}/api/forecast/${currentProjectKey}`, {
+            // Use Jira REST endpoint
+            const forecastUrl = `${window.location.origin}/rest/jurix/1.0/forecast/${currentProjectKey}`;
+            
+            fetch(forecastUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    type: window.currentForecastType  // This sends the correct type
-                }),
-                mode: 'cors'
+                    type: window.currentForecastType
+                })
             })
             .then(response => response.json())
             .then(data => {
@@ -2273,18 +2279,20 @@ window.JurixDashboard = (function() {
         isPolling = false;
     }
 
+    // Update the checkForUpdates function
     function checkForUpdates() {
         if (!currentProjectKey) return;
         
         console.log(`🔍 Checking for updates at ${new Date().toLocaleTimeString()}...`);
         
-        // Check Python backend for updates
-        fetch(`${API_BASE_URL}/api/updates/${currentProjectKey}?since=${lastUpdateTimestamp}`, {
+        // Use Jira REST endpoint
+        const updatesUrl = `${window.location.origin}/rest/jurix/1.0/updates/${currentProjectKey}?since=${lastUpdateTimestamp}`;
+        
+        fetch(updatesUrl, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-            },
-            mode: 'cors'
+            }
         })
         .then(response => response.json())
         .then(data => {

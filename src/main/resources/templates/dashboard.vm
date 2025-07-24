@@ -6,9 +6,6 @@
     <meta name="decorator" content="atl.general">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    #if($webResourceManager)
-      $webResourceManager.requireResource("com.yourcompany.jurix-ai-plugin:jurix-ai-resources")
-    #end
     
     ## Chart.js for charts
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
@@ -1723,87 +1720,298 @@
 
     <script type="text/javascript">
     /* <![CDATA[ */
-    // Pass project key and API configuration to JavaScript
-    window.JurixData = {
-        projectKey: '$projectKey',
-        projectName: '$projectName',
-        apiBaseUrl: '$apiBaseUrl',
-        contextPath: '$contextPath'
-    };
-    // INITIALIZE THE FORECAST TYPE
-    window.currentForecastType = 'velocity';
+    console.log('Starting dashboard initialization...');
+    console.log('Project Key:', '$projectKey');
+    
+    // Initialize the dashboard inline to avoid resource loading issues
+    (function() {
+        'use strict';
+        
+        // Global configuration
+        window.JurixData = {
+            projectKey: '$projectKey',
+            projectName: '$projectName',
+            contextPath: window.location.pathname.substring(0, window.location.pathname.indexOf('/plugins'))
+        };
+        
+        // Initialize dashboard
+        window.JurixDashboard = {
+            currentProjectKey: '$projectKey',
+            charts: {},
+            updateInterval: null,
+            lastUpdateTimestamp: Date.now(),
+            
+            init: function() {
+                console.log('🚀 Initializing JURIX Dashboard...');
+                console.log('📋 Current project key:', this.currentProjectKey);
+                
+                if (this.currentProjectKey) {
+                    this.loadDashboardData();
+                    this.bindEvents();
+                } else {
+                    console.error('❌ No project key found!');
+                    this.showError('No project key specified');
+                }
+            },
+            
+            loadDashboardData: function() {
+                var self = this;
+                console.log('Loading dashboard data for project:', this.currentProjectKey);
+                
+                // Show loading state
+                this.showLoadingState();
+                
+                // Build the correct URL
+                var baseUrl = window.location.origin;
+                var restUrl = baseUrl + '/rest/jurix/1.0/dashboard/' + this.currentProjectKey;
+                
+                console.log('Calling REST endpoint:', restUrl);
+                
+                fetch(restUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(function(response) {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error('HTTP error! status: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(function(data) {
+                    console.log('Dashboard data received:', data);
+                    
+                    if (data.status === 'success' || data.project_id) {
+                        window.lastDashboardData = data;
+                        self.updateDashboard(data);
+                        self.hideLoadingState();
+                        console.log('✅ Dashboard updated successfully');
+                    } else {
+                        throw new Error(data.error || 'Failed to load dashboard data');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error loading dashboard:', error);
+                    self.hideLoadingState();
+                    self.showError('Failed to load dashboard: ' + error.message);
+                });
+            },
+            
+            updateDashboard: function(data) {
+                console.log('Updating dashboard with data:', data);
+                
+                // Update metrics
+                if (data.metrics) {
+                    this.updateMetrics(data.metrics);
+                }
+                
+                // Update predictions
+                if (data.predictions) {
+                    this.updatePredictions(data.predictions);
+                }
+                
+                // Update risk assessment
+                if (data.riskAssessment || data.riskassessment) {
+                    this.updateRiskAssessment(data.riskAssessment || data.riskassessment);
+                }
+                
+                // Update charts
+                if (data.visualizationData || data.visualizationdata) {
+                    this.updateCharts(data.visualizationData || data.visualizationdata);
+                }
+                
+                // Update alerts
+                if (data.alerts) {
+                    this.updateAlerts(data.alerts);
+                }
+            },
 
-    // Additional dashboard functions that work with the new layout
-    window.JurixDashboard = window.JurixDashboard || {};
-    
-    // Add missing functions for the new layout
-    JurixDashboard.viewDetails = function(type) {
-        console.log('Viewing details for:', type);
-        // Navigate to detailed view
-        window.location.href = window.JurixData.contextPath + '/browse/' + window.JurixData.projectKey + '?details=' + type;
-    };
-    
-    JurixDashboard.toggleAlertModal = function() {
-        const modal = document.getElementById('alertModal');
-        const overlay = document.getElementById('modalOverlay');
-        modal.classList.toggle('active');
-        overlay.classList.toggle('active');
-    };
-    
-    JurixDashboard.switchForecast = function(position, element) {
-        // Update active state
-        document.querySelectorAll('.forecast-pill').forEach(opt => opt.classList.remove('active'));
-        element.classList.add('active');
-        
-        // Move indicator dot
-        const indicator = document.querySelector('.forecast-indicator');
-        indicator.className = 'forecast-indicator';
-        indicator.classList.add('pos-' + position);
-        
-        // UPDATE THE FORECAST TYPE - THIS WAS MISSING!
-        const types = ['velocity', 'burndown', 'capacity'];
-        window.currentForecastType = types[position - 1];
-        
-        // Update forecast data
-        console.log('Switching to forecast type:', window.currentForecastType);
-        
-        // Clear any existing results when switching
-        const forecastCard = document.querySelector('.performance-card');
-        if (forecastCard) {
-            const resultsContainer = forecastCard.querySelector('.forecast-results');
-            if (resultsContainer) {
-                resultsContainer.remove();
+            updateRiskAssessment: function(riskData) {
+                console.log('Updating risk assessment:', riskData);
+                var riskScoreEl = document.getElementById('riskScore');
+                if (riskScoreEl && riskData.score !== undefined) {
+                    riskScoreEl.textContent = riskData.score.toFixed(1);
+                }
+            },
+            
+            updateMetrics: function(metrics) {
+                console.log('Updating metrics:', metrics);
+                
+                // Update velocity
+                var velocityEl = document.getElementById('velocityMetric');
+                if (velocityEl && metrics.velocity !== undefined) {
+                    velocityEl.textContent = metrics.velocity;
+                }
+                
+                // Update cycle time - handle both cycleTime and cycletime
+                var cycleTimeEl = document.getElementById('cycleTimeMetric');
+                if (cycleTimeEl) {
+                    var cycleTime = metrics.cycleTime || metrics.cycletime;
+                    if (cycleTime !== undefined) {
+                        cycleTimeEl.textContent = cycleTime + 'd';
+                    }
+                }
+                
+                // Update efficiency
+                var efficiencyEl = document.getElementById('efficiencyMetric');
+                if (efficiencyEl && metrics.efficiency !== undefined) {
+                    efficiencyEl.textContent = metrics.efficiency + '%';
+                }
+                
+                // Update active issues - handle both activeIssues and activeissues
+                var activeIssuesEl = document.getElementById('activeIssuesMetric');
+                if (activeIssuesEl) {
+                    var activeIssues = metrics.activeIssues || metrics.activeissues;
+                    if (activeIssues !== undefined) {
+                        activeIssuesEl.textContent = activeIssues;
+                    }
+                }
+                
+                // Update alert count - handle both criticalAlerts and criticalalerts
+                var alertCountEl = document.getElementById('alertCount');
+                if (alertCountEl) {
+                    var criticalAlerts = metrics.criticalAlerts || metrics.criticalalerts;
+                    if (criticalAlerts !== undefined) {
+                        alertCountEl.textContent = criticalAlerts;
+                    }
+                }
+                
+                // Update the change indicators
+                this.updateMetricChanges(metrics);
+            },
+
+            updateMetricChanges: function(metrics) {
+                // Update velocity change
+                if (metrics.velocitychange) {
+                    var velocityChangeEl = document.getElementById('velocityChange');
+                    if (velocityChangeEl) {
+                        velocityChangeEl.innerHTML = '<span>' + (metrics.velocitychange.text || 'No change') + '</span>';
+                        velocityChangeEl.className = 'stat-change ' + (metrics.velocitychange.type || 'neutral');
+                    }
+                }
+                
+                // Update cycle time change
+                if (metrics.cycletimechange) {
+                    var cycleTimeChangeEl = document.getElementById('cycleTimeChange');
+                    if (cycleTimeChangeEl) {
+                        cycleTimeChangeEl.innerHTML = '<span>' + (metrics.cycletimechange.text || 'No change') + '</span>';
+                        cycleTimeChangeEl.className = 'stat-change ' + (metrics.cycletimechange.type || 'neutral');
+                    }
+                }
+                
+                // Update efficiency change
+                if (metrics.efficiencychange) {
+                    var efficiencyChangeEl = document.getElementById('efficiencyChange');
+                    if (efficiencyChangeEl) {
+                        efficiencyChangeEl.innerHTML = '<span>' + (metrics.efficiencychange.text || 'No change') + '</span>';
+                        efficiencyChangeEl.className = 'stat-change ' + (metrics.efficiencychange.type || 'neutral');
+                    }
+                }
+            },
+            
+            updatePredictions: function(predictions) {
+                console.log('Updating predictions:', predictions);
+                // TODO: Add prediction update logic
+            },
+            
+            updateCharts: function(visualizationData) {
+                console.log('Updating charts:', visualizationData);
+                // TODO: Add chart update logic
+            },
+            
+            updateAlerts: function(alerts) {
+                console.log('Updating alerts:', alerts);
+                var alertCountEl = document.getElementById('alertCount');
+                if (alertCountEl) {
+                    alertCountEl.textContent = alerts ? alerts.length : 0;
+                }
+            },
+            
+            showLoadingState: function() {
+                document.querySelectorAll('.stat-value').forEach(function(el) {
+                    el.textContent = '--';
+                    el.style.opacity = '0.5';
+                });
+            },
+            
+            hideLoadingState: function() {
+                document.querySelectorAll('.stat-value').forEach(function(el) {
+                    el.style.opacity = '1';
+                });
+            },
+            
+            showError: function(message) {
+                if (typeof AJS !== 'undefined' && AJS.flag) {
+                    AJS.flag({
+                        type: 'error',
+                        title: 'Error',
+                        body: message,
+                        close: 'manual'
+                    });
+                } else {
+                    console.error(message);
+                    alert(message);
+                }
+            },
+            
+            bindEvents: function() {
+                console.log('Binding events...');
+            },
+            
+            // Public methods for buttons
+            viewDetails: function(type) {
+                console.log('Viewing details for:', type);
+                window.location.href = window.location.origin + '/browse/' + this.currentProjectKey + '?view=' + type;
+            },
+            
+            toggleAlertModal: function() {
+                var modal = document.getElementById('alertModal');
+                var overlay = document.getElementById('modalOverlay');
+                if (modal && overlay) {
+                    modal.classList.toggle('active');
+                    overlay.classList.toggle('active');
+                }
+            },
+            
+            switchForecast: function(position, element) {
+                console.log('Switching forecast to position:', position);
+                // TODO: Implement forecast switching
+            },
+            
+            startForecast: function() {
+                console.log('Starting forecast...');
+                // TODO: Implement forecast
+            },
+            
+            runSprintAnalysis: function() {
+                console.log('Running AI sprint analysis...');
+                // TODO: Implement sprint analysis
+            },
+            
+            generateReport: function() {
+                console.log('Generating report...');
+                // TODO: Implement report generation
+            },
+            
+            applyRecommendation: function(index) {
+                console.log('Applying recommendation', index);
+                // TODO: Implement recommendation
             }
-        }
-    };
-    
-    JurixDashboard.startForecast = function() {
-        console.log('Starting forecast for type:', window.currentForecastType);
-        // Call the dashboard.js implementation
-        if (window.JurixDashboard && window.JurixDashboard.startForecast) {
-            window.JurixDashboard.startForecast();
-        }
-    };
-    
-    JurixDashboard.runSprintAnalysis = function() {
-        console.log('Running AI sprint analysis...');
-        AJS.flag({
-            type: 'info',
-            title: 'AI Analysis Started',
-            body: 'Running comprehensive sprint analysis. This may take a few moments...',
-            close: 'auto'
-        });
+        };
         
-        // Refresh dashboard with analysis results
-        setTimeout(function() {
-            JurixDashboard.loadDashboardData();
-        }, 2000);
-    };
-    
-    JurixDashboard.generateReport = function() {
-        console.log('Generating report...');
-        window.open(window.JurixData.contextPath + '/rest/jurix/1.0/report/' + window.JurixData.projectKey, '_blank');
-    };
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                window.JurixDashboard.init();
+            });
+        } else {
+            // DOM is already ready
+            window.JurixDashboard.init();
+        }
+    })();
     /* ]]> */
     </script>
 </body>

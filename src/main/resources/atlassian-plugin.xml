@@ -43,6 +43,8 @@
         <context>jira.view.issue</context>
         <context>jira.navigator.simple</context>
         <context>jira.navigator.advanced</context>
+        <context>jira.global</context>
+        
     </web-resource>
     
     <!-- Component Imports for Dependency Injection -->

@@ -10,6 +10,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +22,6 @@ import com.atlassian.plugins.rest.common.security.AnonymousAllowed;
 import com.atlassian.sal.api.user.UserManager;
 import javax.ws.rs.Consumes;
 
-/**
- * REST endpoint for dashboard data
- */
 @Named
 @Path("/dashboard")
 @Consumes({MediaType.APPLICATION_JSON})
@@ -38,31 +39,55 @@ public class DashboardController {
     @GET
     @Path("/{projectKey}")
     @Produces(MediaType.APPLICATION_JSON)
-    @AnonymousAllowed // Remove this in production and use proper auth
+    @AnonymousAllowed
     public Response getDashboardData(@PathParam("projectKey") String projectKey) {
         try {
             log.info("Dashboard data requested for project: {}", projectKey);
             
-            // For now, return mock data to test the endpoint
-            Map<String, Object> dashboardData = new HashMap<>();
-            dashboardData.put("projectKey", projectKey);
-            dashboardData.put("status", "success");
-            dashboardData.put("message", "Dashboard endpoint is working");
+            // Call Python backend
+            String pythonUrl = "http://host.docker.internal:5001/api/dashboard/" + projectKey;
+            URL url = new URL(pythonUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             
-            // Add mock metrics
-            Map<String, Object> metrics = new HashMap<>();
-            metrics.put("velocity", 45);
-            metrics.put("cycleTime", 3.2);
-            metrics.put("efficiency", 78);
-            metrics.put("activeIssues", 23);
-            dashboardData.put("metrics", metrics);
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(120000);
             
-            return Response.ok(dashboardData).build();
+            int responseCode = conn.getResponseCode();
+            log.info("Python backend response code: {}", responseCode);
+            
+            // Read response
+            StringBuilder response = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(
+                        responseCode >= 200 && responseCode < 300 ? 
+                        conn.getInputStream() : conn.getErrorStream(), "utf-8"))) {
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+            }
+            
+            conn.disconnect();
+            
+            // Return the Python backend response
+            return Response.ok(response.toString())
+                .header("Content-Type", "application/json")
+                .build();
             
         } catch (Exception e) {
-            log.error("Error getting dashboard data", e);
+            log.error("Error getting dashboard data from Python backend", e);
+            
+            // Return error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("error", e.getMessage());
+            errorResponse.put("projectKey", projectKey);
+            
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(createErrorResponse("Failed to get dashboard data: " + e.getMessage()))
+                .entity(errorResponse)
                 .build();
         }
     }
