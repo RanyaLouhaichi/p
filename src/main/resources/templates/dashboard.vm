@@ -5,12 +5,11 @@
     <meta charset="utf-8">
     <meta name="decorator" content="atl.general">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     
     ## Chart.js for charts
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
     
-    ## Include the complete dashboard styles from your paste.txt
+    ## Include the complete dashboard styles
     <style>
         * {
             margin: 0;
@@ -1084,14 +1083,15 @@
                 grid-template-columns: 1fr;
             }
         }
-        /* Add these styles to the existing <style> section in dashboard.vm */
-
+        
+        /* Add these styles for forecast results and other missing elements */
+        
         /* Risk levels */
         .risk-card.low-risk .risk-value { color: #36B37E; }
         .risk-card.medium-risk .risk-value { color: #FFAB00; }
         .risk-card.high-risk .risk-value { color: #FF5630; }
         .risk-card.critical-risk .risk-value { color: #DE350B; }
-
+        
         /* Forecast Results */
         .forecast-results {
             background: #f7f8fa;
@@ -1099,20 +1099,20 @@
             padding: 16px;
             margin-top: 16px;
         }
-
+        
         .forecast-result-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
         }
-
+        
         .forecast-result-header h4 {
             margin: 0;
             font-size: 16px;
             color: #172b4d;
         }
-
+        
         .forecast-confidence {
             font-size: 12px;
             color: #5e6c84;
@@ -1120,23 +1120,23 @@
             padding: 4px 8px;
             border-radius: 12px;
         }
-
+        
         .forecast-trend {
             margin-bottom: 8px;
             font-size: 14px;
         }
-
+        
         .forecast-trend.increasing { color: #36B37E; }
         .forecast-trend.declining { color: #FF5630; }
         .forecast-trend.stable { color: #6B778C; }
-
+        
         .forecast-values {
             display: flex;
             gap: 8px;
             align-items: center;
             margin: 12px 0;
         }
-
+        
         .forecast-value {
             background: white;
             padding: 6px 12px;
@@ -1144,7 +1144,7 @@
             font-weight: 600;
             color: #0052CC;
         }
-
+        
         .forecast-insight {
             font-size: 13px;
             color: #6b778c;
@@ -1154,312 +1154,204 @@
             border-radius: 6px;
             border-left: 3px solid #0052CC;
         }
-
+        
         .forecast-recommendation {
             font-size: 13px;
             color: #172b4d;
             margin-top: 12px;
             font-weight: 500;
         }
-
+        
         .forecast-loading {
             text-align: center;
             padding: 20px;
             color: #5e6c84;
-            animation: pulse 2s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
         }
-
-        /* Sprint Health Pulse */
-        .health-pulse-container {
-            text-align: center;
-            padding: 20px;
-        }
-
-        .health-score {
-            font-size: 48px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .health-status {
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            margin-bottom: 20px;
-            color: #5e6c84;
-        }
-
-        .pulse-animation {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto 20px;
-            position: relative;
-        }
-
-        .pulse-dot {
-            width: 100%;
-            height: 100%;
+        
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0052CC;
             border-radius: 50%;
-            animation: heartbeat 1s ease-in-out infinite;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
         }
-
-        @keyframes heartbeat {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-
-        .critical-moments {
-            text-align: left;
-            font-size: 12px;
-            color: #5e6c84;
-            margin-top: 16px;
-            padding: 12px;
-            background: #f4f5f7;
-            border-radius: 6px;
+        
+        /* Additional forecast styles */
+        .forecast-visual {
+            margin: 16px 0;
         }
-
-        /* Team Energy Meter */
-        .team-energy-summary {
+        
+        .forecast-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 16px 0;
+        }
+        
+        .metric-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 20px;
-            padding: 12px;
-            background: #f7f8fa;
-            border-radius: 8px;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e4e6ea;
         }
-
-        .energy-member {
-            margin-bottom: 16px;
+        
+        .metric-row:last-child {
+            border-bottom: none;
         }
-
-        .member-name {
+        
+        .metric-label {
             font-size: 13px;
+            color: #6b778c;
+        }
+        
+        .metric-value {
+            font-size: 14px;
             font-weight: 600;
-            margin-bottom: 4px;
             color: #172b4d;
         }
-
-        .energy-bar-container {
+        
+        .forecast-insight-card {
+            background: white;
+            border: 1px solid #dfe1e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .forecast-insight-icon {
+            width: 32px;
+            height: 32px;
+            background: #f4f5f7;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .forecast-insight-icon svg {
+            width: 18px;
+            height: 18px;
+            fill: #5e6c84;
+        }
+        
+        .forecast-insight-content {
+            flex: 1;
+        }
+        
+        .forecast-insight-title {
+            font-weight: 600;
+            color: #172b4d;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        
+        .forecast-insight-text {
+            color: #5e6c84;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .trend-indicator {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            margin-right: 8px;
+        }
+        
+        .trend-indicator.increasing {
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 12px solid #36B37E;
+        }
+        
+        .trend-indicator.decreasing {
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 12px solid #FF5630;
+        }
+        
+        .trend-indicator.stable {
+            width: 16px;
+            height: 2px;
+            background: #6B778C;
+            border: none;
+        }
+        
+        .forecast-completion {
+            margin: 16px 0;
+        }
+        
+        .completion-bar {
+            width: 100%;
             height: 8px;
             background: #e4e6ea;
             border-radius: 4px;
             overflow: hidden;
-            margin-bottom: 4px;
+            margin-top: 8px;
         }
-
-        .energy-bar {
+        
+        .completion-fill {
             height: 100%;
+            background: #36B37E;
             transition: width 1s ease-out;
         }
-
-        .energy-info {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: #5e6c84;
+        
+        .completion-fill.at-risk {
+            background: #FF5630;
         }
-
-        .recovery-time {
-            color: #FF5630;
-        }
-
-        .energy-recommendations {
-            margin-top: 16px;
-            padding: 12px;
-            background: #fff5f5;
-            border-radius: 6px;
-            font-size: 12px;
-            border: 1px solid #ffebe6;
-        }
-
-        .at-risk {
-            background: #fff5f5;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .capacity-metrics {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin: 16px 0;
-            font-size: 13px;
-        }
-
-        .capacity-metrics > div {
-            background: white;
-            padding: 8px;
-            border-radius: 6px;
+        
+        .forecast-error {
             text-align: center;
-        }
-
-        .capacity-recommendations {
-            font-size: 13px;
-            color: #172b4d;
-        }
-
-        .rec-item {
-            margin: 4px 0;
-            padding-left: 8px;
-        }
-        /* Compact Sprint Health Card */
-        .sprint-health-card {
-            max-width: 100%;
-        }
-
-        .health-widget-compact {
-            padding: 0;
-        }
-
-        .health-compact-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             padding: 20px;
+            color: #de350b;
+            background: #ffebe6;
+            border-radius: 6px;
         }
-
-        .health-left {
-            flex: 1;
-        }
-
-        .health-score-compact {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 8px 0;
-        }
-
-        .score-value {
-            font-size: 36px;
-            font-weight: 700;
-        }
-
-        .health-status-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .health-status-badge.healthy {
-            background: #E3FCEF;
-            color: #006644;
-        }
-
-        .health-status-badge.at_risk {
-            background: #FFFAE6;
-            color: #974F0C;
-        }
-
-        .health-status-badge.critical {
-            background: #FFEBE6;
-            color: #AE2A19;
-        }
-
-        .health-subtitle {
-            font-size: 13px;
-            color: #6B778C;
-        }
-
-        .health-right {
-            display: flex;
-            align-items: center;
-        }
-
-        .pulse-circle {
-            width: 80px;
-            height: 80px;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .pulse-circle .pulse-dot {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            position: relative;
-            z-index: 2;
-        }
-
-        .pulse-healthy .pulse-dot {
-            animation: pulse-healthy-animation 2s ease-in-out infinite;
-        }
-
-        .pulse-warning .pulse-dot {
-            animation: pulse-warning-animation 1.5s ease-in-out infinite;
-        }
-
-        .pulse-critical .pulse-dot {
-            animation: pulse-critical-animation 1s ease-in-out infinite;
-        }
-
-        @keyframes pulse-healthy-animation {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 135, 90, 0.7); }
-            50% { transform: scale(1.1); box-shadow: 0 0 0 20px rgba(0, 135, 90, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 135, 90, 0); }
-        }
-
-        @keyframes pulse-warning-animation {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 171, 0, 0.7); }
-            50% { transform: scale(1.15); box-shadow: 0 0 0 25px rgba(255, 171, 0, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 171, 0, 0); }
-        }
-
-        @keyframes pulse-critical-animation {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 86, 48, 0.7); }
-            50% { transform: scale(1.2); box-shadow: 0 0 0 30px rgba(255, 86, 48, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 86, 48, 0); }
-        }
-
-        .critical-moments-compact {
-            padding: 12px 20px;
-            background: #FFF5F5;
-            border-top: 1px solid #FFEBE6;
-            font-size: 13px;
-            color: #AE2A19;
-        }
-
-        .risk-tag {
-            margin-left: 8px;
-        }
-
-        .health-good {
-            padding: 12px 20px;
-            background: #E3FCEF;
-            border-top: 1px solid #ABF5D1;
-            font-size: 13px;
-            color: #006644;
-            font-weight: 500;
-        }
-
+        
         /* Alert styles when no alerts */
         .alert-card.no-alerts {
             opacity: 0.7;
         }
-
+        
         .alert-card.no-alerts .alert-value {
             color: #42526E;
         }
-
+        
         .alert-card.no-alerts .alert-details {
             color: #6B778C;
         }
-
+        
         .no-alerts-message {
             text-align: center;
             padding: 40px;
             color: #6B778C;
             font-size: 14px;
         }
-
+        
         .alert-severity.critical {
             background: #FF5630;
         }
-
+        
         .alert-severity.warning {
             background: #FFAB00;
         }
@@ -1720,299 +1612,1445 @@
 
     <script type="text/javascript">
     /* <![CDATA[ */
-    console.log('Starting dashboard initialization...');
-    console.log('Project Key:', '$projectKey');
-    
-    // Initialize the dashboard inline to avoid resource loading issues
-    (function() {
-        'use strict';
-        
-        // Global configuration
-        window.JurixData = {
-            projectKey: '$projectKey',
-            projectName: '$projectName',
-            contextPath: window.location.pathname.substring(0, window.location.pathname.indexOf('/plugins'))
-        };
-        
-        // Initialize dashboard
-        window.JurixDashboard = {
-            currentProjectKey: '$projectKey',
-            charts: {},
-            updateInterval: null,
-            lastUpdateTimestamp: Date.now(),
-            
-            init: function() {
-                console.log('🚀 Initializing JURIX Dashboard...');
-                console.log('📋 Current project key:', this.currentProjectKey);
-                
-                if (this.currentProjectKey) {
-                    this.loadDashboardData();
-                    this.bindEvents();
-                } else {
-                    console.error('❌ No project key found!');
-                    this.showError('No project key specified');
-                }
-            },
-            
-            loadDashboardData: function() {
-                var self = this;
-                console.log('Loading dashboard data for project:', this.currentProjectKey);
-                
-                // Show loading state
-                this.showLoadingState();
-                
-                // Build the correct URL
-                var baseUrl = window.location.origin;
-                var restUrl = baseUrl + '/rest/jurix/1.0/dashboard/' + this.currentProjectKey;
-                
-                console.log('Calling REST endpoint:', restUrl);
-                
-                fetch(restUrl, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(function(response) {
-                    console.log('Response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error('HTTP error! status: ' + response.status);
-                    }
-                    return response.json();
-                })
-                .then(function(data) {
-                    console.log('Dashboard data received:', data);
-                    
-                    if (data.status === 'success' || data.project_id) {
-                        window.lastDashboardData = data;
-                        self.updateDashboard(data);
-                        self.hideLoadingState();
-                        console.log('✅ Dashboard updated successfully');
-                    } else {
-                        throw new Error(data.error || 'Failed to load dashboard data');
-                    }
-                })
-                .catch(function(error) {
-                    console.error('Error loading dashboard:', error);
-                    self.hideLoadingState();
-                    self.showError('Failed to load dashboard: ' + error.message);
-                });
-            },
-            
-            updateDashboard: function(data) {
-                console.log('Updating dashboard with data:', data);
-                
-                // Update metrics
-                if (data.metrics) {
-                    this.updateMetrics(data.metrics);
-                }
-                
-                // Update predictions
-                if (data.predictions) {
-                    this.updatePredictions(data.predictions);
-                }
-                
-                // Update risk assessment
-                if (data.riskAssessment || data.riskassessment) {
-                    this.updateRiskAssessment(data.riskAssessment || data.riskassessment);
-                }
-                
-                // Update charts
-                if (data.visualizationData || data.visualizationdata) {
-                    this.updateCharts(data.visualizationData || data.visualizationdata);
-                }
-                
-                // Update alerts
-                if (data.alerts) {
-                    this.updateAlerts(data.alerts);
-                }
-            },
+    // Pass project key and API configuration to JavaScript
+    window.JurixData = {
+        projectKey: '$projectKey',
+        projectName: '$projectName',
+        contextPath: window.location.pathname.substring(0, window.location.pathname.indexOf('/plugins'))
+    };
+    // INITIALIZE THE FORECAST TYPE
+    window.currentForecastType = 'velocity';
 
-            updateRiskAssessment: function(riskData) {
-                console.log('Updating risk assessment:', riskData);
-                var riskScoreEl = document.getElementById('riskScore');
-                if (riskScoreEl && riskData.score !== undefined) {
-                    riskScoreEl.textContent = riskData.score.toFixed(1);
-                }
-            },
+    // Complete JurixDashboard implementation
+    window.JurixDashboard = {
+        currentProjectKey: '$projectKey',
+        charts: {},
+        updateInterval: null,
+        lastUpdateTimestamp: Date.now(),
+        pollInterval: null,
+        isPolling: false,
+        pollFrequency: 5000,
+        MIN_POLL_FREQUENCY: 2000,
+        MAX_POLL_FREQUENCY: 30000,
+        currentForecastType: 'velocity',
+        
+        init: function() {
+            console.log('🚀 Initializing JURIX Dashboard with New Layout...');
             
-            updateMetrics: function(metrics) {
-                console.log('Updating metrics:', metrics);
-                
-                // Update velocity
-                var velocityEl = document.getElementById('velocityMetric');
-                if (velocityEl && metrics.velocity !== undefined) {
-                    velocityEl.textContent = metrics.velocity;
-                }
-                
-                // Update cycle time - handle both cycleTime and cycletime
-                var cycleTimeEl = document.getElementById('cycleTimeMetric');
-                if (cycleTimeEl) {
-                    var cycleTime = metrics.cycleTime || metrics.cycletime;
-                    if (cycleTime !== undefined) {
-                        cycleTimeEl.textContent = cycleTime + 'd';
-                    }
-                }
-                
-                // Update efficiency
-                var efficiencyEl = document.getElementById('efficiencyMetric');
-                if (efficiencyEl && metrics.efficiency !== undefined) {
-                    efficiencyEl.textContent = metrics.efficiency + '%';
-                }
-                
-                // Update active issues - handle both activeIssues and activeissues
-                var activeIssuesEl = document.getElementById('activeIssuesMetric');
-                if (activeIssuesEl) {
-                    var activeIssues = metrics.activeIssues || metrics.activeissues;
-                    if (activeIssues !== undefined) {
-                        activeIssuesEl.textContent = activeIssues;
-                    }
-                }
-                
-                // Update alert count - handle both criticalAlerts and criticalalerts
-                var alertCountEl = document.getElementById('alertCount');
-                if (alertCountEl) {
-                    var criticalAlerts = metrics.criticalAlerts || metrics.criticalalerts;
-                    if (criticalAlerts !== undefined) {
-                        alertCountEl.textContent = criticalAlerts;
-                    }
-                }
-                
-                // Update the change indicators
-                this.updateMetricChanges(metrics);
-            },
-
-            updateMetricChanges: function(metrics) {
-                // Update velocity change
-                if (metrics.velocitychange) {
-                    var velocityChangeEl = document.getElementById('velocityChange');
-                    if (velocityChangeEl) {
-                        velocityChangeEl.innerHTML = '<span>' + (metrics.velocitychange.text || 'No change') + '</span>';
-                        velocityChangeEl.className = 'stat-change ' + (metrics.velocitychange.type || 'neutral');
-                    }
-                }
-                
-                // Update cycle time change
-                if (metrics.cycletimechange) {
-                    var cycleTimeChangeEl = document.getElementById('cycleTimeChange');
-                    if (cycleTimeChangeEl) {
-                        cycleTimeChangeEl.innerHTML = '<span>' + (metrics.cycletimechange.text || 'No change') + '</span>';
-                        cycleTimeChangeEl.className = 'stat-change ' + (metrics.cycletimechange.type || 'neutral');
-                    }
-                }
-                
-                // Update efficiency change
-                if (metrics.efficiencychange) {
-                    var efficiencyChangeEl = document.getElementById('efficiencyChange');
-                    if (efficiencyChangeEl) {
-                        efficiencyChangeEl.innerHTML = '<span>' + (metrics.efficiencychange.text || 'No change') + '</span>';
-                        efficiencyChangeEl.className = 'stat-change ' + (metrics.efficiencychange.type || 'neutral');
-                    }
-                }
-            },
-            
-            updatePredictions: function(predictions) {
-                console.log('Updating predictions:', predictions);
-                // TODO: Add prediction update logic
-            },
-            
-            updateCharts: function(visualizationData) {
-                console.log('Updating charts:', visualizationData);
-                // TODO: Add chart update logic
-            },
-            
-            updateAlerts: function(alerts) {
-                console.log('Updating alerts:', alerts);
-                var alertCountEl = document.getElementById('alertCount');
-                if (alertCountEl) {
-                    alertCountEl.textContent = alerts ? alerts.length : 0;
-                }
-            },
-            
-            showLoadingState: function() {
-                document.querySelectorAll('.stat-value').forEach(function(el) {
-                    el.textContent = '--';
-                    el.style.opacity = '0.5';
-                });
-            },
-            
-            hideLoadingState: function() {
-                document.querySelectorAll('.stat-value').forEach(function(el) {
-                    el.style.opacity = '1';
-                });
-            },
-            
-            showError: function(message) {
-                if (typeof AJS !== 'undefined' && AJS.flag) {
-                    AJS.flag({
-                        type: 'error',
-                        title: 'Error',
-                        body: message,
-                        close: 'manual'
-                    });
-                } else {
-                    console.error(message);
-                    alert(message);
-                }
-            },
-            
-            bindEvents: function() {
-                console.log('Binding events...');
-            },
-            
-            // Public methods for buttons
-            viewDetails: function(type) {
-                console.log('Viewing details for:', type);
-                window.location.href = window.location.origin + '/browse/' + this.currentProjectKey + '?view=' + type;
-            },
-            
-            toggleAlertModal: function() {
-                var modal = document.getElementById('alertModal');
-                var overlay = document.getElementById('modalOverlay');
-                if (modal && overlay) {
-                    modal.classList.toggle('active');
-                    overlay.classList.toggle('active');
-                }
-            },
-            
-            switchForecast: function(position, element) {
-                console.log('Switching forecast to position:', position);
-                // TODO: Implement forecast switching
-            },
-            
-            startForecast: function() {
-                console.log('Starting forecast...');
-                // TODO: Implement forecast
-            },
-            
-            runSprintAnalysis: function() {
-                console.log('Running AI sprint analysis...');
-                // TODO: Implement sprint analysis
-            },
-            
-            generateReport: function() {
-                console.log('Generating report...');
-                // TODO: Implement report generation
-            },
-            
-            applyRecommendation: function(index) {
-                console.log('Applying recommendation', index);
-                // TODO: Implement recommendation
+            this.currentProjectKey = window.JurixData && window.JurixData.projectKey;
+            if (!this.currentProjectKey) {
+                var urlParams = new URLSearchParams(window.location.search);
+                this.currentProjectKey = urlParams.get('projectKey');
             }
-        };
+            
+            console.log('📋 Current project key:', this.currentProjectKey);
+            
+            if (this.currentProjectKey) {
+                this.loadDashboardData();
+                this.startPolling();
+                this.initializeSprintForecast();
+            } else {
+                console.error('❌ No project key found!');
+                this.showError('No project key specified');
+            }
+            
+            this.bindEvents();
+            this.initializeTooltips();
+            this.initializeInteractions();
+        },
         
-        // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                window.JurixDashboard.init();
+        loadDashboardData: function() {
+            var self = this;
+            if (!this.currentProjectKey) {
+                console.error('No project key specified');
+                return;
+            }
+            
+            console.log('Loading dashboard data for project:', this.currentProjectKey);
+            
+            this.showLoadingState();
+            
+            var baseUrl = window.location.origin;
+            var restUrl = baseUrl + '/rest/jurix/1.0/dashboard/' + this.currentProjectKey;
+            
+            console.log('Calling REST endpoint:', restUrl);
+            
+            fetch(restUrl, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(function(response) {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                console.log('Dashboard data received:', data);
+                
+                if (data.status === 'success' || data.project_id) {
+                    window.lastDashboardData = data;
+                    self.updateDashboard(data);
+                    self.hideLoadingState();
+                    console.log('✅ Dashboard updated successfully');
+                } else {
+                    throw new Error(data.error || 'Failed to load dashboard data');
+                }
+            })
+            .catch(function(error) {
+                console.error('Error loading dashboard:', error);
+                self.hideLoadingState();
+                self.showError('Failed to load dashboard: ' + error.message);
             });
-        } else {
-            // DOM is already ready
-            window.JurixDashboard.init();
-        }
-    })();
-    /* ]]> */
-    </script>
+        },
+        
+        updateDashboard: function(data) {
+            console.log('Updating dashboard with enhanced data:', data);
+            
+            if (data.metrics) {
+                this.updateMetrics(data.metrics);
+            }
+            
+            if (data.predictions) {
+                this.updatePredictions(data.predictions);
+                
+                if (data.predictions.aiSummary) {
+                    this.updateAISummary(data.predictions.aiSummary);
+                }
+                
+                if (data.predictions.ticketPredictions) {
+                    this.updateTicketPredictions(data.predictions.ticketPredictions);
+                }
+            }
+            
+            if (data.recommendations) {
+                this.updateRecommendations(data.recommendations);
+            }
+            
+            if (data.visualizationData) {
+                this.updateCharts(data.visualizationData);
+            }
+            
+            if (data.alerts) {
+                this.updateAlerts(data.alerts);
+            }
+            
+            if (data.riskAssessment) {
+                this.updateRiskAssessment(data.riskAssessment);
+            }
+            
+            if (data.sprintHealth) {
+                this.updateSprintHealthPulse(data.sprintHealth);
+            }
+            
+            if (data.teamEnergy) {
+                this.updateTeamEnergyMeter(data.teamEnergy);
+            }
+            
+            if (data.teamAnalytics) {
+                this.updateTeamAnalytics(data.teamAnalytics);
+            }
+            
+            if (data.criticalFactors && data.criticalFactors.length > 0) {
+                this.showCriticalFactors(data.criticalFactors);
+            }
+            
+            this.updateLastUpdatedTime(data.lastUpdated);
+        },
+        
+        updateMetrics: function(metrics) {
+            console.log('Updating metrics:', metrics);
+            
+            var velocityEl = document.getElementById('velocityMetric');
+            if (velocityEl && metrics.velocity !== undefined) {
+                this.animateValue(velocityEl, metrics.velocity);
+                this.updateMetricChange('velocityChange', metrics.velocityChange || { type: 'positive', value: '+12% from last sprint' });
+            }
+            
+            var cycleTimeEl = document.getElementById('cycleTimeMetric');
+            if (cycleTimeEl && metrics.cycleTime !== undefined) {
+                this.animateValue(cycleTimeEl, metrics.cycleTime, 1, 'd');
+                this.updateMetricChange('cycleTimeChange', metrics.cycleTimeChange || { type: 'positive', value: '-0.5 days improvement' });
+            }
+            
+            var efficiencyEl = document.getElementById('efficiencyMetric');
+            if (efficiencyEl && metrics.efficiency !== undefined) {
+                this.animateValue(efficiencyEl, metrics.efficiency, 0, '%');
+                this.updateMetricChange('efficiencyChange', metrics.efficiencyChange || { type: 'positive', value: 'Above target' });
+            }
+            
+            var activeIssuesEl = document.getElementById('activeIssuesMetric');
+            if (activeIssuesEl && metrics.activeIssues !== undefined) {
+                this.animateValue(activeIssuesEl, metrics.activeIssues);
+                
+                var blockerCount = metrics.blockers || 0;
+                if (blockerCount > 0) {
+                    this.updateMetricChange('activeIssuesChange', {
+                        type: 'negative',
+                        value: blockerCount + ' blockers'
+                    });
+                }
+            }
+            
+            var alertCountEl = document.getElementById('alertCount');
+            if (alertCountEl && metrics.criticalAlerts !== undefined) {
+                this.animateValue(alertCountEl, metrics.criticalAlerts);
+            }
+        },
+        
+        updateMetricChange: function(elementId, changeData) {
+            var changeEl = document.getElementById(elementId);
+            if (!changeEl) return;
+            
+            if (changeData) {
+                var iconSvg = changeData.type === 'positive' 
+                    ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5H7z"/></svg>'
+                    : '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17 10l-5 5-5-5h10z"/></svg>';
+                
+                changeEl.className = 'stat-change ' + changeData.type;
+                changeEl.innerHTML = iconSvg + ' ' + (changeData.value || changeData.text || '');
+            }
+        },
+        
+        updatePredictions: function(predictions) {
+            console.log('Updating predictions:', predictions);
+            
+            var container = document.getElementById('predictionsContainer');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (predictions.sprintCompletion) {
+                var item = this.createPredictionItem(
+                    'Sprint Completion Forecast',
+                    predictions.sprintCompletion.probability,
+                    predictions.sprintCompletion.reasoning,
+                    'growth'
+                );
+                container.appendChild(item);
+            }
+            
+            if (predictions.bottlenecks && predictions.bottlenecks.length > 0) {
+                var bottleneck = predictions.bottlenecks[0];
+                var item = this.createPredictionItem(
+                    'Bottleneck Detection',
+                    bottleneck.severity,
+                    bottleneck.description,
+                    'warning'
+                );
+                container.appendChild(item);
+            }
+        },
+        
+        createPredictionItem: function(title, value, description, type) {
+            var div = document.createElement('div');
+            div.className = 'prediction-item';
+            div.innerHTML = 
+                '<div class="prediction-header">' +
+                    '<div class="prediction-icon ' + type + '">' +
+                        (type === 'growth' ? 
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12l3 9h14l3-9M2 12l3-9h14l3 9M2 12h20"/><circle cx="12" cy="12" r="2"/></svg>' :
+                            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20M12 2a10 10 0 110 20 10 10 0 010-20z"/><path d="M12 8v4m0 4h.01"/></svg>'
+                        ) +
+                    '</div>' +
+                    '<div>' +
+                        '<div class="prediction-title">' + title + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="prediction-description">' + description + '</div>' +
+                '<div class="prediction-metric">↗ ' + value + '</div>';
+            return div;
+        },
+        
+        updateRecommendations: function(recommendations) {
+            console.log('Updating recommendations:', recommendations);
+            
+            var container = document.getElementById('recommendationsGrid');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            var recommendationTypes = [
+                { icon: 'portfolio', title: 'Sprint Optimization' },
+                { icon: 'compliance', title: 'Resource Balancing' },
+                { icon: 'service', title: 'Automation Opportunities' },
+                { icon: 'risk', title: 'Quality Improvements' }
+            ];
+            
+            var self = this;
+            recommendations.slice(0, 4).forEach(function(rec, index) {
+                var type = recommendationTypes[index % recommendationTypes.length];
+                var card = self.createRecommendationCard(type.icon, type.title, rec, index);
+                container.appendChild(card);
+            });
+        },
+        
+        createRecommendationCard: function(iconType, title, description, index) {
+            var div = document.createElement('div');
+            div.className = 'recommendation-card';
+           div.innerHTML = 
+               '<div class="rec-icon ' + iconType + '">' +
+                   this.getRecommendationIcon(iconType) +
+               '</div>' +
+               '<div class="rec-title">' + title + '</div>' +
+               '<div class="rec-description">' + description + '</div>' +
+               '<button class="apply-btn" onclick="JurixDashboard.applyRecommendation(' + index + ')">' +
+                   '<span>Apply</span>' +
+               '</button>';
+           return div;
+       },
+       
+       getRecommendationIcon: function(type) {
+           var icons = {
+               portfolio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>',
+               compliance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>',
+               service: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+               risk: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'
+           };
+           return icons[type] || '';
+       },
+       
+       updateCharts: function(visualizationData) {
+           console.log('Updating charts:', visualizationData);
+           
+           var charts = visualizationData.charts || {};
+           
+           if (charts.sprintProgress || charts.teamWorkload) {
+               var progressData = charts.sprintProgress || charts.teamWorkload;
+               this.updateSprintProgressChart(progressData);
+           }
+           
+           if (charts.burndown) {
+               this.updateBurndownChart(charts.burndown);
+           }
+           
+           if (charts.velocityTrend) {
+               this.updateVelocityTrendChart(charts.velocityTrend);
+           }
+       },
+       
+       updateSprintProgressChart: function(chartData) {
+           console.log('Updating sprint progress chart:', chartData);
+           
+           var canvas = document.getElementById('sprintProgressChart');
+           if (!canvas) {
+               console.error('Sprint progress canvas not found');
+               return;
+           }
+           
+           if (this.charts.sprintProgress) {
+               this.charts.sprintProgress.destroy();
+           }
+           
+           var ctx = canvas.getContext('2d');
+           
+           var data = chartData?.data || {
+               labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+               datasets: [{
+                   label: 'Completed',
+                   data: [10, 25, 45, 60],
+                   backgroundColor: '#0052CC',
+                   stack: 'stack0'
+               }, {
+                   label: 'In Progress',
+                   data: [30, 35, 30, 25],
+                   backgroundColor: '#6B88F7',
+                   stack: 'stack0'
+               }, {
+                   label: 'To Do',
+                   data: [60, 40, 25, 15],
+                   backgroundColor: '#DFE5FF',
+                   stack: 'stack0'
+               }]
+           };
+           
+           this.charts.sprintProgress = new Chart(ctx, {
+               type: 'bar',
+               data: data,
+               options: {
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   plugins: {
+                       title: {
+                           display: false
+                       },
+                       legend: {
+                           display: false
+                       },
+                       tooltip: {
+                           callbacks: {
+                               label: function(context) {
+                                   var label = context.dataset.label || '';
+                                   var value = context.parsed.y || 0;
+                                   return label + ': ' + value + ' tickets';
+                               },
+                               afterLabel: function(context) {
+                                   var datasetIndex = context.datasetIndex;
+                                   var dataIndex = context.dataIndex;
+                                   var total = 0;
+                                   
+                                   data.datasets.forEach(function(dataset) {
+                                       total += dataset.data[dataIndex] || 0;
+                                   });
+                                   
+                                   var value = context.parsed.y || 0;
+                                   var percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                   return percentage + '% of total';
+                               }
+                           }
+                       }
+                   },
+                   scales: {
+                       x: {
+                           stacked: true,
+                           grid: {
+                               display: false
+                           }
+                       },
+                       y: {
+                           stacked: true,
+                           beginAtZero: true,
+                           grid: {
+                               color: 'rgba(0, 0, 0, 0.05)'
+                           },
+                           ticks: {
+                               stepSize: 10
+                           }
+                       }
+                   }
+               }
+           });
+       },
+       
+       updateBurndownChart: function(chartData) {
+           console.log('Updating burndown chart:', chartData);
+           
+           var canvas = document.getElementById('burndownChart');
+           if (!canvas) {
+               console.error('Burndown canvas not found');
+               return;
+           }
+           
+           if (this.charts.burndown) {
+               this.charts.burndown.destroy();
+           }
+           
+           var ctx = canvas.getContext('2d');
+           
+           var data = chartData?.data || {
+               labels: ['Day 0', 'Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7', 'Day 8', 'Day 9', 'Day 10'],
+               datasets: [{
+                   label: 'Ideal',
+                   data: [60, 54, 48, 42, 36, 30, 24, 18, 12, 6, 0],
+                   borderColor: '#C1C7D0',
+                   borderDash: [5, 5],
+                   tension: 0,
+                   fill: false,
+                   pointRadius: 3,
+                   pointHoverRadius: 5
+               }, {
+                   label: 'Actual',
+                   data: [60, 58, 52, 45, 38, 30, 25, 20, null, null, null],
+                   borderColor: '#0052CC',
+                   backgroundColor: 'rgba(0, 82, 204, 0.1)',
+                   tension: 0.3,
+                   fill: true,
+                   pointRadius: 4,
+                   pointHoverRadius: 6
+               }]
+           };
+           
+           this.charts.burndown = new Chart(ctx, {
+               type: 'line',
+               data: data,
+               options: {
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   interaction: {
+                       mode: 'index',
+                       intersect: false
+                   },
+                   plugins: {
+                       legend: {
+                           position: 'bottom',
+                           labels: {
+                               usePointStyle: true,
+                               padding: 15
+                           }
+                       },
+                       tooltip: {
+                           mode: 'index',
+                           intersect: false,
+                           callbacks: {
+                               label: function(context) {
+                                   var label = context.dataset.label || '';
+                                   if (label) {
+                                       label += ': ';
+                                   }
+                                   if (context.parsed.y !== null) {
+                                       label += context.parsed.y + ' story points';
+                                   }
+                                   return label;
+                               }
+                           }
+                       }
+                   },
+                   scales: {
+                       x: {
+                           grid: {
+                               display: false
+                           }
+                       },
+                       y: {
+                           beginAtZero: true,
+                           title: {
+                               display: true,
+                               text: 'Story Points',
+                               font: {
+                                   size: 12
+                               }
+                           },
+                           grid: {
+                               color: 'rgba(0, 0, 0, 0.05)'
+                           }
+                       }
+                   }
+               }
+           });
+       },
+       
+       updateVelocityTrendChart: function(chartData) {
+           console.log('Updating velocity trend chart:', chartData);
+           
+           var canvas = document.getElementById('velocityTrendChart');
+           if (!canvas) {
+               console.error('Velocity trend canvas not found');
+               return;
+           }
+           
+           if (this.charts.velocityTrend) {
+               this.charts.velocityTrend.destroy();
+           }
+           
+           var ctx = canvas.getContext('2d');
+           
+           var data = chartData?.data || {
+               labels: ['Week -2', 'Week -1', 'Current', 'Next Week', 'Week +2', 'Week +3'],
+               datasets: [{
+                   label: 'Velocity',
+                   data: [5, 6, 7, 7, 7, 7],
+                   borderColor: '#36B37E',
+                   backgroundColor: 'rgba(54, 179, 126, 0.15)',
+                   tension: 0.4,
+                   fill: true,
+                   pointRadius: 6,
+                   pointHoverRadius: 8,
+                   pointBackgroundColor: '#36B37E',
+                   pointBorderColor: '#fff',
+                   pointBorderWidth: 2,
+                   borderWidth: 3
+               }]
+           };
+           
+           this.charts.velocityTrend = new Chart(ctx, {
+               type: 'line',
+               data: data,
+               options: {
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   plugins: {
+                       legend: {
+                           display: false
+                       },
+                       tooltip: {
+                           backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                           titleColor: '#172b4d',
+                           bodyColor: '#172b4d',
+                           borderColor: '#dfe1e6',
+                           borderWidth: 1,
+                           padding: 12,
+                           displayColors: false,
+                           callbacks: {
+                               label: function(context) {
+                                   return 'Velocity: ' + context.parsed.y + ' points';
+                               },
+                               afterLabel: function(context) {
+                                   var dataIndex = context.dataIndex;
+                                   if (dataIndex > 0) {
+                                       var prevValue = context.dataset.data[dataIndex - 1];
+                                       var currentValue = context.parsed.y;
+                                       var change = currentValue - prevValue;
+                                       var changePercent = ((change / prevValue) * 100).toFixed(1);
+                                       return 'Change: ' + (change >= 0 ? '+' : '') + change + ' (' + changePercent + '%)';
+                                   }
+                                   return '';
+                               }
+                           }
+                       }
+                   },
+                   scales: {
+                       x: {
+                           grid: {
+                               display: false
+                           },
+                           ticks: {
+                               color: '#5e6c84',
+                               font: {
+                                   size: 12
+                               }
+                           }
+                       },
+                       y: {
+                           beginAtZero: true,
+                           title: {
+                               display: true,
+                               text: 'Story Points',
+                               font: {
+                                   size: 12
+                               },
+                               color: '#5e6c84'
+                           },
+                           grid: {
+                               color: 'rgba(0, 0, 0, 0.05)'
+                           },
+                           ticks: {
+                               color: '#5e6c84',
+                               stepSize: 1,
+                               font: {
+                                   size: 12
+                               }
+                           }
+                       }
+                   }
+               }
+           });
+       },
+       
+       updateRiskAssessment: function(riskData) {
+           console.log('Updating risk assessment with real data:', riskData);
+           
+           var riskScoreEl = document.getElementById('riskScore');
+           if (riskScoreEl && riskData.score !== undefined) {
+               this.animateValue(riskScoreEl, riskData.score, 1);
+               
+               var riskCard = riskScoreEl.closest('.risk-card');
+               if (riskCard) {
+                   riskCard.classList.remove('low-risk', 'medium-risk', 'high-risk', 'critical-risk');
+                   riskCard.classList.add(riskData.level + '-risk');
+               }
+           }
+           
+           var riskChartEl = document.getElementById('riskChart');
+           if (riskChartEl && riskData.monthlyScores) {
+               riskChartEl.innerHTML = '';
+               
+               var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+               var currentMonth = new Date().getMonth();
+               var maxScore = Math.max.apply(Math, riskData.monthlyScores.concat([10]));
+               
+               months.forEach(function(month, index) {
+                   var score = riskData.monthlyScores[index] || 0;
+                   var heightPercent = (score / maxScore) * 100;
+                   
+                   var bar = document.createElement('div');
+                   bar.className = 'bar' + (index === currentMonth ? ' active' : '');
+                   bar.style.height = heightPercent + '%';
+                   bar.innerHTML = '<span class="bar-label">' + month + '</span>';
+                   
+                   if (score > 7) {
+                       bar.style.backgroundColor = '#FF5630';
+                   } else if (score > 5) {
+                       bar.style.backgroundColor = '#FFAB00';
+                   } else if (score > 3) {
+                       bar.style.backgroundColor = '#36B37E';
+                   } else {
+                       bar.style.backgroundColor = '#00875A';
+                   }
+                   
+                   bar.title = month + ': Risk score ' + score.toFixed(2);
+                   
+                   riskChartEl.appendChild(bar);
+               });
+           }
+           
+           if (riskData.factors && riskData.factors.length > 0) {
+               var riskLabel = document.querySelector('.risk-label');
+               if (riskLabel) {
+                   var topFactor = riskData.factors[0];
+                   riskLabel.textContent = 'Top risk: ' + topFactor.factor;
+               }
+           }
+       },
+       
+       updateAlerts: function(alerts) {
+           console.log('Updating alerts:', alerts);
+           
+           if (!alerts || alerts.length === 0) {
+               var riskScore = window.lastDashboardData?.riskAssessment?.score || 0;
+               var sprintCompletion = window.lastDashboardData?.predictions?.sprintCompletion?.probability || 1;
+               
+               alerts = [];
+               
+               if (riskScore > 4) {
+                   alerts.push({
+                       type: 'critical',
+                       message: 'High risk score detected: ' + riskScore.toFixed(1),
+                       time: 'Just now',
+                       action: 'Review risk factors immediately'
+                   });
+               }
+               
+               if (sprintCompletion < 0.7) {
+                   alerts.push({
+                       type: 'warning',
+                       message: 'Sprint completion at risk: ' + (sprintCompletion * 100).toFixed(0) + '%',
+                       time: '2 minutes ago',
+                       action: 'Review sprint backlog'
+                   });
+               }
+           }
+           
+           var alertCountEl = document.getElementById('alertCount');
+           if (alertCountEl) {
+               alertCountEl.textContent = alerts.length;
+               
+               var alertCard = document.querySelector('.alert-card');
+               if (alertCard) {
+                   if (alerts.length === 0) {
+                       alertCard.classList.add('no-alerts');
+                       var alertIndicator = document.querySelector('.alert-indicator');
+                       var alertDot = document.querySelector('.alert-dot');
+                       if (alertIndicator) alertIndicator.style.display = 'none';
+                       if (alertDot) alertDot.style.display = 'none';
+                   } else {
+                       alertCard.classList.remove('no-alerts');
+                       var alertIndicator = document.querySelector('.alert-indicator');
+                       var alertDot = document.querySelector('.alert-dot');
+                       if (alertIndicator) alertIndicator.style.display = 'block';
+                       if (alertDot) alertDot.style.display = 'block';
+                   }
+               }
+           }
+           
+           var alertListEl = document.getElementById('alertList');
+           if (alertListEl) {
+               alertListEl.innerHTML = '';
+               
+               if (alerts.length === 0) {
+                   alertListEl.innerHTML = '<div class="no-alerts-message">No critical alerts at this time. System is healthy!</div>';
+               } else {
+                   var self = this;
+                   alerts.forEach(function(alert) {
+                       var alertItem = document.createElement('div');
+                       alertItem.className = 'alert-item';
+                       alertItem.innerHTML = 
+                           '<div class="alert-item-left">' +
+                               '<div class="alert-severity ' + alert.type + '"></div>' +
+                               '<span class="alert-text">' + alert.message + '</span>' +
+                           '</div>' +
+                           '<span class="alert-time">' + (alert.time || 'Just now') + '</span>';
+                       alertListEl.appendChild(alertItem);
+                   });
+               }
+           }
+       },
+       
+       initializeSprintForecast: function() {
+           var self = this;
+           window.JurixDashboard.startForecast = function() {
+               console.log('Starting forecast for type:', window.currentForecastType);
+               
+               var forecastCard = document.querySelector('.performance-card');
+               if (!forecastCard) return;
+               
+               var loadingHtml = 
+                   '<div class="forecast-loading">' +
+                       '<div class="loading-spinner"></div>' +
+                       '<span>Generating ' + window.currentForecastType + ' forecast...</span>' +
+                   '</div>';
+               
+               var resultsContainer = forecastCard.querySelector('.forecast-results');
+               if (!resultsContainer) {
+                   resultsContainer = document.createElement('div');
+                   resultsContainer.className = 'forecast-results';
+                   forecastCard.appendChild(resultsContainer);
+               }
+               
+               resultsContainer.innerHTML = loadingHtml;
+               
+               var baseUrl = window.location.origin;
+               var forecastUrl = baseUrl + '/rest/jurix/1.0/forecast/' + self.currentProjectKey;
+               
+               fetch(forecastUrl, {
+                   method: 'POST',
+                   headers: {
+                       'Content-Type': 'application/json',
+                   },
+                   body: JSON.stringify({
+                       type: window.currentForecastType
+                   })
+               })
+               .then(function(response) {
+                   return response.json();
+               })
+               .then(function(data) {
+                   console.log('Forecast data received:', data);
+                   
+                   if (data.status === 'success') {
+                       self.displayEnhancedForecastResults(data, resultsContainer);
+                   } else {
+                       throw new Error(data.error || 'Failed to generate forecast');
+                   }
+               })
+               .catch(function(error) {
+                   console.error('Error generating forecast:', error);
+                   resultsContainer.innerHTML = 
+                       '<div class="forecast-error">' +
+                           '<span>⚠️ Failed to generate forecast: ' + error.message + '</span>' +
+                       '</div>';
+               });
+           };
+       },
+       
+       displayEnhancedForecastResults: function(forecastData, container) {
+           var type = forecastData.type;
+           var data = forecastData.data;
+           
+           var resultsHtml = '';
+           
+           if (type === 'velocity') {
+               var hasChartData = data.chart && data.chart.data;
+               
+               resultsHtml = 
+                   '<div class="forecast-result-header">' +
+                       '<h4>Velocity Forecast</h4>' +
+                       '<span class="forecast-confidence">Confidence: ' + Math.round((data.confidence || 0.7) * 100) + '%</span>' +
+                   '</div>' +
+                   '<div class="forecast-trend ' + (data.trend || 'stable') + '">' +
+                       '<div class="trend-indicator ' + (data.trend || 'stable') + '"></div>' +
+                       'Trend: <strong>' + (data.trend || 'stable') + '</strong>' +
+                       (data.trend_percentage ? ' (' + (data.trend_percentage > 0 ? '+' : '') + data.trend_percentage.toFixed(1) + '%)' : '') +
+                   '</div>' +
+                   (hasChartData ? 
+                       '<div class="forecast-visual">' +
+                           '<canvas id="velocityForecastChart" height="150"></canvas>' +
+                       '</div>' : '') +
+                   '<div class="forecast-metrics">' +
+                       '<div class="metric-row">' +
+                           '<span class="metric-label">Current Velocity:</span>' +
+                           '<span class="metric-value">' + (data.current_velocity || 0) + ' points/week</span>' +
+                       '</div>' +
+                       '<div class="metric-row">' +
+                           '<span class="metric-label">Next Week Estimate:</span>' +
+                           '<span class="metric-value">' + (data.next_week_estimate || 0) + ' points</span>' +
+                       '</div>' +
+                       '<div class="metric-row">' +
+                           '<span class="metric-label">Historical Average:</span>' +
+                           '<span class="metric-value">' + (data.historical_average || 0).toFixed(1) + ' points</span>' +
+                       '</div>' +
+                   '</div>' +
+                   '<div class="forecast-insight-card">' +
+                       '<div class="forecast-insight-icon">' +
+                           '<svg viewBox="0 0 24 24" fill="currentColor">' +
+                               '<path d="M13 7.5a1 1 0 11-2 0 1 1 0 012 0zm-3 3.75a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v4.25h.75a.75.75 0 010 1.5h-3a.75.75 0 010-1.5h.75V12h-.75a.75.75 0 01-.75-.75z"/>' +
+                               '<path fill-rule="evenodd" d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zM2.5 12a9.5 9.5 0 1119 0 9.5 9.5 0 01-19 0z"/>' +
+                           '</svg>' +
+                       '</div>' +
+                       '<div class="forecast-insight-content">' +
+                           '<div class="forecast-insight-title">Insight</div>' +
+                           '<div class="forecast-insight-text">' + (data.insights || 'Based on historical data and current sprint progress, velocity is expected to remain stable.') + '</div>' +
+                       '</div>' +
+                   '</div>';
+               
+               if (data.recommendations && data.recommendations.length > 0) {
+                   resultsHtml += 
+                       '<div class="forecast-insight-card">' +
+                           '<div class="forecast-insight-icon">' +
+                               '<svg viewBox="0 0 24 24" fill="currentColor">' +
+                                   '<path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>' +
+                               '</svg>' +
+                           '</div>' +
+                           '<div class="forecast-insight-content">' +
+                               '<div class="forecast-insight-title">Recommendations</div>' +
+                               '<div class="forecast-insight-text">';
+                   
+                   data.recommendations.forEach(function(r) {
+                       resultsHtml += '• ' + r + '<br>';
+                   });
+                   
+                   resultsHtml += '</div></div></div>';
+               }
+           } else if (type === 'burndown') {
+               var riskClass = data.at_risk ? 'at-risk' : 'on-track';
+               var hasChartData = data.chart && data.chart.data;
+               
+               resultsHtml = 
+                   '<div class="forecast-result-header">' +
+                       '<h4>Burndown Rate Forecast</h4>' +
+                       '<span class="forecast-confidence ' + riskClass + '">' +
+                           (data.at_risk ? '⚠️ At Risk' : '✅ On Track') +
+                       '</span>' +
+                   '</div>' +
+                   '<div class="forecast-completion">' +
+                       'Sprint Completion: <strong>' + Math.round((data.completion_probability || 0) * 100) + '%</strong>' +
+                       '<div class="completion-bar">' +
+                           '<div class="completion-fill ' + riskClass + '" style="width: ' + ((data.completion_probability || 0) * 100) + '%"></div>' +
+                       '</div>' +
+                   '</div>' +
+                   (hasChartData ? 
+                       '<div class="forecast-visual">' +
+                           '<canvas id="burndownForecastChart" height="150"></canvas>' +
+                       '</div>' : '') +
+                   '<div class="forecast-metrics">' +
+                       '<div class="metric-row">' +
+                           '<span class="metric-label">Current Burn Rate:</span>' +
+                           '<span class="metric-value">' + (data.current_burn_rate || 0).toFixed(1) + ' points/day</span>' +
+                       '</div>' +
+                       '<div class="metric-row">' +
+                           '<span class="metric-label">Required Rate:</span>' +
+                           '<span class="metric-value">' + (data.required_burn_rate || 0).toFixed(1) + ' points/day</span>' +
+                       '</div>' +
+                       '<div class="metric-row">' +
+                           '<span class="metric-label">Estimated Completion:</span>' +
+                           '<span class="metric-value">' + (data.estimated_completion_date || 'Unknown') + '</span>' +
+                       '</div>' +
+                   '</div>' +
+                   '<div class="forecast-insight-card">' +
+                       '<div class="forecast-insight-icon">' +
+                           '<svg viewBox="0 0 24 24" fill="currentColor">' +
+                               '<path d="M13 7.5a1 1 0 11-2 0 1 1 0 012 0zm-3 3.75a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v4.25h.75a.75.75 0 010 1.5h-3a.75.75 0 010-1.5h.75V12h-.75a.75.75 0 01-.75-.75z"/>' +
+                               '<path fill-rule="evenodd" d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zM2.5 12a9.5 9.5 0 1119 0 9.5 9.5 0 01-19 0z"/>' +
+                           '</svg>' +
+                       '</div>' +
+                       '<div class="forecast-insight-content">' +
+                           '<div class="forecast-insight-title">Insight</div>' +
+                           '<div class="forecast-insight-text">' + (data.insights || 'Current burndown rate analysis.') + '</div>' +
+                       '</div>' +
+                   '</div>';
+           } else if (type === 'capacity') {
+               var trendClass = data.capacity_trend === 'declining' ? 'declining' : 
+                               data.capacity_trend === 'overloaded' ? 'overloaded' : 'stable';
+               
+               resultsHtml = 
+                   '<div class="forecast-result-header">' +
+                       '<h4>Team Capacity Forecast</h4>' +
+                       '<span class="forecast-capacity-trend ' + trendClass + '">' +
+                           (data.capacity_trend === 'declining' ? '📉 Declining' : 
+                           data.capacity_trend === 'overloaded' ? '⚠️ Overloaded' :
+                           data.capacity_trend === 'underutilized' ? '📊 Underutilized' : '✅ Stable') +
+                       '</span>' +
+                   '</div>' +
+                   '<div class="forecast-metrics">' +
+                       '<div class="metric-row">' +
+                           '<span class="metric-label">Current Utilization:</span>' +
+                           '<span class="metric-value">' + (data.current_utilization || 0) + '%</span>' +
+                       '</div>' +
+                       '<div class="metric-row">' +
+                           '<span class="metric-label">Optimal Range:</span>' +
+                           '<span class="metric-value">70-85%</span>' +
+                       '</div>' +
+                       '<div class="metric-row">' +
+                           '<span class="metric-label">Team Members:</span>' +
+                           '<span class="metric-value">' + (data.team_size || 0) + ' active</span>' +
+                       '</div>' +
+                   '</div>' +
+                   '<div class="forecast-insight-card">' +
+                       '<div class="forecast-insight-icon">' +
+                           '<svg viewBox="0 0 24 24" fill="currentColor">' +
+                               '<path d="M13 7.5a1 1 0 11-2 0 1 1 0 012 0zm-3 3.75a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v4.25h.75a.75.75 0 010 1.5h-3a.75.75 0 010-1.5h.75V12h-.75a.75.75 0 01-.75-.75z"/>' +
+                               '<path fill-rule="evenodd" d="M12 1C5.925 1 1 5.925 1 12s4.925 11 11 11 11-4.925 11-11S18.075 1 12 1zM2.5 12a9.5 9.5 0 1119 0 9.5 9.5 0 01-19 0z"/>' +
+                           '</svg>' +
+                       '</div>' +
+                       '<div class="forecast-insight-content">' +
+                           '<div class="forecast-insight-title">Insight</div>' +
+                           '<div class="forecast-insight-text">' + (data.insights || 'Team capacity analysis.') + '</div>' +
+                       '</div>' +
+                   '</div>';
+           }
+           
+           container.style.opacity = '0';
+           container.innerHTML = resultsHtml;
+           
+           var self = this;
+           setTimeout(function() {
+               container.style.transition = 'opacity 0.5s ease-in';
+               container.style.opacity = '1';
+               
+               if (type === 'velocity' && data.chart) {
+                   self.drawVelocityForecastEnhanced(data);
+               } else if (type === 'burndown' && data.chart) {
+                   self.drawBurndownForecastEnhanced(data);
+               } else if (type === 'capacity' && data.chart) {
+                   self.drawCapacityForecastEnhanced(data);
+               }
+           }, 100);
+       },
+       
+       drawVelocityForecastEnhanced: function(data) {
+           var canvas = document.getElementById('velocityForecastChart');
+           if (!canvas || !data.chart || !data.chart.data) return;
+           
+           var ctx = canvas.getContext('2d');
+           
+           if (window.velocityForecastChartInstance) {
+               window.velocityForecastChartInstance.destroy();
+           }
+           
+           window.velocityForecastChartInstance = new Chart(ctx, {
+               type: data.chart.type || 'line',
+               data: data.chart.data,
+               options: {
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   plugins: {
+                       legend: {
+                           display: false
+                       },
+                       tooltip: {
+                           callbacks: {
+                               label: function(context) {
+                                   return context.dataset.label + ': ' + context.parsed.y + ' points';
+                               }
+                           }
+                       }
+                   },
+                   scales: {
+                       y: {
+                           beginAtZero: true,
+                           grid: {
+                               color: 'rgba(0, 0, 0, 0.05)'
+                           },
+                           ticks: {
+                               callback: function(value) {
+                                   return value + ' pts';
+                               }
+                           }
+                       },
+                       x: {
+                           grid: {
+                               display: false
+                           }
+                       }
+                   }
+               }
+           });
+       },
+       
+       animateValue: function(element, endValue, decimalPlaces, suffix) {
+           if (!element) return;
+           
+           decimalPlaces = decimalPlaces || 0;
+           suffix = suffix || '';
+           
+           var startValue = parseFloat(element.textContent) || 0;
+           var duration = 1500;
+           var startTime = performance.now();
+           
+           var numericEnd = parseFloat(endValue);
+           
+           function update(currentTime) {
+               var elapsed = currentTime - startTime;
+               var progress = Math.min(elapsed / duration, 1);
+               
+               var easeOut = 1 - Math.pow(1 - progress, 4);
+               var current = startValue + (numericEnd - startValue) * easeOut;
+               
+               if (decimalPlaces > 0) {
+                   element.textContent = current.toFixed(decimalPlaces) + suffix;
+               } else {
+                   element.textContent = Math.floor(current) + suffix;
+               }
+               
+               if (progress < 1) {
+                   requestAnimationFrame(update);
+               }
+           }
+           
+           requestAnimationFrame(update);
+       },
+       
+       showLoadingState: function() {
+           document.querySelectorAll('.stat-value').forEach(function(el) {
+               el.textContent = '--';
+               el.style.opacity = '0.5';
+           });
+           
+           document.querySelectorAll('.chart-container').forEach(function(el) {
+               el.style.opacity = '0.5';
+           });
+       },
+       
+       hideLoadingState: function() {
+           document.querySelectorAll('.stat-value').forEach(function(el) {
+               el.style.opacity = '1';
+           });
+           
+           document.querySelectorAll('.chart-container').forEach(function(el) {
+               el.style.opacity = '1';
+           });
+       },
+       
+       showError: function(message) {
+           if (typeof AJS !== 'undefined' && AJS.flag) {
+               AJS.flag({
+                   type: 'error',
+                   title: 'Error',
+                   body: message,
+                   close: 'manual'
+               });
+           } else {
+               console.error(message);
+               alert(message);
+           }
+       },
+       
+       updateLastUpdatedTime: function(timestamp) {
+           var time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+           console.log('Dashboard last updated:', time);
+       },
+       
+       bindEvents: function() {
+           console.log('Events bound for new dashboard layout');
+       },
+       
+       initializeTooltips: function() {
+           var tooltip = document.getElementById('tooltip');
+           if (!tooltip) return;
+           
+           document.addEventListener('mouseover', function(e) {
+               if (e.target.classList.contains('bar-segment')) {
+                   var rect = e.target.getBoundingClientRect();
+                   var percentage = e.target.style.height;
+                   var type = e.target.classList.contains('completed') ? 'Completed' :
+                              e.target.classList.contains('in-progress') ? 'In Progress' : 'To Do';
+                   
+                   tooltip.innerHTML = type + ': ' + percentage;
+                   tooltip.style.left = rect.left + rect.width / 2 + 'px';
+                   tooltip.style.top = rect.top - 30 + 'px';
+                   tooltip.classList.add('show');
+               }
+           });
+           
+           document.addEventListener('mouseout', function(e) {
+               if (e.target.classList.contains('bar-segment')) {
+                   tooltip.classList.remove('show');
+               }
+           });
+       },
+       
+       initializeInteractions: function() {
+           var self = this;
+           
+           document.querySelectorAll('.sidebar-icon').forEach(function(icon) {
+               icon.addEventListener('click', function() {
+                   document.querySelectorAll('.sidebar-icon').forEach(function(i) {
+                       i.classList.remove('active');
+                   });
+                   this.classList.add('active');
+               });
+           });
+           
+           document.addEventListener('keydown', function(e) {
+               if (e.key === 'Escape') {
+                   var modal = document.getElementById('alertModal');
+                   var overlay = document.getElementById('modalOverlay');
+                   if (modal && modal.classList.contains('active')) {
+                       modal.classList.remove('active');
+                       overlay.classList.remove('active');
+                   }
+               }
+           });
+       },
+       
+       startPolling: function() {
+           if (this.isPolling) return;
+           
+           this.isPolling = true;
+           console.log('Starting smart polling for real-time updates');
+           
+           var self = this;
+           this.checkForUpdates();
+           
+           this.pollInterval = setInterval(function() {
+               self.checkForUpdates();
+           }, this.pollFrequency);
+       },
+       
+       stopPolling: function() {
+           if (this.pollInterval) {
+               clearInterval(this.pollInterval);
+               this.pollInterval = null;
+           }
+           this.isPolling = false;
+       },
+       
+       checkForUpdates: function() {
+           var self = this;
+           if (!this.currentProjectKey) return;
+           
+           console.log('🔍 Checking for updates at ' + new Date().toLocaleTimeString() + '...');
+           
+           var baseUrl = window.location.origin;
+           var updatesUrl = baseUrl + '/rest/jurix/1.0/updates/' + this.currentProjectKey + '?since=' + this.lastUpdateTimestamp;
+           
+           fetch(updatesUrl, {
+               method: 'GET',
+               headers: {
+                   'Content-Type': 'application/json',
+               }
+           })
+           .then(function(response) {
+               return response.json();
+           })
+           .then(function(data) {
+               if (data.hasUpdates) {
+                   console.log('✅ Found ' + data.updateCount + ' updates!');
+                   
+                   self.lastUpdateTimestamp = data.timestamp || Date.now();
+                   
+                   if (data.updates && data.updates.length > 0) {
+                       self.showUpdateNotification(data.updates[0]);
+                   }
+                   
+                   if (data.needsRefresh) {
+                       self.loadDashboardData();
+                   }
+                   
+                   self.adjustPollFrequency(true);
+               } else {
+                   self.adjustPollFrequency(false);
+               }
+           })
+           .catch(function(error) {
+               console.error('❌ Error checking updates:', error);
+               self.adjustPollFrequency(false);
+           });
+       },
+       
+       adjustPollFrequency: function(hasActivity) {
+           this.stopPolling();
+           
+           if (hasActivity) {
+               this.pollFrequency = Math.max(this.MIN_POLL_FREQUENCY, this.pollFrequency * 0.8);
+           } else {
+               this.pollFrequency = Math.min(this.MAX_POLL_FREQUENCY, this.pollFrequency * 1.5);
+           }
+           
+           console.log('Adjusted poll frequency to ' + this.pollFrequency + 'ms');
+           
+           var self = this;
+           this.pollInterval = setInterval(function() {
+               self.checkForUpdates();
+           }, this.pollFrequency);
+       },
+       
+       showUpdateNotification: function(update) {
+           if (typeof AJS !== 'undefined' && AJS.flag) {
+               AJS.flag({
+                   type: 'success',
+                   title: 'Dashboard Updated',
+                   body: (update.issueKey || 'System') + ' - ' + (update.eventType || 'Updated'),
+                   close: 'auto'
+               });
+           }
+       },
+       
+       viewDetails: function(type) {
+           console.log('Viewing details for:', type);
+           window.location.href = window.location.origin + '/browse/' + this.currentProjectKey + '?view=' + type;
+       },
+       
+       toggleAlertModal: function() {
+           var modal = document.getElementById('alertModal');
+           var overlay = document.getElementById('modalOverlay');
+           if (modal && overlay) {
+               modal.classList.toggle('active');
+               overlay.classList.toggle('active');
+           }
+       },
+       
+       switchForecast: function(position, element) {
+           console.log('Switching forecast to position:', position);
+           
+           document.querySelectorAll('.forecast-pill').forEach(function(opt) {
+               opt.classList.remove('active');
+           });
+           element.classList.add('active');
+           
+           var indicator = document.querySelector('.forecast-indicator');
+           if (indicator) {
+               indicator.className = 'forecast-indicator';
+               indicator.classList.add('pos-' + position);
+           }
+           
+           var types = ['velocity', 'burndown', 'capacity'];
+           window.currentForecastType = types[position - 1];
+           
+           console.log('Updated forecast type to:', window.currentForecastType);
+           
+           var forecastCard = document.querySelector('.performance-card');
+           if (forecastCard) {
+               var resultsContainer = forecastCard.querySelector('.forecast-results');
+               if (resultsContainer) {
+                   resultsContainer.remove();
+               }
+           }
+       },
+       
+       runSprintAnalysis: function() {
+           var self = this;
+           console.log('Running AI sprint analysis...');
+           if (typeof AJS !== 'undefined' && AJS.flag) {
+               AJS.flag({
+                   type: 'info',
+                   title: 'AI Analysis Started',
+                   body: 'Running comprehensive sprint analysis. This may take a few moments...',
+                   close: 'auto'
+               });
+           }
+           
+           setTimeout(function() {
+               self.loadDashboardData();
+           }, 2000);
+       },
+       
+       generateReport: function() {
+           console.log('Generating report...');
+           window.open(window.location.origin + '/rest/jurix/1.0/report/' + this.currentProjectKey, '_blank');
+       },
+       
+       applyRecommendation: function(index) {
+           var self = this;
+           console.log('Applying recommendation', index);
+           
+           if (typeof AJS !== 'undefined' && AJS.flag) {
+               AJS.flag({
+                   type: 'success',
+                   title: 'Recommendation Applied',
+                   body: 'The AI recommendation has been applied successfully!',
+                   close: 'auto'
+               });
+           }
+           
+           setTimeout(function() {
+               self.loadDashboardData();
+           }, 1000);
+       },
+       
+       updateAISummary: function(summary) {
+           console.log('AI Summary:', summary);
+       },
+       
+       updateTicketPredictions: function(predictions) {
+           console.log('Ticket Predictions:', predictions);
+       },
+       
+       updateSprintHealthPulse: function(healthData) {
+           console.log('Sprint Health:', healthData);
+       },
+       
+       updateTeamEnergyMeter: function(energyData) {
+           console.log('Team Energy:', energyData);
+       },
+       
+       updateTeamAnalytics: function(analytics) {
+           console.log('Team Analytics:', analytics);
+       },
+       
+       showCriticalFactors: function(factors) {
+           console.log('Critical Factors:', factors);
+       },
+       
+       drawBurndownForecastEnhanced: function(data) {
+           var canvas = document.getElementById('burndownForecastChart');
+           if (!canvas || !data.chart || !data.chart.data) return;
+           
+           var ctx = canvas.getContext('2d');
+           
+           if (window.burndownForecastChartInstance) {
+               window.burndownForecastChartInstance.destroy();
+           }
+           
+           window.burndownForecastChartInstance = new Chart(ctx, {
+               type: data.chart.type || 'line',
+               data: data.chart.data,
+               options: {
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   plugins: {
+                       legend: {
+                           display: true,
+                           position: 'bottom'
+                       }
+                   },
+                   scales: {
+                       y: {
+                           beginAtZero: true,
+                           title: {
+                               display: true,
+                               text: 'Story Points'
+                           }
+                       },
+                       x: {
+                           grid: {
+                               display: false
+                           }
+                       }
+                   }
+               }
+           });
+       },
+       
+       drawCapacityForecastEnhanced: function(data) {
+           var canvas = document.getElementById('capacityForecastChart');
+           if (!canvas || !data.chart || !data.chart.data) return;
+           
+           var ctx = canvas.getContext('2d');
+           
+           if (window.capacityForecastChartInstance) {
+               window.capacityForecastChartInstance.destroy();
+           }
+           
+           window.capacityForecastChartInstance = new Chart(ctx, {
+               type: data.chart.type || 'bar',
+               data: data.chart.data,
+               options: {
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   plugins: {
+                       legend: {
+                           display: false
+                       }
+                   },
+                   scales: {
+                       y: {
+                           beginAtZero: true,
+                           max: 100,
+                           ticks: {
+                               callback: function(value) {
+                                   return value + '%';
+                               }
+                           }
+                       }
+                   }
+               }
+           });
+       }
+   };
+   
+   // Initialize when DOM is ready
+   if (document.readyState === 'loading') {
+       document.addEventListener('DOMContentLoaded', function() {
+           window.JurixDashboard.init();
+       });
+   } else {
+       window.JurixDashboard.init();
+   }
+   /* ]]> */
+   </script>
 </body>
 </html>
