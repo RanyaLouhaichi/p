@@ -8,6 +8,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.POST;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.io.BufferedReader;
@@ -85,6 +87,74 @@ public class DashboardController {
             errorResponse.put("status", "error");
             errorResponse.put("error", e.getMessage());
             errorResponse.put("projectKey", projectKey);
+            
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(errorResponse)
+                .build();
+        }
+    }
+
+    @POST
+    @Path("/forecast/{projectKey}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @AnonymousAllowed
+    public Response generateForecast(@PathParam("projectKey") String projectKey, String requestBody) {
+        try {
+            log.info("Forecast requested for project: {} with body: {}", projectKey, requestBody);
+            
+            // Forward to Python backend
+            String pythonUrl = "http://host.docker.internal:5001/api/forecast/" + projectKey;
+            URL url = new URL(pythonUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Accept", "application/json");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(120000);
+            
+            // Send request body
+            if (requestBody != null && !requestBody.isEmpty()) {
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = requestBody.getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+            }
+            
+            int responseCode = conn.getResponseCode();
+            log.info("Python backend response code: {}", responseCode);
+            
+            // Read response
+            StringBuilder response = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(
+                        responseCode >= 200 && responseCode < 300 ? 
+                        conn.getInputStream() : conn.getErrorStream(), "utf-8"))) {
+                String responseLine;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+            }
+            
+            log.info("Python backend response: {}", response.toString());
+            
+            conn.disconnect();
+            
+            // Return the response
+            return Response.ok(response.toString())
+                .header("Content-Type", "application/json")
+                .build();
+                
+        } catch (Exception e) {
+            log.error("Error generating forecast", e);
+            
+            // Return proper JSON error response
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("status", "error");
+            errorResponse.put("error", e.getMessage());
+            errorResponse.put("type", "forecast");
             
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity(errorResponse)

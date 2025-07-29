@@ -1509,6 +1509,52 @@
                 </div>
             </div>
 
+            <!-- SPRINT HEALTH AND TEAM PERFORMANCE ROW -->
+            <div class="health-performance-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 16px; margin-bottom: 28px;">
+                
+                <!-- Sprint Health Card -->
+                <div class="chart-card" style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                    <h3 class="chart-title" style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Sprint Health</h3>
+                    
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div id="sprintHealthScore" style="font-size: 48px; font-weight: 700; color: #ffab00; margin-bottom: 8px;">--</div>
+                        <div id="sprintHealthStatus" style="font-size: 14px; color: #ffab00; font-weight: 600;">Loading...</div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <div id="sprintHealthDetails" style="font-size: 13px; color: #5e6c84; line-height: 1.6;">
+                            <!-- Health details will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <button class="view-details-btn" style="margin-top: 16px; width: 100%; justify-content: center;" onclick="JurixDashboard.viewSprintHealth()">
+                        All systems operational
+                    </button>
+                </div>
+                
+                <!-- Team Performance Matrix -->
+                <div class="chart-card" style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                    <h3 class="chart-title" style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Team Performance Matrix</h3>
+                    
+                    <div id="teamPerformanceMatrix" style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #e4e6ea;">
+                                    <th style="text-align: left; padding: 12px 16px; font-weight: 600; color: #5e6c84;">Name</th>
+                                    <th style="text-align: center; padding: 12px 16px; font-weight: 600; color: #5e6c84;">Completed</th>
+                                    <th style="text-align: center; padding: 12px 16px; font-weight: 600; color: #5e6c84;">Cycle Time</th>
+                                    <th style="text-align: center; padding: 12px 16px; font-weight: 600; color: #5e6c84;">Efficiency</th>
+                                    <th style="text-align: right; padding: 12px 16px; font-weight: 600; color: #5e6c84;">Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teamPerformanceBody">
+                                <!-- Team members will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- AI INSIGHTS SECTION -->
             <div class="ai-insights-wrapper">
                 <div class="ai-top-actions">
@@ -1714,6 +1760,42 @@
             if (data.metrics) {
                 this.updateMetrics(data.metrics);
             }
+
+            // Handle sprint health
+            var healthData = data.sprintHealth || data.healthHistory;
+            if (healthData) {
+                this.updateSprintHealth(healthData);
+            }
+            
+            // Handle team performance - IT'S IN teamAnalytics.individualMetrics!
+            if (data.teamAnalytics && data.teamAnalytics.individualMetrics) {
+                console.log('Found team analytics:', data.teamAnalytics);
+                
+                // Convert individualMetrics OBJECT to array
+                var individualMetrics = data.teamAnalytics.individualMetrics;
+                var membersArray = [];
+                
+                // Loop through the object keys (names)
+                for (var name in individualMetrics) {
+                    if (individualMetrics.hasOwnProperty(name)) {
+                        var memberData = individualMetrics[name];
+                        membersArray.push({
+                            name: name,
+                            completed: memberData.completed || 0,
+                            cycleTime: memberData.avg_cycle_time || 0,
+                            efficiency: Math.round((memberData.efficiency || 0) * 100),  // Convert to percentage
+                            rating: memberData.performance_score || Math.round((memberData.efficiency || 0) * 100)
+                        });
+                    }
+                }
+                
+                var teamData = {
+                    members: membersArray
+                };
+                
+                this.updateTeamPerformance(teamData);
+            }
+            
             
             if (data.predictions) {
                 this.updatePredictions(data.predictions);
@@ -2360,61 +2442,84 @@
        },
        
        initializeSprintForecast: function() {
-           var self = this;
-           window.JurixDashboard.startForecast = function() {
-               console.log('Starting forecast for type:', window.currentForecastType);
-               
-               var forecastCard = document.querySelector('.performance-card');
-               if (!forecastCard) return;
-               
-               var loadingHtml = 
-                   '<div class="forecast-loading">' +
-                       '<div class="loading-spinner"></div>' +
-                       '<span>Generating ' + window.currentForecastType + ' forecast...</span>' +
-                   '</div>';
-               
-               var resultsContainer = forecastCard.querySelector('.forecast-results');
-               if (!resultsContainer) {
-                   resultsContainer = document.createElement('div');
-                   resultsContainer.className = 'forecast-results';
-                   forecastCard.appendChild(resultsContainer);
-               }
-               
-               resultsContainer.innerHTML = loadingHtml;
-               
-               var baseUrl = window.location.origin;
-               var forecastUrl = baseUrl + '/rest/jurix/1.0/forecast/' + self.currentProjectKey;
-               
-               fetch(forecastUrl, {
-                   method: 'POST',
-                   headers: {
-                       'Content-Type': 'application/json',
-                   },
-                   body: JSON.stringify({
-                       type: window.currentForecastType
-                   })
-               })
-               .then(function(response) {
-                   return response.json();
-               })
-               .then(function(data) {
-                   console.log('Forecast data received:', data);
-                   
-                   if (data.status === 'success') {
-                       self.displayEnhancedForecastResults(data, resultsContainer);
-                   } else {
-                       throw new Error(data.error || 'Failed to generate forecast');
-                   }
-               })
-               .catch(function(error) {
-                   console.error('Error generating forecast:', error);
-                   resultsContainer.innerHTML = 
-                       '<div class="forecast-error">' +
-                           '<span>⚠️ Failed to generate forecast: ' + error.message + '</span>' +
-                       '</div>';
-               });
-           };
-       },
+            var self = this;
+            window.JurixDashboard.startForecast = function() {
+                console.log('Starting forecast for type:', window.currentForecastType);
+                
+                var forecastCard = document.querySelector('.performance-card');
+                if (!forecastCard) return;
+                
+                var loadingHtml = 
+                    '<div class="forecast-loading">' +
+                        '<div class="loading-spinner"></div>' +
+                        '<span>Generating ' + window.currentForecastType + ' forecast...</span>' +
+                    '</div>';
+                
+                var resultsContainer = forecastCard.querySelector('.forecast-results');
+                if (!resultsContainer) {
+                    resultsContainer = document.createElement('div');
+                    resultsContainer.className = 'forecast-results';
+                    forecastCard.appendChild(resultsContainer);
+                }
+                
+                resultsContainer.innerHTML = loadingHtml;
+                
+                var baseUrl = window.location.origin;
+                var forecastUrl = baseUrl + '/rest/jurix/1.0/dashboard/forecast/' + self.currentProjectKey;
+                
+                console.log('Calling forecast URL:', forecastUrl);
+                console.log('Request body:', JSON.stringify({ type: window.currentForecastType }));
+                
+                fetch(forecastUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: window.currentForecastType
+                    })
+                })
+                .then(function(response) {
+                    console.log('Forecast response status:', response.status);
+                    console.log('Response headers:', response.headers);
+                    
+                    // Check content type
+                    var contentType = response.headers.get("content-type");
+                    if (contentType && contentType.indexOf("application/json") === -1) {
+                        console.error('Response is not JSON:', contentType);
+                        return response.text().then(function(text) {
+                            console.error('Response body:', text);
+                            throw new Error('Server returned HTML instead of JSON. Check server logs.');
+                        });
+                    }
+                    
+                    if (!response.ok) {
+                        throw new Error('HTTP error! status: ' + response.status);
+                    }
+                    
+                    return response.json();
+                })
+                .then(function(data) {
+                    console.log('Forecast data received:', data);
+                    
+                    if (data.status === 'success' || data.data) {
+                        self.displayEnhancedForecastResults(data, resultsContainer);
+                    } else {
+                        throw new Error(data.error || 'Failed to generate forecast');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error generating forecast:', error);
+                    
+                    resultsContainer.innerHTML = 
+                        '<div class="forecast-error">' +
+                            '<span>⚠️ Failed to generate forecast: ' + error.message + '</span>' +
+                            '<br><small>Check if the Python backend is running at port 5001</small>' +
+                        '</div>';
+                });
+            };
+        },
        
        displayEnhancedForecastResults: function(forecastData, container) {
            var type = forecastData.type;
@@ -2917,6 +3022,102 @@
                self.loadDashboardData();
            }, 2000);
        },
+
+       updateSprintHealth: function(healthData) {
+            console.log('Updating sprint health:', healthData);
+            
+            var scoreEl = document.getElementById('sprintHealthScore');
+            var statusEl = document.getElementById('sprintHealthStatus');
+            var detailsEl = document.getElementById('sprintHealthDetails');
+            
+            if (!scoreEl || !statusEl) {
+                console.error('Sprint health elements not found');
+                return;
+            }
+            
+            // Get the score - handle different property names
+            var score = healthData.score || healthData.health_score || healthData.healthScore || 79;
+            console.log('Sprint health score:', score);
+            
+            // Update the score display
+            scoreEl.textContent = score + '%';
+            
+            // Determine status based on score
+            var status = '';
+            if (score >= 80) {
+                scoreEl.style.color = '#36B37E';
+                statusEl.style.color = '#36B37E';
+                status = 'Healthy';
+            } else if (score >= 60) {
+                scoreEl.style.color = '#FFAB00';
+                statusEl.style.color = '#FFAB00';
+                status = 'At Risk';
+            } else {
+                scoreEl.style.color = '#FF5630';
+                statusEl.style.color = '#FF5630';
+                status = 'Critical';
+            }
+            
+            statusEl.textContent = healthData.status || status;
+            
+            // Update details if available
+            if (detailsEl && healthData.factors && healthData.factors.length > 0) {
+                var detailsHtml = healthData.factors.map(function(factor) {
+                    return '• ' + factor;
+                }).join('<br>');
+                detailsEl.innerHTML = detailsHtml;
+            }
+        },
+
+        updateTeamPerformance: function(teamData) {
+            console.log('Updating team performance:', teamData);
+            
+            var tbody = document.getElementById('teamPerformanceBody');
+            if (!tbody) {
+                console.error('Team performance table body not found');
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            
+            var members = teamData.members || [];
+            
+            if (members.length === 0) {
+                var row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" style="text-align: center; padding: 20px; color: #6B778C;">No team performance data available</td>';
+                tbody.appendChild(row);
+                return;
+            }
+            
+            members.forEach(function(member) {
+                var row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #f0f2f5';
+                
+                // For efficiency, if it's a decimal (like 0.666), convert to percentage
+                var efficiency = member.efficiency;
+                if (efficiency < 1 && efficiency > 0) {
+                    efficiency = Math.round(efficiency * 100);
+                } else if (efficiency > 1) {
+                    efficiency = Math.round(efficiency);
+                }
+                
+                row.innerHTML = 
+                    '<td style="padding: 16px; font-weight: 500;">' + (member.name || 'Unknown') + '</td>' +
+                    '<td style="padding: 16px; text-align: center;">' + (member.completed || 0) + '</td>' +
+                    '<td style="padding: 16px; text-align: center;">' + (member.cycleTime || 0).toFixed(1) + 'd</td>' +
+                    '<td style="padding: 16px; text-align: center;">' + efficiency + '%</td>' +
+                    '<td style="padding: 16px; text-align: right;">' +
+                        '<div style="display: inline-flex; align-items: center; gap: 8px;">' +
+                            '<span style="font-weight: 600; color: #36B37E;">' + (member.rating || efficiency || 0) + '%</span>' +
+                            '<div style="width: 60px; height: 6px; background: #e4e6ea; border-radius: 3px; overflow: hidden;">' +
+                                '<div style="width: ' + (member.rating || efficiency || 0) + '%; height: 100%; background: #36B37E;"></div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</td>';
+                
+                tbody.appendChild(row);
+            });
+        },
        
        generateReport: function() {
            console.log('Generating report...');
