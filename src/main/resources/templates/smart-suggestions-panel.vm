@@ -1,4 +1,4 @@
-## Smart Suggestions Panel - This template must exist even if empty
+## Smart Suggestions Panel -
 ## The actual functionality is handled by smart-suggestions.js
 <div id="smart-suggestions-panel-placeholder" style="display:none;">
     <!-- Smart suggestions will be loaded here by JavaScript -->

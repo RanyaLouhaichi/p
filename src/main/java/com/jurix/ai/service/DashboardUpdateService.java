@@ -10,16 +10,13 @@ import java.util.stream.Collectors;
 @Named
 public class DashboardUpdateService {
     private static final Logger log = LoggerFactory.getLogger(DashboardUpdateService.class);
-    
-    // Simple in-memory storage
     private final Map<String, List<UpdateEvent>> updates = new ConcurrentHashMap<>();
     private final int MAX_UPDATES_PER_PROJECT = 100;
     
     public void recordUpdate(String projectKey, UpdateEvent event) {
         updates.computeIfAbsent(projectKey, k -> Collections.synchronizedList(new ArrayList<>()))
-               .add(0, event); // Add to beginning
+               .add(0, event); 
         
-        // Trim to max size
         List<UpdateEvent> projectUpdates = updates.get(projectKey);
         if (projectUpdates.size() > MAX_UPDATES_PER_PROJECT) {
             projectUpdates.subList(MAX_UPDATES_PER_PROJECT, projectUpdates.size()).clear();
@@ -32,7 +29,6 @@ public class DashboardUpdateService {
     public Map<String, Object> getUpdatesSince(String projectKey, long sinceTimestamp) {
         List<UpdateEvent> projectUpdates = updates.getOrDefault(projectKey, new ArrayList<>());
         
-        // Filter updates since timestamp
         List<UpdateEvent> recentUpdates = projectUpdates.stream()
             .filter(update -> update.timestamp > sinceTimestamp)
             .collect(Collectors.toList());
@@ -45,7 +41,6 @@ public class DashboardUpdateService {
         if (!recentUpdates.isEmpty()) {
             result.put("latestTimestamp", recentUpdates.get(0).timestamp);
             
-            // Convert to list of maps
             List<Map<String, Object>> updateList = new ArrayList<>();
             for (UpdateEvent update : recentUpdates) {
                 Map<String, Object> updateMap = new HashMap<>();
@@ -64,16 +59,12 @@ public class DashboardUpdateService {
     public ProjectUpdateInfo getProjectUpdateInfo(String projectKey) {
         ProjectUpdateInfo info = new ProjectUpdateInfo(projectKey);
         List<UpdateEvent> projectUpdates = updates.getOrDefault(projectKey, new ArrayList<>());
-        
-        // Add updates to info (they're already in reverse chronological order)
         for (UpdateEvent update : projectUpdates) {
             info.addUpdate(update);
         }
         
         return info;
     }
-    
-    // Inner classes
     public static class UpdateEvent {
         public final String issueKey;
         public final String status;

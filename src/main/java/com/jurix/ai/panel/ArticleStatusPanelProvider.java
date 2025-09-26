@@ -29,14 +29,12 @@ public class ArticleStatusPanelProvider extends AbstractJiraContextProvider {
         if (issue != null) {
             contextMap.put("issue", issue);
             contextMap.put("issueKey", issue.getKey());
-            
-            // Check if article exists
             ArticleGenerationService.ArticleData articleData = articleService.getArticleData(issue.getKey());
             
             if (articleData != null) {
                 contextMap.put("hasArticle", true);
                 contextMap.put("articleStatus", articleData.status);
-                contextMap.put("articleVersion", 1); // Default version
+                contextMap.put("articleVersion", 1); 
                 
                 if (articleData.article != null) {
                     contextMap.put("approvalStatus", articleData.article.get("approval_status"));

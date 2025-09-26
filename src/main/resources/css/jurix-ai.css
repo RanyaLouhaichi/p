@@ -1,14 +1,9 @@
-/* JURIX AI - Professional Enterprise Design System */
-
 :root {
-    /* Professional Enterprise Color Palette */
     --jurix-primary: #0052CC;
     --jurix-primary-dark: #0747A6;
     --jurix-primary-light: #4C9AFF;
     --jurix-primary-lighter: #B3D4FF;
     --jurix-primary-lightest: #DEEBFF;
-    
-    /* Neutral Colors - Professional Gray Scale */
     --jurix-gray-900: #091E42;
     --jurix-gray-800: #172B4D;
     --jurix-gray-700: #253858;
@@ -21,7 +16,7 @@
     --jurix-gray-50: #F4F5F7;
     --jurix-white: #FFFFFF;
     
-    /* Status Colors - Professional Palette */
+
     --jurix-success: #00875A;
     --jurix-success-light: #36B37E;
     --jurix-success-bg: #E3FCEF;
@@ -38,12 +33,12 @@
     --jurix-info-light: #2684FF;
     --jurix-info-bg: #DEEBFF;
     
-    /* Purple for special highlights */
+
     --jurix-purple: #6554C0;
     --jurix-purple-light: #8777D9;
     --jurix-purple-bg: #F3E5FF;
     
-    /* Professional Shadows */
+
     --jurix-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
     --jurix-shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
     --jurix-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
@@ -51,15 +46,14 @@
     --jurix-shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.18);
     --jurix-shadow-2xl: 0 20px 40px rgba(0, 0, 0, 0.2);
     
-    /* Border Radius */
+
     --jurix-radius-sm: 4px;
     --jurix-radius-md: 6px;
     --jurix-radius-lg: 8px;
     --jurix-radius-xl: 12px;
     --jurix-radius-2xl: 16px;
     --jurix-radius-full: 9999px;
-    
-    /* Spacing Scale */
+
     --jurix-space-xs: 0.25rem;
     --jurix-space-sm: 0.5rem;
     --jurix-space-md: 1rem;
@@ -68,18 +62,17 @@
     --jurix-space-2xl: 3rem;
     --jurix-space-3xl: 4rem;
     
-    /* Typography */
+
     --jurix-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     --jurix-font-mono: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     
-    /* Transitions */
+
     --jurix-transition-fast: all 0.1s ease;
     --jurix-transition-base: all 0.2s ease;
     --jurix-transition-slow: all 0.3s ease;
     --jurix-transition-slower: all 0.4s ease;
 }
 
-/* Global Styles */
 .jurix-ai-container {
     font-family: var(--jurix-font-family);
     color: var(--jurix-gray-800);
@@ -87,8 +80,6 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
-
-/* Professional Card Component */
 .jurix-card {
     background: var(--jurix-white);
     border-radius: var(--jurix-radius-lg);
@@ -102,8 +93,6 @@
     box-shadow: var(--jurix-shadow-md);
     transform: translateY(-2px);
 }
-
-/* Professional Button Styles */
 .jurix-btn {
     padding: var(--jurix-space-sm) var(--jurix-space-lg);
     border-radius: var(--jurix-radius-sm);
@@ -141,7 +130,7 @@
 }
 
 /* ===================================
-   MODERN CHAT WIDGET - PROFESSIONAL
+   CHAT WIDGET 
    =================================== */
 
 .jurix-chat-widget {
@@ -181,8 +170,6 @@
     height: 24px;
     color: white;
 }
-
-/* Chat Window - Professional Design */
 .jurix-chat-window {
     position: fixed;
     bottom: 88px;
@@ -214,8 +201,6 @@
         transform: scale(1) translateY(0);
     }
 }
-
-/* Chat Header - Professional Style */
 .jurix-chat-header {
     background: var(--jurix-white);
     border-bottom: 1px solid var(--jurix-gray-100);
@@ -291,7 +276,6 @@
     color: var(--jurix-gray-700);
 }
 
-/* Chat Messages */
 .jurix-chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -313,7 +297,6 @@
     border-radius: 3px;
 }
 
-/* Message Styles */
 .chat-message {
     display: flex;
     gap: 8px;
@@ -374,7 +357,6 @@
     margin-left: auto;
 }
 
-/* Quick Actions */
 .quick-actions {
     display: flex;
     flex-wrap: wrap;
@@ -398,7 +380,6 @@
     border-color: var(--jurix-primary);
 }
 
-/* Chat Input */
 .jurix-chat-input {
     padding: 16px;
     background: var(--jurix-white);
@@ -448,7 +429,7 @@
    DASHBOARD COMPONENTS
    =================================== */
 
-/* Metric Cards - Professional Style */
+
 .jurix-metric-card {
     background: var(--jurix-white);
     border-radius: var(--jurix-radius-lg);
@@ -500,7 +481,6 @@
     color: var(--jurix-danger);
 }
 
-/* Charts Container */
 .jurix-chart-container {
     background: var(--jurix-white);
     border-radius: var(--jurix-radius-lg);
@@ -522,7 +502,6 @@
     color: var(--jurix-gray-900);
 }
 
-/* AI Recommendations - Professional Light Style */
 .jurix-recommendations-panel {
     background: var(--jurix-white);
     border: 1px solid var(--jurix-primary-lighter);
@@ -558,7 +537,6 @@
     transform: translateX(4px);
 }
 
-/* AI Predictions - Professional Style */
 .jurix-predictions-panel {
     background: var(--jurix-white);
     border: 1px solid var(--jurix-info-light);
@@ -607,7 +585,6 @@
     margin-bottom: 4px;
 }
 
-/* Risk Badges */
 .risk-low {
     background: var(--jurix-success-bg);
     color: var(--jurix-success);
@@ -635,7 +612,6 @@
     font-weight: 500;
 }
 
-/* Team Performance Card */
 .jurix-team-card {
     background: var(--jurix-white);
     border-radius: var(--jurix-radius-lg);
@@ -672,8 +648,6 @@
     font-weight: 600;
     font-size: 14px;
 }
-
-/* Activity Timeline */
 .jurix-timeline {
     background: var(--jurix-white);
     border-radius: var(--jurix-radius-lg);
@@ -724,7 +698,6 @@
     color: var(--jurix-info);
 }
 
-/* Notification Styles */
 .jurix-notification {
     position: fixed;
     top: 20px;
@@ -789,7 +762,6 @@
     font-size: 0.875rem;
 }
 
-/* Loading States */
 .jurix-loading {
     position: relative;
     opacity: 0.6;
@@ -813,8 +785,6 @@
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
-
-/* Loader Animation */
 .jurix-loader {
     display: inline-block;
     width: 20px;
@@ -825,7 +795,6 @@
     animation: spin 0.8s linear infinite;
 }
 
-/* Responsive Design */
 @media (max-width: 1200px) {
     .jurix-chat-window {
         width: 360px;
@@ -857,7 +826,6 @@
     }
 }
 
-/* Utility Classes */
 .jurix-text-primary { color: var(--jurix-primary); }
 .jurix-text-success { color: var(--jurix-success); }
 .jurix-text-warning { color: var(--jurix-warning); }
@@ -874,7 +842,6 @@
 .jurix-shadow-md { box-shadow: var(--jurix-shadow-md); }
 .jurix-shadow-lg { box-shadow: var(--jurix-shadow-lg); }
 
-/* Animations */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -896,19 +863,17 @@
     50% { opacity: 0.5; }
 }
 
-/* Professional Focus States */
+
 :focus-visible {
     outline: 2px solid var(--jurix-primary);
     outline-offset: 2px;
 }
 
-/* Selection Colors */
 ::selection {
     background: var(--jurix-primary-lightest);
     color: var(--jurix-gray-900);
 }
 
-/* Scrollbar Styling */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -926,8 +891,10 @@
 ::-webkit-scrollbar-thumb:hover {
     background: var(--jurix-gray-300);
 }
+/* ===================================
+   SMART SUGGESTIONS MODULE
+   =================================== */
 
-/* Smart Suggestions Styles */
 .jurix-suggestions-module {
     background: var(--jurix-white);
     border-radius: var(--jurix-radius-lg);
@@ -1071,8 +1038,6 @@
 .error-suggestions {
     color: var(--jurix-danger);
 }
-
-/* Animation for new suggestions */
 @keyframes suggestionSlideIn {
     from {
         opacity: 0;
@@ -1088,8 +1053,6 @@
     animation: suggestionSlideIn 0.3s ease-out;
 }
 
-
-/* Smart Suggestions Panel Enhancements */
 #smart-suggestions-panel {
     margin-bottom: 20px;
     opacity: 0;
@@ -1122,7 +1085,6 @@
     font-size: 12px;
 }
 
-/* Loading State */
 .loading-suggestions {
     text-align: center;
     padding: 40px 20px;
@@ -1149,8 +1111,6 @@
     margin: 10px 0 0 0;
     font-size: 13px;
 }
-
-/* Error State */
 .error-suggestions {
     text-align: center;
     padding: 30px 20px;
@@ -1172,7 +1132,7 @@
     margin-top: 10px;
 }
 
-/* No Suggestions State */
+
 .no-suggestions {
     text-align: center;
     padding: 30px 20px;
@@ -1189,7 +1149,7 @@
     color: #999;
 }
 
-/* Suggestion Items */
+
 .suggestions-list {
     max-height: 600px;
     overflow-y: auto;
@@ -1222,7 +1182,7 @@
     border-left: 3px solid #97a0af;
 }
 
-/* Suggestion Header */
+
 .suggestion-header {
     display: flex;
     justify-content: space-between;
@@ -1252,7 +1212,6 @@
     flex-shrink: 0;
 }
 
-/* Reason and Preview */
 .suggestion-reason {
     font-size: 12px;
     color: #6b778c;
@@ -1280,7 +1239,6 @@
     -webkit-box-orient: vertical;
 }
 
-/* Feedback Section */
 .suggestion-feedback {
     display: flex;
     align-items: center;
@@ -1326,7 +1284,7 @@
     border-color: #de350b;
 }
 
-/* Responsive adjustments for smaller screens */
+
 @media (max-width: 1200px) {
     #smart-suggestions-panel {
         position: relative;
@@ -1334,7 +1292,6 @@
     }
 }
 
-/* Animation for new suggestions */
 @keyframes suggestionSlideIn {
     from {
         opacity: 0;
@@ -1357,20 +1314,20 @@
 .suggestion-item:nth-child(4) { animation-delay: 0.4s; }
 .suggestion-item:nth-child(5) { animation-delay: 0.5s; }
 
-/* Fix positioning issues */
 #viewissuesidebar #smart-suggestions-panel {
     margin: 0 0 20px 0;
     width: 100%;
 }
 
-/* Ensure panel doesn't interfere with other modules */
+
 .issue-main-column #smart-suggestions-panel {
     margin: 20px 0;
 }
 
-/* Add these styles to the existing style.textContent in the init function */
+/* ===================================
+   FORECAST MODULE
+   =================================== */
 
-/* Forecast metrics styling */
 .forecast-metrics {
     background: #f7f8fa;
     border-radius: 8px;
@@ -1400,7 +1357,7 @@
     font-size: 14px;
 }
 
-/* Capacity specific styles */
+
 .capacity-overview {
     padding: 20px;
     text-align: center;
@@ -1457,7 +1414,6 @@
     font-style: italic;
 }
 
-/* Overloaded members */
 .overloaded-members {
     margin-top: 16px;
     padding: 16px;
@@ -1488,7 +1444,6 @@
     color: #DE350B;
 }
 
-/* Burndown specific */
 .forecast-completion {
     margin: 16px 0;
 }
@@ -1504,8 +1459,6 @@
 .completion-fill.on-track {
     background: linear-gradient(90deg, #36B37E 0%, #00875A 100%);
 }
-
-/* Recommendations */
 .forecast-recommendations {
     margin-top: 16px;
     padding: 16px;
@@ -1546,7 +1499,6 @@
     line-height: 1.5;
 }
 
-/* Capacity recommendations */
 .capacity-recommendations {
     margin-top: 16px;
     padding: 16px;

@@ -22,14 +22,12 @@ import okhttp3.MediaType;
 
 import com.jurix.ai.config.JurixConfiguration;
 
-/**
- * Service for communicating with the Python backend
- */
+
 @Named
 public class ChatService {
     private static final Logger log = LoggerFactory.getLogger(ChatService.class);
     
-    private static final int TIMEOUT_SECONDS = 120; // 2 minutes timeout
+    private static final int TIMEOUT_SECONDS = 120; 
     
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
@@ -38,39 +36,29 @@ public class ChatService {
     @Inject
     public ChatService(JurixConfiguration configuration) {
         this.configuration = configuration;
-        
-        // Configure HTTP client with custom timeouts
         this.httpClient = new OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build();
-            
-        // Configure JSON mapper
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
     
-    /**
-     * Send a chat message to the Python backend
-     */
     public ChatController.ChatResponse sendChatMessage(String query, String conversationId, String username) 
             throws IOException {
         
         log.info("Sending chat message to Python backend: conversationId={}, username={}", 
                 conversationId, username);
         log.info("Backend URL: {}", configuration.getBackendUrl());
-        
-        // Build request payload
+
         Map<String, Object> requestData = new HashMap<>();
         requestData.put("query", query);
         requestData.put("conversationId", conversationId);
-        
-        // Convert to JSON
+
         String jsonPayload = objectMapper.writeValueAsString(requestData);
         log.debug("Request payload: {}", jsonPayload);
-        
-        // Create HTTP request
+ 
         RequestBody body = RequestBody.create(
             MediaType.parse("application/json; charset=utf-8"), 
             jsonPayload
@@ -83,7 +71,6 @@ public class ChatService {
             .addHeader("Accept", "application/json")
             .build();
         
-        // Execute request
         try (Response response = httpClient.newCall(request).execute()) {
             String responseBody = response.body().string();
             log.info("Response code from backend: {}", response.code());
@@ -91,8 +78,6 @@ public class ChatService {
             if (!response.isSuccessful()) {
                 log.error("Python backend returned error: {} - Body: {}", 
                     response.code(), responseBody);
-                
-                // Try to parse error response
                 try {
                     Map<String, Object> errorResponse = objectMapper.readValue(
                         responseBody, Map.class);
@@ -104,37 +89,27 @@ public class ChatService {
                         " - Response: " + responseBody);
                 }
             }
-            
-            // Parse response
             log.info("Successfully received response from Python backend");
             log.debug("Response from Python backend: {}", responseBody);
             
-            // Convert to response object
             PythonBackendResponse backendResponse = objectMapper.readValue(
                 responseBody, 
                 PythonBackendResponse.class
             );
-            
-            // Transform to our response format
             return transformResponse(backendResponse, conversationId);
         }
     }
     
-    /**
-     * Transform Python backend response to our format
-     */
     private ChatController.ChatResponse transformResponse(
             PythonBackendResponse backendResponse, 
             String conversationId) {
         
         ChatController.ChatResponse response = new ChatController.ChatResponse();
-        
-        // Set basic fields
+
         response.setResponse(backendResponse.getResponse());
         response.setConversationId(conversationId);
         response.setWorkflowStatus(backendResponse.getStatus() != null ? backendResponse.getStatus() : "success");
-        
-        // Transform articles
+    
         if (backendResponse.getArticles() != null) {
             List<ChatController.Article> articles = new ArrayList<>();
             for (Map<String, Object> articleData : backendResponse.getArticles()) {
@@ -142,7 +117,7 @@ public class ChatService {
                 article.setTitle((String) articleData.get("title"));
                 article.setContent((String) articleData.get("content"));
                 
-                // Handle relevance score
+
                 Object relevanceScore = articleData.get("relevance_score");
                 if (relevanceScore instanceof Number) {
                     article.setRelevanceScore(((Number) relevanceScore).doubleValue());
@@ -152,18 +127,15 @@ public class ChatService {
             }
             response.setArticles(articles);
         }
-        
-        // Set recommendations
+
         if (backendResponse.getRecommendations() != null) {
             response.setRecommendations(backendResponse.getRecommendations());
         }
-        
-        // Set predictions
+
         if (backendResponse.getPredictions() != null) {
             response.setPredictions(backendResponse.getPredictions());
         }
-        
-        // Set collaboration metadata
+
         if (backendResponse.getCollaborationMetadata() != null) {
             response.setCollaborationMetadata(backendResponse.getCollaborationMetadata());
         }
@@ -171,9 +143,7 @@ public class ChatService {
         return response;
     }
     
-    /**
-     * Internal class to represent Python backend response
-     */
+
     private static class PythonBackendResponse {
         private String query;
         private String response;
@@ -186,8 +156,6 @@ public class ChatService {
         private Map<String, Object> predictions;
         private Map<String, Object> collaborationMetadata;
         private String workflowStatus;
-        
-        // Getters and setters
         public String getQuery() {
             return query;
         }

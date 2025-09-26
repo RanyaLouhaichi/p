@@ -15,7 +15,6 @@ public class NotificationService {
     private static NotificationService instance;
     
     private NotificationService() {
-        // Private constructor for singleton
     }
     
     public static synchronized NotificationService getInstance() {
@@ -71,7 +70,6 @@ public class NotificationService {
                 ApplicationUser systemUser = ComponentAccessor.getJiraAuthenticationContext().getLoggedInUser();
                 
                 if (systemUser == null) {
-                    // Get a system user if no logged-in user
                     systemUser = ComponentAccessor.getUserManager().getUserByName("admin");
                 }
                 

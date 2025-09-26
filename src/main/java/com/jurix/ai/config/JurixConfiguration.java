@@ -6,9 +6,6 @@ import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-/**
- * Configuration management for JURIX plugin
- */
 @Named
 public class JurixConfiguration {
     private static final String PLUGIN_KEY = "com.jurix.ai";
@@ -22,18 +19,12 @@ public class JurixConfiguration {
         this.pluginSettingsFactory = pluginSettingsFactory;
     }
     
-    /**
-     * Get the Python backend URL
-     */
     public String getBackendUrl() {
         PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
         String url = (String) settings.get(BACKEND_URL_KEY);
         return url != null ? url : DEFAULT_BACKEND_URL;
     }
-    
-    /**
-     * Set the Python backend URL
-     */
+ 
     public void setBackendUrl(String url) {
         PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
         settings.put(BACKEND_URL_KEY, url);

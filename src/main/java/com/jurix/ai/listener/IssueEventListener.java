@@ -49,27 +49,15 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
     private final ArticleGenerationService articleService;
     private final Gson gson = new Gson();
     private OkHttpClient httpClient;
-    
-    // Track registration status
     private boolean registered = false;
-    
-    // Redis connection for persistent storage - OPTIONAL
     private JedisPool jedisPool;
     private boolean redisEnabled = false;
-    
-    // Fallback to in-memory storage when Redis is not available
     private final Set<String> generatedArticles = ConcurrentHashMap.newKeySet();
     private final Set<String> inProgressArticles = ConcurrentHashMap.newKeySet();
-    
-    // Redis keys
     private static final String ARTICLE_GENERATED_PREFIX = "article_generated:";
     private static final String ARTICLE_IN_PROGRESS_PREFIX = "article_in_progress:";
     private static final String LISTENER_STARTUP_TIME = "listener_startup_time";
-    
-    // Track current session startup time
     private long startupTime;
-    
-    // Time to wait before considering an "in progress" generation as stale
     private static final long IN_PROGRESS_TIMEOUT_MS = 900000; // 15 minutes
 
     @Inject
@@ -89,10 +77,7 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
         log.info("🟢 ==========================================");
         
         try {
-            // Try to initialize Redis, but don't fail if it's not available
             initializeRedisOptional();
-            
-            // Record startup time
             startupTime = System.currentTimeMillis();
             if (redisEnabled) {
                 try (Jedis jedis = jedisPool.getResource()) {
@@ -100,21 +85,15 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
                 }
             }
             log.info("📝 Recorded startup time: {}", new Date(startupTime));
-            
-            // Initialize HTTP client
             this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(30, TimeUnit.SECONDS)  
                 .readTimeout(500, TimeUnit.SECONDS) 
                 .build();
-            
-            // Register with event publisher
             log.info("📝 Attempting to register with EventPublisher...");
             eventPublisher.register(this);
             registered = true;
             log.info("✅ SUCCESSFULLY REGISTERED with EventPublisher!");
-            
-            // Clean up any stale "in progress" entries if Redis is available
             if (redisEnabled) {
                 cleanupStaleInProgressEntries();
             }
@@ -135,12 +114,8 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
             poolConfig.setTestOnReturn(true);
             poolConfig.setTestWhileIdle(true);
             poolConfig.setNumTestsPerEvictionRun(3);
-            poolConfig.setBlockWhenExhausted(true);
-            
-            // Connect to Redis
             jedisPool = new JedisPool(poolConfig, "localhost", 6379, 2000);
-            
-            // Test connection
+
             try (Jedis jedis = jedisPool.getResource()) {
                 jedis.ping();
                 redisEnabled = true;
@@ -154,7 +129,6 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
                 try {
                     jedisPool.close();
                 } catch (Exception ex) {
-                    // Ignore
                 }
                 jedisPool = null;
             }
@@ -178,7 +152,6 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
                             cleaned++;
                         }
                     } catch (NumberFormatException e) {
-                        // Invalid value, delete it
                         jedis.del(key);
                         cleaned++;
                     }
@@ -220,19 +193,13 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
             String issueKey = issue.getKey();
             String projectKey = issue.getProjectObject().getKey();
             String eventType = getEventTypeName(eventTypeId);
-            
-            // Get issue resolution date
             Date resolutionDate = issue.getResolutionDate();
             
             log.info("📌 Event: {} - Issue: {} - Status: {} - Resolution Date: {}", 
                      eventType, issueKey, issue.getStatus().getName(), resolutionDate);
-            
-            // Always handle dashboard update in a separate thread
             new Thread(() -> {
                 handleDashboardUpdate(projectKey, issue, eventType);
             }).start();
-            
-            // ARTICLE GENERATION IS DISABLED FOR NOW
             log.debug("Article generation is currently disabled");
             
         } catch (Exception e) {
@@ -246,7 +213,6 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
                 return jedis.exists(ARTICLE_GENERATED_PREFIX + issueKey);
             } catch (Exception e) {
                 log.error("Error checking if article was generated for {}", issueKey, e);
-                // Fall back to in-memory
             }
         }
         return generatedArticles.contains(issueKey);
@@ -256,16 +222,14 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
         if (redisEnabled) {
             try (Jedis jedis = jedisPool.getResource()) {
                 String key = ARTICLE_IN_PROGRESS_PREFIX + issueKey;
-                // Set if not exists, with 15 minute expiry
                 Long result = jedis.setnx(key, String.valueOf(System.currentTimeMillis()));
                 if (result == 1) {
-                    jedis.expire(key, 900); // 15 minutes
+                    jedis.expire(key, 900); 
                     return true;
                 }
                 return false;
             } catch (Exception e) {
                 log.error("Error marking article generation in progress for {}", issueKey, e);
-                // Fall back to in-memory
             }
         }
         return inProgressArticles.add(issueKey);
@@ -285,18 +249,13 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
     private void markArticleGenerationComplete(String issueKey) {
         if (redisEnabled) {
             try (Jedis jedis = jedisPool.getResource()) {
-                // Mark as complete with timestamp
                 jedis.set(ARTICLE_GENERATED_PREFIX + issueKey, String.valueOf(System.currentTimeMillis()));
-                // Set expiry to 30 days
                 jedis.expire(ARTICLE_GENERATED_PREFIX + issueKey, 2592000);
-                
-                // Clear in-progress flag
                 clearArticleGenerationInProgress(issueKey);
                 
                 log.info("✅ Marked article generation complete for {}", issueKey);
             } catch (Exception e) {
                 log.error("Error marking article generation complete for {}", issueKey, e);
-                // Fall back to in-memory
             }
         }
         generatedArticles.add(issueKey);
@@ -315,8 +274,6 @@ public class IssueEventListener implements InitializingBean, DisposableBean {
             );
             
             updateService.recordUpdate(projectKey, updateEvent);
-            
-            // Notify Python backend
             notifyPythonBackend(projectKey, eventType, issue);
             
         } catch (Exception e) {

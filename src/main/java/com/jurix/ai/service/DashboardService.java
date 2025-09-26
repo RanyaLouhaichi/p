@@ -18,7 +18,6 @@ public class DashboardService {
     private final Map<String, Object> dashboardCache = new ConcurrentHashMap<>();
     
     public void broadcastDashboardUpdate(String projectKey, JurixApiClient.DashboardResponse dashboard) {
-        // In a real implementation, this would use WebSockets
         dashboardCache.put(projectKey, dashboard);
         log.info("Broadcasting dashboard update for project: {}", projectKey);
     }

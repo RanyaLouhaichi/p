@@ -40,8 +40,6 @@ public class DashboardServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        
-        // Get authentication context
         JiraAuthenticationContext authContext = ComponentAccessor.getJiraAuthenticationContext();
         ApplicationUser user = authContext.getLoggedInUser();
         
@@ -49,15 +47,12 @@ public class DashboardServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/login.jsp?os_destination=" + request.getRequestURI());
             return;
         }
-        
-        // Get project from URL
         String projectKey = request.getParameter("projectKey");
         if (projectKey == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Project key is required");
             return;
         }
         
-        // Verify project exists and user has access
         ProjectManager projectManager = ComponentAccessor.getProjectManager();
         Project project = projectManager.getProjectByCurrentKey(projectKey);
         
@@ -65,8 +60,7 @@ public class DashboardServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "Project not found");
             return;
         }
-        
-        // Check permissions
+
         if (!ComponentAccessor.getPermissionManager()
                 .hasPermission(com.atlassian.jira.permission.ProjectPermissions.BROWSE_PROJECTS, 
                               project, user)) {
@@ -74,19 +68,15 @@ public class DashboardServlet extends HttpServlet {
             return;
         }
         
-        // Prepare context for template - NO MORE MOCK DATA
         Map<String, Object> context = new HashMap<>();
         context.put("project", project);
         context.put("projectKey", projectKey);
         context.put("projectName", project.getName());
         
-        // Remove all mock data - will be loaded from backend
-        context.put("dashboardData", "{}"); // Empty JSON, will be loaded by JS
+        context.put("dashboardData", "{}"); 
         
-        // Backend API configuration
         context.put("apiBaseUrl", "http://host.docker.internal:5001");
         
-        // Pass project key to JavaScript
         context.put("jsProjectKey", projectKey);
         
         response.setContentType("text/html;charset=utf-8");

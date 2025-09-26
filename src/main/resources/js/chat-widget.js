@@ -1,4 +1,3 @@
-// JURIX AI Chat Widget - Ultra Modern Minimalist Design
 window.JurixChat = (function() {
     'use strict';
     
@@ -15,16 +14,10 @@ window.JurixChat = (function() {
     const API_BASE = AJS.contextPath() + '/rest/jurix-api/1.0';
     
     function init() {
-        // Generate unique conversation ID
         conversationId = 'jira-chat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        
-        // Create chat button
+
         createChatButton();
-        
-        // Create chat window
         createChatWindow();
-        
-        // Check backend connectivity
         checkBackendConnection();
     }
     
@@ -53,7 +46,6 @@ window.JurixChat = (function() {
         const statusDot = document.querySelector('.status-dot');
         const statusText = document.querySelector('.status-text');
         if (statusDot && statusText) {
-            // Always show as connected/online
             statusDot.classList.add('online');
             statusDot.classList.remove('offline');
             statusText.textContent = 'Connected';
@@ -179,8 +171,7 @@ window.JurixChat = (function() {
         
         messageContainer = document.getElementById('chatMessages');
         inputField = document.getElementById('chatInput');
-        
-        // Add enhanced styles
+
         addEnhancedStyles();
     }
     
@@ -757,8 +748,6 @@ window.JurixChat = (function() {
             chatWindow.classList.add('open');
             inputField.focus();
             scrollToBottom();
-            
-            // Check connection status when opening
             checkBackendConnection();
         } else {
             chatWindow.classList.remove('open');
@@ -768,20 +757,11 @@ window.JurixChat = (function() {
     function sendMessage() {
         const message = inputField.value.trim();
         if (!message) return;
-        
-        // Add user message
         addMessage(message, 'user');
-        
-        // Clear input
         inputField.value = '';
-        
-        // Show typing indicator
         showTypingIndicator();
-        
-        // Change send button to stop button
         updateSendButton(true);
         
-        // Use the proper Java REST endpoint
         currentRequest = AJS.$.ajax({
             url: AJS.contextPath() + '/rest/jurix/1.0/chat',
             type: 'POST',
@@ -796,12 +776,10 @@ window.JurixChat = (function() {
                 updateSendButton(false);
                 currentRequest = null;
                 
-                // Add the main response
                 if (response.response) {
                     addMessage(response.response, 'assistant');
                 }
                 
-                // Handle additional data if present
                 if (response.articles && response.articles.length > 0) {
                     addArticlesSummary(response.articles);
                 }
@@ -810,7 +788,6 @@ window.JurixChat = (function() {
                     addQuickActions(response.recommendations);
                 }
                 
-                // Handle predictions if present
                 if (response.predictions && Object.keys(response.predictions).length > 0) {
                     addPredictiveInsights(response.predictions);
                 }
@@ -853,8 +830,6 @@ window.JurixChat = (function() {
         bubbleDiv.innerHTML = `<p>${escapeHtml(text)}</p>`;
         
         messageDiv.appendChild(bubbleDiv);
-        
-        // Insert before quick actions if they exist
         const quickActions = messageContainer.querySelector('.quick-actions');
         if (quickActions) {
             messageContainer.insertBefore(messageDiv, quickActions);
@@ -928,7 +903,6 @@ window.JurixChat = (function() {
     }
     
     function addQuickActions(recommendations) {
-        // Remove existing quick actions
         const existing = messageContainer.querySelector('.quick-actions');
         if (existing) existing.remove();
         
@@ -1039,7 +1013,6 @@ window.JurixChat = (function() {
     }
     
     function openArticle(articleId) {
-        // For now, just show a message. You can implement the actual navigation later
         console.log('Opening article:', articleId);
         AJS.flag({
             type: 'info',
@@ -1049,7 +1022,6 @@ window.JurixChat = (function() {
         });
     }
     
-    // Public API
     return {
         init: init,
         toggleChat: toggleChat,
@@ -1060,8 +1032,6 @@ window.JurixChat = (function() {
         openArticle: openArticle
     };
 })();
-
-// Initialize when DOM is ready
 AJS.$(document).ready(function() {
     JurixChat.init();
 });

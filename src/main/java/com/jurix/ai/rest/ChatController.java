@@ -25,9 +25,6 @@ import com.jurix.ai.config.JurixConfiguration;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
-/**
- * REST endpoint for handling chat interactions with the Python backend
- */
 @Named
 @Path("/chat")
 @Consumes({MediaType.APPLICATION_JSON})
@@ -62,34 +59,24 @@ public class ChatController {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @AnonymousAllowed // Remove this in production and use proper auth
+    @AnonymousAllowed 
     public Response chat(ChatRequest request) {
         try {
-            // Log the incoming request
             log.info("Received chat request: {}", request.getQuery());
-            
-            // Get current user (optional - for context)
             UserProfile currentUser = userManager.getRemoteUser();
             String username = currentUser != null ? currentUser.getUsername() : "anonymous";
-            
-            // Validate request
             if (request.getQuery() == null || request.getQuery().trim().isEmpty()) {
                 return Response.status(Response.Status.BAD_REQUEST)
                     .entity(createErrorResponse("Query cannot be empty"))
                     .build();
             }
             
-            // Call the chat service
             ChatResponse response = chatService.sendChatMessage(
                 request.getQuery(),
                 request.getConversationId(),
                 username
             );
-            
-            // Log successful response
             log.info("Successfully generated response for query");
-            
-            // Return the response
             return Response.ok(response).build();
             
         } catch (Exception e) {
@@ -106,19 +93,11 @@ public class ChatController {
         error.put("response", "I'm sorry, I encountered an error. Please try again.");
         return error;
     }
-    
-    /**
-     * Request object for chat endpoint
-     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ChatRequest {
         private String query;
         private String conversationId;
-        
-        // Default constructor
         public ChatRequest() {}
-        
-        // Getters and setters
         @JsonProperty("query")
         public String getQuery() {
             return query;
@@ -147,10 +126,6 @@ public class ChatController {
                 '}';
         }
     }
-    
-    /**
-     * Response object for chat endpoint
-     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ChatResponse {
         private String response;
@@ -160,8 +135,6 @@ public class ChatController {
         private Map<String, Object> predictions;
         private Map<String, Object> collaborationMetadata;
         private String workflowStatus;
-        
-        // Default constructor
         public ChatResponse() {
             this.articles = new ArrayList<>();
             this.recommendations = new ArrayList<>();
@@ -169,7 +142,6 @@ public class ChatController {
             this.collaborationMetadata = new HashMap<>();
         }
         
-        // Getters and setters with JsonProperty on methods
         @JsonProperty("response")
         public String getResponse() {
             return response;
@@ -240,20 +212,13 @@ public class ChatController {
             this.workflowStatus = workflowStatus;
         }
     }
-    
-    /**
-     * Article object
-     */
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Article {
         private String title;
         private String content;
         private double relevanceScore;
-        
-        // Default constructor
         public Article() {}
-        
-        // Getters and setters with JsonProperty
         @JsonProperty("title")
         public String getTitle() {
             return title;

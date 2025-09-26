@@ -1,41 +1,27 @@
-// article-review.js - Fixed to work with onclick handlers
 (function() {
     'use strict';
     
     const ArticleReview = {
         API_BASE: AJS.contextPath() + '/rest/jurix/1.0/article',
-        notificationCheckInterval: 30000, // Check every 30 seconds
+        notificationCheckInterval: 30000, 
         currentArticle: null,
         currentIssueKey: null,
         
         init: function() {
             console.log('🚀 Initializing JURIX Article Review System');
-            
-            // Add styles
             this.injectStyles();
-            
-            // Initialize notification system
             this.initNotificationSystem();
-            
-            // Check for notifications immediately
             this.checkNotifications();
-            
-            // Set up periodic check
             setInterval(() => this.checkNotifications(), this.notificationCheckInterval);
-            
-            // Listen for issue view events
             if (typeof JIRA !== 'undefined' && JIRA.Events) {
                 JIRA.bind(JIRA.Events.NEW_CONTENT_ADDED, () => {
                     this.checkCurrentIssueArticle();
                 });
             }
-            
-            // Initialize if on issue view
             this.checkCurrentIssueArticle();
         },
         
         initNotificationSystem: function() {
-            // Create notification container
             if (!AJS.$('#jurix-notifications').length) {
                 const notificationContainer = `
                     <div id="jurix-notifications" class="jurix-notifications-container">
@@ -59,8 +45,6 @@
                 `;
                 
                 AJS.$('body').append(notificationContainer);
-                
-                // Bind events
                 AJS.$('.jurix-notification-bell').on('click', (e) => {
                     e.stopPropagation();
                     this.toggleNotificationDropdown();
@@ -77,7 +61,6 @@
         },
         
         checkNotifications: function() {
-            // Simplified for now - you can implement real notification checking later
             console.log('Checking notifications...');
         },
         
@@ -102,8 +85,6 @@
         checkCurrentIssueArticle: function() {
             const issueKey = this.getCurrentIssueKey();
             if (!issueKey) return;
-            
-            // Check if article exists for this issue
             AJS.$.ajax({
                 url: `${this.API_BASE}/${issueKey}`,
                 type: 'GET',
@@ -121,7 +102,6 @@
         },
         
         getCurrentIssueKey: function() {
-            // Try multiple methods to get issue key
             if (typeof JIRA !== 'undefined' && JIRA.Issue && JIRA.Issue.getIssueKey) {
                 return JIRA.Issue.getIssueKey();
             }
@@ -136,7 +116,6 @@
         },
         
         addArticleIndicator: function(issueKey) {
-            // Add indicator to issue header
             if (!AJS.$('.jurix-article-indicator').length) {
                 const indicator = `
                     <button class="jurix-article-indicator aui-button" 
@@ -160,11 +139,7 @@
         openArticleReview: function(issueKey) {
             console.log('🔍 Opening article review for:', issueKey);
             this.currentIssueKey = issueKey;
-            
-            // Show loading
             this.showArticleModal('loading');
-            
-            // Fetch article
             AJS.$.ajax({
                 url: `${this.API_BASE}/${issueKey}`,
                 type: 'GET',
@@ -199,7 +174,6 @@
         },
         
         showArticleModal: function(state, data) {
-            // Remove existing modal
             AJS.$('#jurix-article-modal').remove();
             
             let modalContent = '';
@@ -235,20 +209,14 @@
             `;
             
             AJS.$('body').append(modal);
-            
-            // Bind events
             AJS.$('.close-modal, .jurix-modal-overlay').on('click', (e) => {
                 if (e.target === e.currentTarget || AJS.$(e.target).hasClass('close-modal')) {
                     this.closeModal();
                 }
             });
-            
-            // Bind feedback events if article is shown
             if (state === 'article') {
                 this.bindFeedbackEvents();
             }
-            
-            // Show modal with animation
             setTimeout(() => {
                 AJS.$('#jurix-article-modal').addClass('show');
             }, 10);
@@ -290,8 +258,6 @@
             const createdAt = data.createdAt || Date.now();
             
             const isApproved = approvalStatus === 'approved';
-            
-            // Convert markdown to HTML
             const htmlContent = this.markdownToHtml(content);
             
             return `
@@ -388,11 +354,8 @@
         
         submitFeedback: function(action, feedback) {
             console.log('📤 Submitting feedback:', { action, feedback });
-            
-            // Show loading state
             AJS.$('.feedback-actions').html('<div class="loading-spinner"><div class="spinner"></div></div>');
             
-            // Ensure we have current article data
             if (!this.currentArticle || !this.currentArticle.article) {
                 console.error('❌ No current article data available');
                 AJS.flag({
@@ -430,15 +393,11 @@
                     });
                     
                     if (action === 'refine' && response.article) {
-                        // Update current article with refined version
                         this.currentArticle = response;
-                        
-                        // Refresh the view after a short delay
                         setTimeout(() => {
                             this.showArticleModal('article', this.currentArticle);
                         }, 1500);
                     } else if (action === 'approve' || action === 'reject') {
-                        // Close modal after approval/rejection
                         setTimeout(() => {
                             this.closeModal();
                         }, 1500);
@@ -454,18 +413,14 @@
                     });
                     
                     let errorMessage = 'Failed to submit feedback. Please try again.';
-                    
-                    // Try to parse error response
+
                     try {
                         const errorResponse = JSON.parse(xhr.responseText);
                         if (errorResponse.error) {
                             errorMessage = errorResponse.error;
                         }
                     } catch (e) {
-                        // Use default message
                     }
-                    
-                    // Check specific error conditions
                     if (xhr.status === 0) {
                         errorMessage = 'Cannot connect to server. Please check if the backend is running.';
                     } else if (xhr.status === 404) {
@@ -483,13 +438,10 @@
                         close: 'manual'
                     });
                     
-                    // Restore the feedback section
                     this.showArticleModal('article', this.currentArticle);
                 }
             });
         },
-
-        // Add a test function to verify the feedback endpoint
         testFeedbackEndpoint: function() {
             console.log('🧪 Testing feedback endpoint...');
             
@@ -531,33 +483,24 @@
         },
         
         markdownToHtml: function(markdown) {
-            // Basic markdown to HTML conversion
             let html = markdown
-                // Headers
                 .replace(/^### (.*$)/gim, '<h3>$1</h3>')
                 .replace(/^## (.*$)/gim, '<h2>$1</h2>')
                 .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-                // Bold
                 .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                // Italic
                 .replace(/\*(.+?)\*/g, '<em>$1</em>')
-                // Code blocks
                 .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
-                // Inline code
                 .replace(/`(.+?)`/g, '<code>$1</code>')
-                // Lists
                 .replace(/^\* (.+)$/gim, '<li>$1</li>')
                 .replace(/^- (.+)$/gim, '<li>$1</li>')
                 .replace(/^\d+\. (.+)$/gim, '<li>$1</li>')
-                // Paragraphs
                 .replace(/\n\n/g, '</p><p>')
-                // Line breaks
                 .replace(/\n/g, '<br>');
             
-            // Wrap in paragraph tags
+
             html = '<p>' + html + '</p>';
             
-            // Clean up list items
+
             html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
             
             return html;
@@ -961,10 +904,8 @@
         }
     };
     
-    // IMPORTANT: Make ArticleReview globally accessible
     window.JurixArticleReview = ArticleReview;
-    
-    // Initialize on DOM ready
+
     AJS.toInit(() => {
         ArticleReview.init();
     });

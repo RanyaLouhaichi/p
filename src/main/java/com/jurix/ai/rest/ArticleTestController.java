@@ -70,7 +70,6 @@ public class ArticleTestController {
         log.info("🚀 ========================================");
         
         try {
-            // Get the issue
             IssueManager issueManager = ComponentAccessor.getIssueManager();
             Issue issue = issueManager.getIssueObject(issueKey);
             
@@ -87,18 +86,15 @@ public class ArticleTestController {
             log.info("   Status: {}", issue.getStatus().getName());
             log.info("   Type: {}", issue.getIssueType().getName());
             
-            // Check if already generating
             String cacheKey = "article_generation:" + issue.getKey();
             if (articleService.isArticleGenerationInProgress(cacheKey)) {
                 log.warn("⚠️ Article generation already in progress");
                 return Response.ok(createInfoResponse("Article generation already in progress")).build();
             }
             
-            // Mark as in progress
             log.info("🔄 Marking generation as in progress...");
             articleService.markGenerationInProgress(cacheKey);
             
-            // Prepare issue data
             Map<String, Object> issueData = new HashMap<>();
             issueData.put("key", issue.getKey());
             issueData.put("summary", issue.getSummary());
@@ -113,7 +109,6 @@ public class ArticleTestController {
             
             log.info("📦 Prepared issue data: {}", gson.toJson(issueData));
             
-            // Call article generation API
             String articleGenUrl = "http://host.docker.internal:5001/api/article/generate/" + issue.getKey();
             log.info("🌐 Calling URL: {}", articleGenUrl);
             
@@ -130,7 +125,6 @@ public class ArticleTestController {
             
             log.info("📤 Sending request to Python backend...");
             
-            // Synchronous call for testing
             try (okhttp3.Response response = httpClient.newCall(request).execute()) {
                 log.info("📨 Response received: {}", response.code());
                 String responseBody = response.body().string();
@@ -139,14 +133,11 @@ public class ArticleTestController {
                 if (response.isSuccessful()) {
                     log.info("✅ Article generated successfully!");
                     
-                    // Parse response
                     Map<String, Object> result = gson.fromJson(responseBody, Map.class);
                     
-                    // Store article data
                     articleService.storeArticleData(issue.getKey(), result);
                     log.info("💾 Article data stored");
                     
-                    // Create notification
                     articleService.createNotification(issue.getKey(), issue.getSummary());
                     log.info("🔔 Notification created");
                     

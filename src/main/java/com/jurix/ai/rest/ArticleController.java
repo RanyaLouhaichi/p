@@ -48,8 +48,6 @@ public class ArticleController {
     public Response getArticle(@PathParam("issueKey") String issueKey) {
         try {
             log.info("📖 Getting article for issue: {}", issueKey);
-            
-            // First check local storage
             ArticleGenerationService.ArticleData articleData = articleService.getArticleData(issueKey);
             
             if (articleData != null && articleData.article != null) {
@@ -63,8 +61,6 @@ public class ArticleController {
                 
                 return Response.ok(response).build();
             }
-            
-            // If not found locally, check Python backend
             log.info("🔍 Article not in local storage, checking Python backend...");
             
             String backendUrl = "http://host.docker.internal:5001/api/article/status/" + issueKey;
@@ -79,7 +75,6 @@ public class ArticleController {
                     Map<String, Object> backendData = gson.fromJson(responseBody, Map.class);
                     
                     if ("success".equals(backendData.get("status"))) {
-                        // Store in local cache
                         Map<String, Object> article = (Map<String, Object>) backendData.get("article");
                         if (article != null) {
                             articleService.storeArticleData(issueKey, backendData);
@@ -90,20 +85,15 @@ public class ArticleController {
                     }
                 }
             }
-            
-            // Try to get issue details and generate if needed
             IssueManager issueManager = ComponentAccessor.getIssueManager();
             Issue issue = issueManager.getIssueObject(issueKey);
             
             if (issue != null) {
-                // Check if issue is resolved
                 String status = issue.getStatus().getName();
                 if (status.equalsIgnoreCase("Done") || status.equalsIgnoreCase("Resolved") || 
                     status.equalsIgnoreCase("Closed")) {
                     
                     log.info("🔄 Issue is resolved but no article found. Generating...");
-                    
-                    // Trigger generation
                     Map<String, Object> issueData = new HashMap<>();
                     issueData.put("key", issue.getKey());
                     issueData.put("summary", issue.getSummary());
@@ -126,8 +116,6 @@ public class ArticleController {
                         if (genResponse.isSuccessful()) {
                             String genResponseBody = genResponse.body().string();
                             Map<String, Object> genResult = gson.fromJson(genResponseBody, Map.class);
-                            
-                            // Store locally
                             articleService.storeArticleData(issueKey, genResult);
                             
                             return Response.ok(genResult).build();
@@ -155,14 +143,10 @@ public class ArticleController {
     public Response generateArticle(@PathParam("issueKey") String issueKey) {
         try {
             log.info("🚀 Article generation requested for: {}", issueKey);
-            
-            // Check if already generating
             String cacheKey = "article_generation:" + issueKey;
             if (articleService.isArticleGenerationInProgress(cacheKey)) {
                 return Response.ok(createInfoResponse("Article generation already in progress")).build();
             }
-            
-            // Get issue details
             IssueManager issueManager = ComponentAccessor.getIssueManager();
             Issue issue = issueManager.getIssueObject(issueKey);
             
@@ -171,11 +155,7 @@ public class ArticleController {
                     .entity(createErrorResponse("Issue not found"))
                     .build();
             }
-            
-            // Mark as generating
             articleService.markGenerationInProgress(cacheKey);
-            
-            // Prepare issue data
             Map<String, Object> issueData = new HashMap<>();
             issueData.put("key", issue.getKey());
             issueData.put("summary", issue.getSummary());
@@ -183,8 +163,6 @@ public class ArticleController {
             issueData.put("status", issue.getStatus().getName());
             issueData.put("type", issue.getIssueType().getName());
             issueData.put("projectKey", issue.getProjectObject().getKey());
-            
-            // Call Python backend
             String backendUrl = "http://host.docker.internal:5001/api/article/generate/" + issueKey;
             
             RequestBody body = RequestBody.create(
@@ -196,15 +174,11 @@ public class ArticleController {
                 .url(backendUrl)
                 .post(body)
                 .build();
-            
-            // Execute synchronously to return result
             try (okhttp3.Response response = httpClient.newCall(request).execute()) {
                 String responseBody = response.body().string();
                 
                 if (response.isSuccessful()) {
                     Map<String, Object> result = gson.fromJson(responseBody, Map.class);
-                    
-                    // Store the article data
                     articleService.storeArticleData(issueKey, result);
                     articleService.createNotification(issueKey, issue.getSummary());
                     
@@ -247,8 +221,6 @@ public class ArticleController {
                     .entity(createErrorResponse("Invalid feedback data"))
                     .build();
             }
-            
-            // Check if Python backend is available
             String healthUrl = "http://host.docker.internal:5001/health";
             try {
                 Request healthCheck = new Request.Builder()
@@ -270,8 +242,6 @@ public class ArticleController {
                     .entity(createErrorResponse("Cannot connect to backend service"))
                     .build();
             }
-            
-            // Forward to Python backend
             String backendUrl = "http://host.docker.internal:5001/api/article/feedback/" + issueKey;
             log.info("📤 Forwarding to Python backend: {}", backendUrl);
             
@@ -292,8 +262,6 @@ public class ArticleController {
                 
                 if (response.isSuccessful()) {
                     Map<String, Object> result = gson.fromJson(responseBody, Map.class);
-                    
-                    // Update local storage if article was refined
                     if (result.get("article") != null) {
                         log.info("💾 Updating local article storage");
                         articleService.storeArticleData(issueKey, result);
@@ -304,7 +272,6 @@ public class ArticleController {
                 } else {
                     log.error("❌ Python backend returned error: {} - {}", response.code(), responseBody);
                     
-                    // Try to parse error message
                     String errorMessage = "Failed to process feedback";
                     try {
                         Map<String, Object> errorResponse = gson.fromJson(responseBody, Map.class);
@@ -312,7 +279,6 @@ public class ArticleController {
                             errorMessage = (String) errorResponse.get("error");
                         }
                     } catch (Exception e) {
-                        // Use default error message
                     }
                     
                     return Response.status(response.code())
@@ -329,8 +295,6 @@ public class ArticleController {
                 .build();
         }
     }
-
-    // Also add a test endpoint to verify feedback works
     @POST
     @Path("/test-feedback")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -354,7 +318,6 @@ public class ArticleController {
     @AnonymousAllowed
     public Response testArticleGeneration(@PathParam("issueKey") String issueKey) {
         try {
-            // Create test article data
             Map<String, Object> testArticle = new HashMap<>();
             testArticle.put("title", "Resolution Guide: " + issueKey);
             testArticle.put("content", "# Issue Resolution\n\nThis issue was successfully resolved.\n\n## Problem\nThe problem was identified as...\n\n## Solution\nThe following steps were taken:\n1. Step 1\n2. Step 2\n3. Step 3\n\n## Prevention\nTo prevent this in the future...");
@@ -366,7 +329,6 @@ public class ArticleController {
             articleData.put("article", testArticle);
             articleData.put("status", "success");
             
-            // Store test article
             articleService.storeArticleData(issueKey, articleData);
             
             return Response.ok(createSuccessResponse("Test article created")).build();

@@ -18,8 +18,6 @@ public class ArticleGenerationService {
     
     private static final Logger log = LoggerFactory.getLogger(ArticleGenerationService.class);
     private final Gson gson = new Gson();
-    
-    // In-memory storage
     private final Map<String, ArticleData> articleStorage = new ConcurrentHashMap<>();
     private final Set<String> generationInProgress = ConcurrentHashMap.newKeySet();
     
@@ -44,7 +42,6 @@ public class ArticleGenerationService {
     
     public void markGenerationInProgress(String cacheKey) {
         generationInProgress.add(cacheKey);
-        // Auto-remove after 10 minutes
         new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
@@ -82,7 +79,6 @@ public class ArticleGenerationService {
     }
     
     public void createNotification(String issueKey, String issueSummary) {
-        // Simple notification - just log for now
         log.info("Article ready for issue: {} - {}", issueKey, issueSummary);
     }
     
@@ -102,7 +98,6 @@ public class ArticleGenerationService {
         return null;
     }
     
-    // Simple data class
     public static class ArticleData {
         public String issueKey;
         public Map<String, Object> article;

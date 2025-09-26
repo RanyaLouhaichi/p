@@ -31,25 +31,19 @@ public class UpdatesController {
     @GET
     @Path("/{projectKey}")
     @Produces(MediaType.APPLICATION_JSON)
-    @AnonymousAllowed // Add proper security in production
+    @AnonymousAllowed 
     public Response getUpdates(
             @PathParam("projectKey") String projectKey,
             @QueryParam("since") Long sinceTimestamp) {
         
         try {
-            // Default to last 5 minutes if not specified
             if (sinceTimestamp == null) {
                 sinceTimestamp = System.currentTimeMillis() - (5 * 60 * 1000);
             }
-            
-            // Get updates from service
             Map<String, Object> updates = updateService.getUpdatesSince(projectKey, sinceTimestamp);
             
-            // If there are updates, fetch fresh dashboard data
             if ((Boolean) updates.get("hasUpdates")) {
                 log.info("Updates detected for project {} - fetching fresh dashboard data", projectKey);
-                
-                // Get fresh dashboard data from Python backend
                 JurixApiClient.DashboardResponse dashboardData = apiClient.getDashboard(projectKey);
                 updates.put("dashboardData", dashboardData);
             }
@@ -70,7 +64,6 @@ public class UpdatesController {
     @AnonymousAllowed
     public Response getUpdateSummary(@PathParam("projectKey") String projectKey) {
         try {
-            // Get project update info
             var updateInfo = updateService.getProjectUpdateInfo(projectKey);
             
             Map<String, Object> summary = new HashMap<>();
@@ -95,7 +88,6 @@ public class UpdatesController {
     @AnonymousAllowed
     public Response testUpdate(@PathParam("projectKey") String projectKey) {
         try {
-            // Create a test update
             DashboardUpdateService.UpdateEvent testEvent = new DashboardUpdateService.UpdateEvent(
                 "TEST-123",
                 "In Progress",

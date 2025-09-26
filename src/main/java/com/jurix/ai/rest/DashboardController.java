@@ -46,7 +46,6 @@ public class DashboardController {
         try {
             log.info("Dashboard data requested for project: {}", projectKey);
             
-            // Call Python backend
             String pythonUrl = "http://host.docker.internal:5001/api/dashboard/" + projectKey;
             URL url = new URL(pythonUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -59,8 +58,7 @@ public class DashboardController {
             
             int responseCode = conn.getResponseCode();
             log.info("Python backend response code: {}", responseCode);
-            
-            // Read response
+
             StringBuilder response = new StringBuilder();
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(
@@ -73,8 +71,6 @@ public class DashboardController {
             }
             
             conn.disconnect();
-            
-            // Return the Python backend response
             return Response.ok(response.toString())
                 .header("Content-Type", "application/json")
                 .build();
@@ -82,7 +78,6 @@ public class DashboardController {
         } catch (Exception e) {
             log.error("Error getting dashboard data from Python backend", e);
             
-            // Return error response
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("status", "error");
             errorResponse.put("error", e.getMessage());
@@ -103,7 +98,6 @@ public class DashboardController {
         try {
             log.info("Forecast requested for project: {} with body: {}", projectKey, requestBody);
             
-            // Forward to Python backend
             String pythonUrl = "http://host.docker.internal:5001/api/forecast/" + projectKey;
             URL url = new URL(pythonUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -115,7 +109,6 @@ public class DashboardController {
             conn.setConnectTimeout(30000);
             conn.setReadTimeout(120000);
             
-            // Send request body
             if (requestBody != null && !requestBody.isEmpty()) {
                 try (OutputStream os = conn.getOutputStream()) {
                     byte[] input = requestBody.getBytes("utf-8");
@@ -125,8 +118,7 @@ public class DashboardController {
             
             int responseCode = conn.getResponseCode();
             log.info("Python backend response code: {}", responseCode);
-            
-            // Read response
+      
             StringBuilder response = new StringBuilder();
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(
@@ -142,7 +134,6 @@ public class DashboardController {
             
             conn.disconnect();
             
-            // Return the response
             return Response.ok(response.toString())
                 .header("Content-Type", "application/json")
                 .build();
@@ -150,7 +141,6 @@ public class DashboardController {
         } catch (Exception e) {
             log.error("Error generating forecast", e);
             
-            // Return proper JSON error response
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("status", "error");
             errorResponse.put("error", e.getMessage());

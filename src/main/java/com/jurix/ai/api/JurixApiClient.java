@@ -1,3 +1,6 @@
+/*-
+ * This api is a mock service for testing the front interactivity ! */
+
 package com.jurix.ai.api;
 
 import com.google.gson.Gson;
@@ -14,8 +17,6 @@ public class JurixApiClient {
     
     private static final Logger log = LoggerFactory.getLogger(JurixApiClient.class);
     private final Gson gson;
-    
-    // Singleton instance
     private static JurixApiClient instance;
     
     private JurixApiClient() {
@@ -30,8 +31,6 @@ public class JurixApiClient {
         }
         return instance;
     }
-    
-    // Mock methods that return data without external API calls
     
     public ChatResponse askOrchestrator(String query, String conversationId) {
         log.info("Mock chat request: {}", query);
@@ -102,51 +101,9 @@ public class JurixApiClient {
     
     public void notifyTicketResolved(String ticketId, Map<String, Object> ticketData) {
         log.info("Mock webhook notification for resolved ticket: {}", ticketId);
-        // In a real implementation, this would send to an external service
+       
     }
     
-    private Map<String, Object> createMockMetrics() {
-        Map<String, Object> metrics = new HashMap<>();
-        metrics.put("throughput", 45);
-        metrics.put("cycle_time", 3.2);
-        metrics.put("bottlenecks", Map.of(
-            "To Do", 15,
-            "In Progress", 8,
-            "In Review", 3,
-            "Done", 45
-        ));
-        return metrics;
-    }
-    
-    private Map<String, Object> createMockPredictions() {
-        Map<String, Object> predictions = new HashMap<>();
-        predictions.put("sprint_completion", Map.of(
-            "probability", 0.85,
-            "risk_level", "low",
-            "reasoning", "Based on current velocity and remaining work",
-            "confidence_interval", Arrays.asList(0.80, 0.90)
-        ));
-        predictions.put("velocity_forecast", Map.of(
-            "next_week_estimate", 48.5,
-            "trend", "increasing",
-            "insights", "Team velocity showing consistent improvement"
-        ));
-        predictions.put("risks", Arrays.asList(
-            Map.of(
-                "description", "3 items blocked for more than 2 days",
-                "severity", "medium",
-                "mitigation", "Schedule blocker resolution meeting"
-            ),
-            Map.of(
-                "description", "Upcoming team member vacation",
-                "severity", "low",
-                "mitigation", "Plan for reduced capacity in next sprint"
-            )
-        ));
-        return predictions;
-    }
-    
-    // Response DTOs
     public static class ChatResponse {
         public String query;
         public String response;

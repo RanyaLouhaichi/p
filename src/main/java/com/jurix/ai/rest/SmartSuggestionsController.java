@@ -46,8 +46,7 @@ public class SmartSuggestionsController {
         try {
             String issueKey = (String) requestData.get("issue_key");
             log.info("Getting suggestions for issue: {}", issueKey);
-            
-            // Get issue details from Jira
+
             IssueManager issueManager = ComponentAccessor.getIssueManager();
             MutableIssue issue = issueManager.getIssueObject(issueKey);
             
@@ -57,38 +56,32 @@ public class SmartSuggestionsController {
                     .entity(createErrorResponse("Issue not found"))
                     .build();
             }
-            
-            // Extract issue details
+  
             Map<String, Object> issueData = new HashMap<>();
             issueData.put("issue_key", issueKey);
             issueData.put("issue_summary", issue.getSummary() != null ? issue.getSummary() : "");
             issueData.put("issue_description", issue.getDescription() != null ? issue.getDescription() : "");
             issueData.put("issue_type", issue.getIssueType() != null ? issue.getIssueType().getName() : "");
             issueData.put("issue_status", issue.getStatus() != null ? issue.getStatus().getName() : "");
-            
-            // Get labels
+
             List<String> labels = issue.getLabels().stream()
                 .map(Label::getLabel)
                 .collect(Collectors.toList());
             issueData.put("labels", labels);
-            
-            // Get components
+
             List<String> components = issue.getComponents().stream()
                 .map(ProjectComponent::getName)
                 .collect(Collectors.toList());
             issueData.put("components", components);
-            
-            // Get priority
+
             if (issue.getPriority() != null) {
                 issueData.put("priority", issue.getPriority().getName());
             }
-            
-            // Get assignee
+
             if (issue.getAssignee() != null) {
                 issueData.put("assignee", issue.getAssignee().getDisplayName());
             }
-            
-            // Get project key
+
             issueData.put("project_key", issue.getProjectObject().getKey());
             
             log.info("Issue data extracted: summary='{}', type='{}', status='{}', labels={}, components={}", 
@@ -98,8 +91,7 @@ public class SmartSuggestionsController {
                 labels,
                 components
             );
-            
-            // Call Python backend with complete issue data
+
             RequestBody body = RequestBody.create(
                 okhttp3.MediaType.parse("application/json"),
                 gson.toJson(issueData)

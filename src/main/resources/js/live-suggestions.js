@@ -1,4 +1,3 @@
-// JURIX Live Smart Suggestions - Ultimate Edition with Advanced Features
 window.JurixLiveSuggestions = (function() {
     'use strict';
     
@@ -11,7 +10,7 @@ window.JurixLiveSuggestions = (function() {
     var selectedIndex = -1;
     var animationFrame = null;
     
-    // Enhanced mock suggestions with more data
+    // mock suggestions for testing
     var mockSuggestions = [
         {
             id: 1,
@@ -99,17 +98,13 @@ window.JurixLiveSuggestions = (function() {
     }
     
     function createPanel() {
-        // Remove existing panel
         var existing = document.getElementById('jurix-live-suggestions-panel');
         if (existing) existing.remove();
-        
-        // Create enhanced panel HTML
         panel = document.createElement('div');
         panel.id = 'jurix-live-suggestions-panel';
         panel.className = 'jurix-suggestions-panel';
         panel.innerHTML = [
             '<div class="jurix-suggestions-container">',
-                // Enhanced header with animation
                 '<div class="jurix-suggestions-header">',
                     '<div class="jurix-pulse-bg"></div>',
                     '<div class="jurix-header-content">',
@@ -143,7 +138,6 @@ window.JurixLiveSuggestions = (function() {
                     '</div>',
                 '</div>',
                 
-                // Search insights bar
                 '<div class="jurix-insights-bar">',
                     '<div class="jurix-insight-item">',
                         '<span class="jurix-insight-label">Context:</span>',
@@ -156,8 +150,7 @@ window.JurixLiveSuggestions = (function() {
                         '</div>',
                     '</div>',
                 '</div>',
-                
-                // Enhanced content area
+
                 '<div class="jurix-suggestions-content">',
                     '<div class="jurix-suggestions-empty">',
                         '<div class="jurix-empty-icon">',
@@ -169,8 +162,7 @@ window.JurixLiveSuggestions = (function() {
                         '<p class="jurix-empty-hint">Try keywords like "deployment", "kubernetes", or "troubleshooting"</p>',
                     '</div>',
                 '</div>',
-                
-                // Enhanced footer with better layout
+
                 '<div class="jurix-suggestions-footer">',
                     '<div class="jurix-footer-left">',
                         '<div class="suggestions-count">',
@@ -190,7 +182,7 @@ window.JurixLiveSuggestions = (function() {
                 '</div>',
             '</div>',
             
-            // Minimized state
+
             '<div class="jurix-minimized-badge" onclick="JurixLiveSuggestions.restore()">',
                 '<span class="jurix-badge-icon">💡</span>',
                 '<span class="jurix-badge-count">0</span>',
@@ -906,18 +898,15 @@ window.JurixLiveSuggestions = (function() {
     
     function attachListeners() {
         console.log('Attaching enhanced listeners...');
-        
-        // Listen to all input events
+
         document.addEventListener('input', handleInput, true);
-        
-        // Check for TinyMCE
+
         var checkInterval = setInterval(function() {
             var iframe = document.querySelector('iframe[id*="description"]');
             if (iframe) {
                 try {
                     var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
                     if (iframeDoc && iframeDoc.body) {
-                        // Monitor TinyMCE content
                         var observer = new MutationObserver(function() {
                             var text = iframeDoc.body.textContent || '';
                             handleTextChange(text);
@@ -937,8 +926,6 @@ window.JurixLiveSuggestions = (function() {
                 }
             }
         }, 1000);
-        
-        // Poll for changes
         setInterval(function() {
             var textarea = document.querySelector('textarea[name="description"]');
             if (textarea && textarea.value) {
@@ -963,7 +950,6 @@ window.JurixLiveSuggestions = (function() {
         currentQuery = text;
         clearTimeout(debounceTimer);
         
-        // Show typing indicator immediately
         if (text.length > 2) {
             showPanel();
             showTypingIndicator();
@@ -1022,17 +1008,11 @@ window.JurixLiveSuggestions = (function() {
         var startTime = Date.now();
         showPanel();
         showLoadingState();
-        
-        // Simulate processing time
         setTimeout(function() {
             var keywords = text.toLowerCase().split(/\W+/).filter(function(w) { return w.length > 2; });
-            
-            // Enhanced filtering with relevance scoring
             var scored = mockSuggestions.map(function(s) {
                 var score = 0;
                 var matchedKeywords = [];
-                
-                // Check keywords in title and preview
                 keywords.forEach(function(keyword) {
                     var titleMatch = s.title.toLowerCase().indexOf(keyword) >= 0;
                     var previewMatch = s.preview.toLowerCase().indexOf(keyword) >= 0;
@@ -1051,7 +1031,6 @@ window.JurixLiveSuggestions = (function() {
                     }
                 });
                 
-                // Boost for trending articles
                 if (s.trending) score += 0.5;
                 
                 return {
@@ -1061,8 +1040,6 @@ window.JurixLiveSuggestions = (function() {
                     matchedKeywords: matchedKeywords
                 };
             });
-            
-            // Filter and sort
             var filtered = scored
                 .filter(function(s) { return s.score > 0; })
                 .sort(function(a, b) { return b.score - a.score; })
@@ -1071,11 +1048,9 @@ window.JurixLiveSuggestions = (function() {
             var queryTime = Date.now() - startTime;
             displaySuggestions(filtered, queryTime);
             hideTypingIndicator();
-            
-            // Update confidence
             updateConfidence(filtered);
             
-        }, 600 + Math.random() * 400); // Simulate variable processing time
+        }, 600 + Math.random() * 400); 
     }
     
     function showLoadingState() {
@@ -1101,8 +1076,6 @@ window.JurixLiveSuggestions = (function() {
         var badgeCount = panel.querySelector('.jurix-badge-count');
         
         if (!content) return;
-        
-        // Update stats
         if (countEl) countEl.textContent = suggestions.length;
         if (timeEl) timeEl.textContent = queryTime + 'ms';
         if (badgeCount) badgeCount.textContent = suggestions.length;
@@ -1125,8 +1098,6 @@ window.JurixLiveSuggestions = (function() {
         var html = suggestions.map(function(result, index) {
             var s = result.item;
             var relevanceLevel = Math.ceil(result.relevance * 5);
-            
-            // Highlight keywords
             var highlightedTitle = s.title;
             var highlightedPreview = s.preview;
             result.matchedKeywords.forEach(function(keyword) {
@@ -1187,8 +1158,6 @@ window.JurixLiveSuggestions = (function() {
         }).join('');
         
         content.innerHTML = html;
-        
-        // Add click handlers
         content.querySelectorAll('.jurix-suggestion-item').forEach(function(item) {
             item.addEventListener('click', handleSuggestionClick);
             item.addEventListener('mouseenter', function() {
@@ -1218,7 +1187,7 @@ window.JurixLiveSuggestions = (function() {
         
         console.log('Selected article:', suggestion.title);
         
-        // Insert reference into field
+
         var textarea = document.querySelector('textarea[name="description"]');
         var iframe = document.querySelector('iframe[id*="description"]');
         
@@ -1226,7 +1195,7 @@ window.JurixLiveSuggestions = (function() {
             var reference = '\n\n📚 Reference: ' + suggestion.title + '\n🔗 ' + suggestion.category + ' • ' + suggestion.readTime + ' read';
             textarea.value += reference;
             
-            // Trigger change event
+
             var event = new Event('change', { bubbles: true });
             textarea.dispatchEvent(event);
         } else if (iframe) {
@@ -1240,7 +1209,7 @@ window.JurixLiveSuggestions = (function() {
             }
         }
         
-        // Animate selection
+  
         item.style.background = '#E3FCEF';
         item.style.borderColor = '#00875A';
         setTimeout(function() {
@@ -1286,9 +1255,7 @@ window.JurixLiveSuggestions = (function() {
     }
     
     function startAnimations() {
-        // Continuous glow animation for icon
         animationFrame = requestAnimationFrame(function animate() {
-            // Add any continuous animations here
             animationFrame = requestAnimationFrame(animate);
         });
     }
@@ -1325,8 +1292,6 @@ window.JurixLiveSuggestions = (function() {
         console.log('Settings clicked - implement settings panel');
         alert('Settings panel coming soon! 🚀');
     }
-    
-    // Public API
     return {
         init: init,
         show: showPanel,
@@ -1339,14 +1304,11 @@ window.JurixLiveSuggestions = (function() {
         }
     };
 })();
-
-// Initialize when document is ready
 if (typeof AJS !== 'undefined') {
     AJS.$(document).ready(function() {
         JurixLiveSuggestions.init();
     });
 } else {
-    // Fallback for testing
     document.addEventListener('DOMContentLoaded', function() {
         JurixLiveSuggestions.init();
     });

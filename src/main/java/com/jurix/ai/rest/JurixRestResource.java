@@ -30,7 +30,6 @@ public class JurixRestResource {
     private static final Logger log = LoggerFactory.getLogger(JurixRestResource.class);
     private final Gson gson = new Gson();
     
-    // Backend API URL - configure this based on your setup
     private static final String BACKEND_API_URL = "http://host.docker.internal:5001";
     
     @GET
@@ -40,8 +39,6 @@ public class JurixRestResource {
         status.put("status", "healthy");
         status.put("version", "1.0.0");
         status.put("timestamp", System.currentTimeMillis());
-        
-        // Check backend connectivity
         try {
             URL url = new URL(BACKEND_API_URL + "/health");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -79,16 +76,12 @@ public class JurixRestResource {
         log.info("Chat request received - Query: {}, ConversationId: {}", query, conversationId);
         
         try {
-            // Call backend API
             Map<String, Object> backendResponse = callBackendAPI("/api/chat", "POST", requestMap);
             
-            // Return the backend response
             return Response.ok(backendResponse).build();
             
         } catch (Exception e) {
             log.error("Failed to call backend API", e);
-            
-            // Fallback response
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("query", query);
             errorResponse.put("response", "Sorry, I couldn't connect to the AI service. Please try again later.");
@@ -112,10 +105,7 @@ public class JurixRestResource {
         log.info("Dashboard refresh request for project: {}", projectKey);
         
         try {
-            // Call backend API
             Map<String, Object> backendResponse = callBackendAPI("/api/dashboard/" + projectKey, "GET", null);
-            
-            // Transform response for frontend
             Map<String, Object> dashboard = new HashMap<>();
             dashboard.put("projectId", projectKey);
             dashboard.put("metrics", backendResponse.get("metrics"));
@@ -126,8 +116,6 @@ public class JurixRestResource {
             
         } catch (Exception e) {
             log.error("Failed to call backend API for dashboard", e);
-            
-            // Return mock data as fallback
             return Response.ok(createMockDashboard(projectKey)).build();
         }
     }
@@ -135,16 +123,14 @@ public class JurixRestResource {
     @POST
     @Path("/trigger-article/{issueKey}")
     public Response triggerArticleGeneration(@PathParam("issueKey") String issueKey) {
-        // FORCE LOG TO CONSOLE AND FILE
         System.out.println("ARTICLE TRIGGER: " + issueKey);
-        log.error("ARTICLE TRIGGER CALLED FOR: " + issueKey); // ERROR level always shows
+        log.error("ARTICLE TRIGGER CALLED FOR: " + issueKey); 
         
         Map<String, Object> response = new HashMap<>();
         response.put("issueKey", issueKey);
         response.put("timestamp", System.currentTimeMillis());
         
         try {
-            // Get issue details
             IssueManager issueManager = ComponentAccessor.getIssueManager();
             MutableIssue issue = issueManager.getIssueObject(issueKey);
             
@@ -153,8 +139,6 @@ public class JurixRestResource {
                 response.put("message", "Issue not found");
                 return Response.status(404).entity(response).build();
             }
-            
-            // Prepare data for Python backend
             Map<String, Object> issueData = new HashMap<>();
             issueData.put("key", issue.getKey());
             issueData.put("summary", issue.getSummary());
@@ -162,8 +146,6 @@ public class JurixRestResource {
             issueData.put("status", issue.getStatus().getName());
             issueData.put("type", issue.getIssueType().getName());
             issueData.put("projectKey", issue.getProjectObject().getKey());
-            
-            // Call Python backend DIRECTLY
             String pythonUrl = "http://host.docker.internal:5001/api/article/generate/" + issueKey;
             
             URL url = new URL(pythonUrl);
@@ -173,18 +155,13 @@ public class JurixRestResource {
             conn.setDoOutput(true);
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(30000);
-            
-            // Send data
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = gson.toJson(issueData).getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
-            
-            // Get response
             int responseCode = conn.getResponseCode();
-            log.error("PYTHON RESPONSE CODE: " + responseCode); // Force log
-            
-            // Read response
+            log.error("PYTHON RESPONSE CODE: " + responseCode); 
+ 
             StringBuilder responseBody = new StringBuilder();
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(
@@ -202,7 +179,7 @@ public class JurixRestResource {
             
             conn.disconnect();
             
-            log.error("ARTICLE GENERATION COMPLETE: " + response); // Force log
+            log.error("ARTICLE GENERATION COMPLETE: " + response); 
             
         } catch (Exception e) {
             log.error("ARTICLE GENERATION ERROR", e);
@@ -213,9 +190,7 @@ public class JurixRestResource {
         return Response.ok(response).build();
     }
     
-    /**
-     * Helper method to call backend API
-     */
+
     private Map<String, Object> callBackendAPI(String endpoint, String method, Map<String, Object> payload) throws Exception {
         URL url = new URL(BACKEND_API_URL + endpoint);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -237,8 +212,7 @@ public class JurixRestResource {
             
             int responseCode = conn.getResponseCode();
             log.info("Backend API response code: {}", responseCode);
-            
-            // Read response
+
             StringBuilder response = new StringBuilder();
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(
@@ -249,8 +223,7 @@ public class JurixRestResource {
                     response.append(responseLine.trim());
                 }
             }
-            
-            // Parse response
+
             return gson.fromJson(response.toString(), Map.class);
             
         } finally {

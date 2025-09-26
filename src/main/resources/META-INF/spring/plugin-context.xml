@@ -6,6 +6,4 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.atlassian.com/schema/atlassian-scanner
         http://www.atlassian.com/schema/atlassian-scanner/atlassian-scanner.xsd">
-
-    <!-- Empty beans file -->
 </beans>
